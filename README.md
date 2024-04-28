@@ -1,6 +1,6 @@
-# 🤔⚒️: An Automated Framework to Translate NL to Symbolic Model for Verification⚙️
+# 🤔⚒️: A Framework for Translating Natural Language to Protocol's Symbolic Model with LLMs⚙️
 
-This repo contains code and test cases for our automated tool. The general front
+This repo contains a benchmark for symbolic model synthesis and a tool with web-based frontend.
 
 ## 💡 Introduction
 
@@ -10,12 +10,20 @@ The tool can be divided into two parts, parser and translator roughly. The parse
 
 ## 🛠️ Setup
 
-Setup the conda environments (optional), and install the related packages.
-```bash
-conda create -n llm4V python=3.10
-conda activate llm4V
-pip install -r requirements.txt
-```
+1. Install Tamarin-prover
+- Follow the [Tamarin manual](https://tamarin-prover.com/manual/master/book/002_installation.html).
+    ```bash
+    brew install tamarin-prover/tap/tamarin-prover
+    ```
+- Make sure the prover equipped with a Sapic+ [1] platform.
+
+
+2. Setup the conda environments, and install the related packages.
+    ```bash
+    conda create -n llm4V python=3.10
+    conda activate llm4V
+    pip install -r requirements.txt
+    ```
 
 ## 🚀 Get Started
 
@@ -23,7 +31,7 @@ pip install -r requirements.txt
 - run the tool's frontend
     ```bash
     cd src
-    python -m flask --app frontend.py run
+    python -m flask --app tool.py run
     ```
 - add ```--debug``` for debug mode.
 - Then open web-based tool at http://127.0.0.1:5000
