@@ -1,0 +1,40 @@
+theory Otway_Rees_protocol
+begin
+
+functions: senc/2, sdec/2
+equations: sdec(senc(m, k), k) = m
+
+let A(kas, kab, I, B, S) =
+  new Na;
+  out(I, A, B, senc(<Na, I, A, B>, kas));
+  in(I, cypher);
+  let <Na, =kab> = sdec(cypher, kas) in
+  0
+
+let B(kbs, kab, I, A, S) =
+  in(I, =A, =B, cypher1);
+  let <xNa, =I, =A, =B> = sdec(cypher1, kbs) in
+  new Nb;
+  out(I, A, B, senc(<xNa, I, A, B>, kas), senc(<Nb, I, A, B>, kbs));
+  in(I, cypher2);
+  let <Nb, =kab> = sdec(cypher2, kbs) in
+  out(I, cypher1);
+  0
+
+let S(kas, kbs, kab, I, A, B) =
+  in(I, =A, =B, cypher1, cypher2);
+  let <Na, =I, =A, =B> = sdec(cypher1, kas) in
+  let <Nb, =I, =A, =B> = sdec(cypher2, kbs) in
+  out(I, senc(<Na, kab>, kas), senc(<Nb, kab>, kbs));
+  0
+
+process:
+!(
+  new kas; new kab; new kbs;
+  let I = id(kas); out(I);
+  let A = id(kas); out(A);
+  let B = id(kbs); out(B);
+  let S = id(kas); out(S);
+  (!A(kas, kab, I, B, S) | !B(kbs, kab, I, A, S) | !S(kas, kbs, kab, I, A, B))
+)
+end

@@ -1,0 +1,36 @@
+theory SSH_Protocol
+begin
+
+functions: hash/1, aenc/2, adec/2, g/1, p/1, q/1, s/1, mod/2, pow/2
+equations: adec(aenc(m,pk(sk)),sk)=m
+
+let Client(Vc, Vs, Ic, Is, Ks) =      
+  new x;
+  let e = mod(pow(g(x), p(x)), q(x)) in
+  event OUT_C_1(e);
+  out(e);  
+  in(Ks, f, s);
+  let K = mod(pow(f, x), p(x)) in
+  let H = hash(Vc || Vs || Ic || Is || Ks || e || f || K) in
+  event IN_C_2(Ks, f, s, H);
+  event SessionBuiltC(Vc, Vs, Ic, Is, Ks, e, f, K, H) 
+  
+let Server(Vc, Vs, Ic, Is, Ks) =  
+  in(e);
+  new y;
+  let f = mod(pow(g(y), p(y)), q(y)) in
+  let K = mod(pow(e, y), p(y)) in
+  let H = hash(Vc || Vs || Ic || Is || Ks || e || f || K) in
+  let s = s(H) in
+  event OUT_S_1(Ks, f, s, H);
+  out(Ks, f, s);
+  event SessionBuiltS(Vc, Vs, Ic, Is, Ks, e, f, K, H)
+
+process:
+!(
+  new Vc; new Vs; new Ic; new Is; new Ks; 
+  event HonestC(Vc, Vs, Ic, Is, Ks);
+  event HonestS(Vc, Vs, Ic, Is, Ks);
+  (!Client(Vc, Vs, Ic, Is, Ks) | !Server(Vc, Vs, Ic, Is, Ks))
+)   
+end

@@ -1,0 +1,46 @@
+theory Public_Key_Protocol
+begin
+
+functions: pub/1, priv/1, aenc/2, adec/2
+equations: adec(aenc(m, pub(sk)), priv(sk)) = m
+
+let Alice(pubA, privA, pubB) =
+  new Na;
+  event OUT_A_1(aenc(<A, Na>, pubB));
+  out(aenc(<A, Na>, pubB));
+  in(cypher);
+  let mess = adec(cypher, privA) in
+  let <xNa, =pubA> = mess in
+  event IN_A_2(xNa, aenc(<xNa, Nb>, pubA));
+  event OUT_A_2(aenc(Na, pubB));
+  out(aenc(Na, pubB));
+  in(cypher2);
+  let mess2 = adec(cypher2, privA) in
+  let <=Na, Nb> = mess2 in
+  event IN_A_3(Nb);
+  event OUT_A_3(aenc(Nb, pubB));
+  out(aenc(Nb, pubB))
+
+let Bob(pubB, privB, pubA) =
+  in(cypher1);
+  let mess1 = adec(cypher1, privB) in
+  let <A, Na> = mess1 in
+  event IN_B_1(A, Na, aenc(<A, Na>, pubB));
+  new Nb;
+  event OUT_B_1(aenc(<Na, Nb>, pubA));
+  out(aenc(<Na, Nb>, pubA));
+  in(cypher2);
+  let mess2 = adec(cypher2, privB) in
+  let <=Na, Nb> = mess2 in
+  event IN_B_2(Na, Nb, aenc(Na, pubB));
+  event SessionBuilt(pubA, pubB, Na, Nb)
+
+process:
+!(
+  new privA, pubA;
+  new privB, pubB;
+  out(pubA);
+  out(pubB);
+  (!Alice(pubA, privA, pubB) | !Bob(pubB, privB, pubA))
+)
+end

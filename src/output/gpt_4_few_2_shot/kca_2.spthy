@@ -1,0 +1,41 @@
+theory Needham_Schroeder_Symmetric_Key_protocol
+begin
+
+functions: senc/2, sdec/2
+equations: sdec(senc(m, k), k) = m
+
+let A(Kas, Kbs, idS, idB) = 
+  new Na;
+  out(<idS, <idB, Na>>);
+  in(cypher);
+  let <xPackage1, xPackage2, xNb> = cypher in
+  let < =idB, =Na, Kab> = sdec(xPackage1, Kas) in
+  event OUT_A_2(senc(xNb, Kab));
+  out(senc(xNb, Kab))
+
+let S(Kas, Kbs, idA, idB) =
+  in(<=idA, <xidB, xNa>>);
+  new Kab;
+  let Package1 = senc(<idB, xNa, Kab>, Kas) in
+  let Package2 = senc(<idA, xNa, Kab>, Kbs) in
+  out(<Package1, Package2, xNa>)
+
+let B(Kas, Kbs, idS, idA) =
+  in(cypher);
+  let <xPackage1, xPackage2, =Na> = cypher in
+  let < =idA, =Na, Kab> = sdec(xPackage2, Kbs) in
+  new Nb;
+  out(<xPackage1, senc(Na, Kab), Nb>);
+  in(cypher2);
+  let =Nb = sdec(cypher2, Kab) in
+  0
+
+process:
+!(
+    new Kas; new Kbs; 
+    let idS = id(Kas); out(idS);
+    let idA = id(Kbs); out(idA);
+    (!A(Kas, Kbs, idS, idA)  | !S(Kas, Kbs, idA, idS) | !B(Kas, Kbs, idS, idA))
+  )
+)
+end

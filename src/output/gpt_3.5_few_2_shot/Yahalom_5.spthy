@@ -1,0 +1,55 @@
+theory Needham_Schroeder_Public_Key_protocol
+begin
+
+functions: pk/1, aenc/2, adec/2
+equations: adec(aenc(m,pk(sk)),sk)=m
+
+let A_B(skA, pkB)=      
+  new Na;
+  event OUT_A_1(aenc(<A, Na>, pkB));
+  out(aenc( <A,Na> ,pkB));  
+  in(cypher1);
+  let mess1 = adec(cypher1,skA) in
+  let <=B,Na,Nb> = mess1 in
+  event IN_B_1(B,Na,Nb,aenc(<A,Na,Nb>,pk(skB)));
+  event OUT_A_2(aenc(<B,Kab,Na,Nb>,pk(skA)));
+  out(aenc(<B,Kab,Na,Nb>,pk(skA)));
+  event SessionBuiltA(pk(skA), Kab, Na, Nb);
+  event SessionA(pk(skA), pkB, Kab) 
+  
+let B_S(skB, pkS) =  
+  in(cypher2);
+  let mess2 = adec(cypher2,skB) in
+  let <=A,Na,Nb> = mess2 in
+  event IN_S_1(A,Na,Nb,aenc(<A,Na,Nb>,pk(skB)));
+  new Kab;
+  event OUT_S_1(aenc(<B,Kab,Na,Nb>,pkA));
+  out(aenc(<B,Kab,Na,Nb>,pkA));
+  event OUT_S_2(aenc(<A,Kab>,pk(skB)));
+  out(aenc(<A,Kab>,pk(skB)));
+  event SessionBuiltB(pk(skB),A,Kab,Na,Nb);
+  event SessionB(pkA,pk(skB),A)
+
+let A_B2(skA, skB) =  
+  in(cypher3);
+  let mess3 = adec(cypher3,skA) in
+  let <=A,Kab> = mess3 in
+  event IN_B_2(A,Kab,aenc(<A,Kab>,pk(skB)));
+  new Nb;
+  event OUT_A_3(aenc(<Nb>,Kab));
+  out(aenc(<Nb>,Kab));
+  event SessionBuiltA2(pk(skA),Kab,Nb);
+  event SessionA2(pk(skA),pkB,Kab)
+
+process:
+!(
+  new skA; out(pk(skA)); event HonestA(pk(skA));
+  !(
+    new skB; out(pk(skB)); event HonestB(pk(skB));
+    !(
+      new pkS; out(pkS); event HonestS(pkS);
+      (!A_B(skA, pkB) | !B_S(skB, pkS) | !A_B2(skA, skB))
+    )
+  )
+)   
+end

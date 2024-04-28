@@ -1,0 +1,62 @@
+theory Alice_Bob_S_Server_protocol
+begin
+
+functions: senc/2, sdec/2
+equations: sdec(senc(m, k), k) = m
+
+let S(A, B, Na, Kas, Kbs) =
+  new Kab;
+  let msg = senc(<Na, B, Kab, senc(<Kab, A>, Kbs)>, Kas) in
+  event OUT_S_1(A, B, Na, msg);
+  out(msg);
+  in(cypher1);
+  let <Nb, =Kab> = sdec(cypher1, Kas) in
+  event IN_S_2(Nb, cypher1);
+  event OUT_S_2(senc(Nb, Kab));
+  out(senc(Nb, Kab));
+  in(cypher2);
+  let <dec_Nb, =Kab> = sdec(cypher2, Kab) in
+  event IN_S_3(dec_Nb, cypher2);
+  event OUT_S_3(senc(dec_Nb, Kab));
+  out(senc(dec_Nb, Kab));
+  event SessionBuilt(A, B, Kab)
+  
+let Alice(A, B, Kas) =
+  new Na;
+  event OUT_A_1(<A, B, Na>);
+  out(<A, B, Na>);
+  in(msg1);
+  let <Na, B, Kab, cypher> = sdec(msg1, Kas) in
+  event IN_A_2(Na, B, Kab, cypher);
+  event OUT_A_2(senc(<Kab, A>, Kbs));
+  out(senc(<Kab, A>, Kbs));
+  in(cypher2);
+  let dec_Nb = sdec(cypher2, Kab) in
+  event IN_A_3(dec_Nb, cypher2);
+  event SessionBuilt(A, B, Kab)
+  
+let Bob(B, Kbs) =
+  in(msg1);
+  let dec_msg1 = sdec(msg1, Kbs) in
+  event IN_B_1(dec_msg1);
+  let <Kab, A> = dec_msg1 in
+  event OUT_B_1(senc(<Nb>, Kab));
+  out(senc(<Nb>, Kab));
+  in(cypher2);
+  let dec_Nb = sdec(cypher2, Kab) in
+  event IN_B_2(dec_Nb, cypher2);
+  event SessionBuilt(A, B, Kab)
+
+process:
+!(
+  new Kas, Kbs;
+  let A = "Alice";
+  let B = "Bob";
+  event HonestS(A, B, Kas, Kbs);
+  !(
+    !Alice(A, B, Kas) |
+    !S(A, B, Na, Kas, Kbs) |
+    !Bob(B, Kbs)
+  )
+)
+end

@@ -1,0 +1,33 @@
+theory Denning_Sacco_protocol
+begin
+
+functions: senc/2, sdec/2
+equations: sdec(senc(m, k), k) = m
+
+let Alice(Kas, idA, idB, idS) = 
+  out(idS, <idA, idB>);
+  in(cypher);
+  let < =idB, Kab, T, cypher_for_B> = sdec(cypher, Kas) in
+  out(idB, cypher_for_B);
+
+let S(Kas, Kbs, idA, idB, idS) =
+  in(=idS, <xidA, xidB>);
+  new Kab;
+  new T;
+  let cypher_for_A = senc(<xidB, Kab, T, senc(<Kab, xidA, T>, Kbs)>, Kas) in
+  out(xidA, cypher_for_A);
+
+let Bob(Kbs, idB) =
+  in(=idB, cypher);
+  let <Kab, =idB, T> = sdec(cypher, Kbs) in
+  0
+
+process:
+!(
+    new Kas; new Kbs;
+    let idA = id(Kas); out(idA);
+    let idB = id(Kbs); out(idB);
+    let idS = id(Kas, Kbs); out(idS);
+    (!Alice(Kas, idA, idB, idS) | !S(Kas, Kbs, idA, idB, idS) | !Bob(Kbs, idB))
+)
+end

@@ -1,0 +1,45 @@
+theory Needham_Schroeder_Symmetric_Key_protocol
+begin
+
+functions: senc/2, sdec/2
+equations: sdec(senc(m,k),k) = m
+
+let P(kas, kab, A, B) =      
+  new I, Na;
+  event OUT_I_1(senc(<I,A,B,{Na,I,A,B}>, kas));
+  out(senc(<I,A,B,{Na,I,A,B}>, kas));
+  in(cypher1);
+  let mess1 = sdec(cypher1, kas) in
+  let <Nb, =I,A,B> = mess1 in
+  event IN_I_2(Nb, senc(<Nb,I,A,B>, kbs));
+  event OUT_I_2(senc(<Nb,I,A,B>, kbs));
+  out(senc(<Nb,I,A,B>, kbs));
+  event SessionBuiltA(kab, I, Na, Nb);
+  event SessionA(kab, A, B) 
+  
+let Q(kbs, kas) =  
+  in(cypher2);
+  let mess2 = sdec(cypher2, kbs) in
+  let <=Na, kab> = mess2 in
+  event IN_R_1(Na, senc(<Na,kab>, kas));
+  event OUT_R_1(senc(<Na,kab>, kas));
+  out(senc(<Na,kab>, kas));
+  in(cypher3);
+  let mess3 = sdec(cypher3, kas) in
+  let <=Nb, kab> = mess3 in
+  event IN_R_2(Nb, senc(<Nb,kab>, kbs));
+  event SessionBuiltB(kab, I, Na, Nb);
+  event SessionB(kab, A, B)
+
+process:
+!(
+  new kas, kab;
+  let A = id(kas);
+  let B = id(kab);
+  event HonestA(kas);
+  event HonestB(kab);
+  !(
+    (!P(kas, kab, A, B) | !Q(kbs, kas))
+  )
+)   
+end

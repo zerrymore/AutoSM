@@ -1,0 +1,32 @@
+theory CCITT_X509_protocol
+begin
+
+functions: pk/1, sk/1, h/1, aenc/2, adec/2, sign/2, verify/2
+equations: verify(sign(m, sk(k)), pk(k)) = m
+
+let Alice(SK(A), PK(B)) =
+  new Ta, Na, Xa, Ya;
+  let encrypted_data = aenc(<A, Ta, Na, B, Xa, {Ya}PK(B)>, pk(B)) in
+  let signed_data = sign(h(<A, Ta, Na, B, Xa, {Ya}PK(B)>), sk(A)) in
+  event OUT_A(<A, Ta, Na, B, Xa, {Ya}PK(B), signed_data>);
+  out(<A, Ta, Na, B, Xa, {Ya}PK(B), signed_data>);
+
+let Bob(SK(B), PK(A)) =
+  in(message);
+  let <A, Ta, Na, B, Xa, encrypted_data, signed_data> = message in
+  let decrypted_data = adec(encrypted_data, sk(B)) in
+  let verified = verify(signed_data, pk(A)) in
+  let <A', Ta', Na', B', Xa', Ya'> = decrypted_data in
+  event IN_B(<A, Ta, Na, B, Xa, {Ya}PK(B), signed_data>);
+  event Verified(verified);
+  out(verified);
+
+process:
+!(
+  new SK(A), PK(A); out(PK(A)); event HonestA(PK(A));
+  !(
+    new SK(B), PK(B); out(PK(B)); event HonestB(PK(B));
+    (!Alice(SK(A), PK(B)) | !Bob(SK(B), PK(A)))
+  )
+)
+end

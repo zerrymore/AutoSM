@@ -1,0 +1,34 @@
+theory Alex_Blake_protocol
+begin
+
+functions: kdf/2
+equations: kdf(ANonce, BNonce) = SK
+
+let Alex() =
+  new ANonce;
+  event OUT_A_1(ANonce);
+  out(ANonce);
+  in(BNonce);
+  event IN_A_2(BNonce);
+  let SK = kdf(ANonce, BNonce) in
+  event SessionInstalled_A(SK);
+  event OUT_A_3("ACK");
+  out("ACK");
+  event DONE_A;
+
+let Blake() =
+  in(ANonce);
+  event IN_B_1(ANonce);
+  new BNonce;
+  event OUT_B_2(BNonce);
+  out(BNonce);
+  event IN_B_3("ACK");
+  let SK = kdf(ANonce, BNonce) in
+  event SessionInstalled_B(SK);
+  event DONE_B;
+
+process:
+!(
+  (!Alex() | !Blake())
+)
+end

@@ -1,0 +1,33 @@
+theory Diffie_Hellman_protocol
+begin
+
+functions: pk/1, g/1, h1/2, h2/2, concat/2
+equations: 
+
+let Initiator(lkI, pkR)=      
+  new eskI;
+  let X = g(h1(concat(eskI, lkI))) in
+  event OUT_I_1(X);
+  out(X);
+  in(Y);
+  let kI = h2(concat(Y, lkI)) in
+  event SessionKeyI(kI);
+  
+let Responder(lkR, pkI) =  
+  in(X);
+  new eskR;
+  let Y = g(h1(concat(eskR, lkR))) in
+  event OUT_R_1(Y);
+  out(Y);
+  let kR = h2(concat(X, lkR)) in
+  event SessionKeyR(kR);
+
+process:
+!(
+  new lkI; out(pk(lkI)); event HonestI(pk(lkI));
+  !(
+    new lkR; out(pk(lkR)); event HonestR(pk(lkR));
+    (!Initiator(lkI, pk(lkR)) | !Responder(lkR, pk(lkI)))
+  )
+)   
+end

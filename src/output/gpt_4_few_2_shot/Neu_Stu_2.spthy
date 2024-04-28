@@ -1,0 +1,74 @@
+theory Needham_Schroeder_Kerberos_protocol
+begin
+
+functions: pk/1, senc/2, sdec/2
+equations: sdec(senc(m,k),k)=m
+
+let A(Kas, Kbs, pkS) =
+  new Na;
+  event OUT_A_1(Na, pkS);
+  out(Na, pkS);
+  in(cypher1);
+  let mess1 = sdec(cypher1, Kas) in
+  let <xNb, =Na, xKab, =Tb> = mess1 in
+  event IN_A_1(xNb, Na, xKab, Tb, senc(<xNb, Na, xKab, Tb>, Kas));
+  out(senc(<xNb, xKab>, Kbs));
+  event OUT_A_2(senc(<xNb, xKab>, Kbs));
+  in(cypher2);
+  let mess2 = sdec(cypher2, xKab) in
+  let =xNb = mess2 in
+  event IN_A_2(xNb, senc(xNb, xKab));
+  new Ma;
+  out(Ma, senc(<xNb, xKab>, Kbs));
+  event OUT_A_3(Ma, senc(<xNb, xKab>, Kbs));
+  in(cypher3);
+  let mess3 = sdec(cypher3, xKab) in
+  let =Ma, xMb = mess3 in
+  event IN_A_3(Ma, xMb, senc(<Ma, xMb>, xKab));
+  out(senc(xMb, xKab));
+  event OUT_A_4(senc(xMb, xKab));
+  event SessionA(Kas, Na, xNb, xKab, Ma, xMb)
+
+let B(Kbs, pkS) =
+  in(cypher1);
+  let <xNa, =pkS> = sdec(cypher1, Kbs) in
+  event IN_B_1(xNa, pkS, senc(<xNa, pkS>, Kbs));
+  new Nb;
+  out(senc(<xNa, Nb, pkS>, Kbs));
+  event OUT_B_1(senc(<xNa, Nb, pkS>, Kbs));
+  in(cypher2);
+  let mess2 = sdec(cypher2, Kbs) in
+  let <xA, xKab, =Tb> = mess2 in
+  event IN_B_2(xA, xKab, Tb, senc(<xA, xKab, Tb>, Kbs));
+  out(senc(Nb, xKab));
+  event OUT_B_2(senc(Nb, xKab));
+  in(cypher3);
+  let mess3 = sdec(cypher3, xKab) in
+  let =Nb, xMa = mess3 in
+  event IN_B_3(Nb, xMa, senc(<Nb, xMa>, xKab));
+  new Mb;
+  out(senc(<xMa, Mb>, xKab));
+  event OUT_B_3(senc(<xMa, Mb>, xKab));
+  in(cypher4);
+  let mess4 = sdec(cypher4, xKab) in
+  let =Mb = mess4 in
+  event IN_B_4(Mb, senc(Mb, xKab));
+  event SessionB(Kbs, xNa, Nb, xKab, xMa, Mb)
+
+let S(Kas, Kbs) =
+  in(cypher1);
+  let <xA, xNa, xTb> = sdec(cypher1, Kas) in
+  event IN_S_1(xA, xNa, xTb, senc(<xA, xNa, xTb>, Kas));
+  new Kab;
+  out(senc(<xNa, Kab, xTb>, Kas), senc(<xA, Kab, xTb>, Kbs));
+  event OUT_S_1(senc(<xNa, Kab, xTb>, Kas), senc(<xA, Kab, xTb>, Kbs));
+  event SessionS(Kas, xNa, Kab, xTb)
+
+process:
+!(
+  new Kas; out(Kas); event HonestA(Kas);
+  new Kbs; out(Kbs); event HonestB(Kbs);
+  new pkS; out(pkS); event HonestS(pkS);
+  (!A(Kas, Kbs, pkS) | !B(Kbs, pkS) | !S(Kas, Kbs))
+)
+end

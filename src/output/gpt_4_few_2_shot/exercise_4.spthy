@@ -1,0 +1,28 @@
+theory KeyExchangeProtocol
+begin
+
+functions: kdf/2
+
+let Alex() = 
+  new ANonce;
+  out(ANonce);
+  in(BNonce);
+  let SK = kdf(ANonce, BNonce) in
+  event SessionKeyInstalled(SK);
+  out("ACK");
+  event StateSwitchedToDone();
+
+let Blake() = 
+  in(ANonce);
+  new BNonce;
+  out(BNonce);
+  in("ACK");
+  let SK = kdf(ANonce, BNonce) in
+  event SessionKeyInstalled(SK);
+  event StateSwitchedToDone();
+
+process:
+!(
+  !Alex() | !Blake()
+)
+end

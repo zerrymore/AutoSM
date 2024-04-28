@@ -1,0 +1,50 @@
+theory Denning_Sacco_protocol
+begin
+
+functions: kas/1, kbs/1, aenc/2, adec/2
+equations: adec(aenc(m,pk(sk)),sk)=m
+
+let S(kas, kbs) =
+  in(req);
+  let <A,B> = req in
+  new Kab, T;
+  let enc_part = aenc(<Kab,A,T>, kbs) in
+  let msg = <B,Kab,T,enc_part> in
+  event OUT_S(msg);
+  out(msg);
+  event SessionBuilt(A,B,Kab,T)
+
+let A(kas, kbs) =
+  event HonestA;
+  let B = "Bob" in
+  let msg = <A,B> in
+  event OUT_A(msg);
+  out(msg);
+  in(resp);
+  let <B,Kab,T,enc_part> = resp in
+  let <Kab',A',T'> = adec(enc_part, kbs) in
+  if (B = B' and T = T') then
+    event SessionBuilt(A,B,Kab,T)
+  else
+    event ErrorA
+
+let B(kas, kbs) =
+  event HonestB;
+  in(msg);
+  let <B,Kab,T,enc_part> = msg in
+  let <Kab',A',T'> = adec(enc_part, kbs) in
+  if (T = T') then
+    event SessionBuilt(A',B,Kab,T)
+  else
+    event ErrorB
+
+process:
+!(
+  new kas, kbs;
+  !(
+    !S(kas, kbs) |
+    !A(kas, kbs) |
+    !B(kas, kbs)
+  )
+)
+end

@@ -1,0 +1,30 @@
+theory Key_Confirmation_Protocol
+begin
+
+functions: pk/1, senc/2, aenc/2, adec/2, h/1
+equations: sdec(senc(m,k),k)=m, adec(aenc(m,pk(sk)),sk)=m
+
+let Client(pkS) = 
+  new k;
+  let kEnc = aenc(k, pkS) in
+  out(kEnc);
+  in(hash);
+  let =h(k) = hash in
+  event KeyConfirmed(k)
+
+let Server(skS) =
+  in(kEnc);
+  let k = adec(kEnc, skS) in
+  let hash = h(k) in
+  out(hash);
+  event KeyReceived(k)
+
+process:
+!(
+  new skS; out(pk(skS)); event HonestServer(pk(skS));
+  !(
+    new pkC; event HonestClient(pkC);
+    (!Client(pk(skS)) | !Server(skS))
+  )
+)   
+end

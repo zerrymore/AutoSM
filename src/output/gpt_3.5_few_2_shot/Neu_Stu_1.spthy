@@ -1,0 +1,49 @@
+theory Needham_Schroeder_Public_Key_protocol
+begin
+
+functions: pk/1, aenc/2, adec/2
+equations: adec(aenc(m,pk(sk)),sk)=m
+
+let A(Na, B, S, Kas, Kbs) =
+  event OUT_A_1(<A, Na>);
+  out(<A, Na>);
+  in(cypher1);
+  let <B, Na, Kab, Tb> = adec(cypher1, Kas) in
+  event IN_A_2(<B, Na, Kab, Tb>, aenc(<A, Kab, Tb>, Kbs));
+  event OUT_A_2(aenc(Na, Kab));
+  out(aenc(Na, Kab));
+  in(cypher2);
+  let Mb = adec(cypher2, Kab) in
+  event IN_A_3(Mb, aenc(Mb, Kab));
+  event SessionBuilt(A, B, Kab);
+  event Session(A, B, Kab, Tb);
+  event Acknowledgment(A, B, Mb);
+
+let B(Nb, A, S, Kas, Kbs) =
+  in(cypher);
+  let <A, Na> = adec(cypher, Kbs) in
+  event IN_B_1(<A, Na>, aenc(<A, Na, B, aenc(<A, Na, B, Nb, Tb>, Kas), Nb>, Kbs));
+  event OUT_B_1(aenc(<A, Na, B, aenc(<A, Na, B, Nb, Tb>, Kas), Nb>, Kbs));
+  out(aenc(<A, Na, B, aenc(<A, Na, B, Nb, Tb>, Kas), Nb>, Kbs));
+  in(cypher1);
+  let <A, Kab, Tb> = adec(cypher1, Kbs) in
+  event IN_B_2(<A, Kab, Tb>, aenc(Nb, Kab));
+  event OUT_B_2(aenc(Ma, Kab));
+  out(aenc(Ma, Kab));
+  in(cypher2);
+  let Ma = adec(cypher2, Kab) in
+  event IN_B_3(Ma, aenc(Ma, Kab));
+  event SessionBuilt(B, A, Kab);
+  event Session(B, A, Kab, Tb);
+  event Response(B, A, Ma);
+
+process:
+!(
+  new Na;
+  new Nb;
+  let Kas = pk(S);
+  let Kbs = pk(S);
+  let Kab = pk(S);
+  (!A(Na, B, S, Kas, Kbs) | !B(Nb, A, S, Kas, Kbs))
+)
+end

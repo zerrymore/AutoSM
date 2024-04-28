@@ -1,0 +1,29 @@
+theory protocol
+begin
+functions: kdf/2
+equations: 
+
+let Alex() = 
+  new ANonce;
+  out(ANonce);
+  in(BNonce);
+  let SK = kdf(ANonce, BNonce) in
+  event InstallKeyA(SK);
+  out("ACK");
+  event DoneA
+
+let Blake() =
+  in(ANonce);
+  new BNonce;
+  out(BNonce);
+  in("ACK");
+  let SK = kdf(ANonce, BNonce) in
+  event InstallKeyB(SK);
+  event DoneB
+
+process:
+!(
+    !Alex() | !Blake()
+  )
+)
+end

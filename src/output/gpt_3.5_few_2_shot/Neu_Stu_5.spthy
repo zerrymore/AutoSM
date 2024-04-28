@@ -1,0 +1,91 @@
+theory Needham_Schroeder_Public_Key_protocol
+begin
+
+functions: pk/1, aenc/2, adec/2
+equations: adec(aenc(m,pk(sk)),sk)=m
+
+let Initial_Request_A(skA, pkB) =      
+  new Na;
+  event OUT_I_1(<A, Na>);
+  out(aenc(<A, Na>, pkB));
+  in(cypher);
+  let mess = adec(cypher, skA) in
+  let <=B, Na, Kab, Tb> = mess in
+  event IN_I_2(<B, Kab, Tb>);
+  event OUT_I_2(aenc(Na, pkB));
+  out(aenc(Na, pkB));
+  event SessionBuilt_A(A, B, Kab);
+  event Session_A(A, B, Kab) 
+  
+let Request_Forwarding_B(skB, pkS, Kbs) =  
+  in(cypher1);
+  let mess1 = adec(cypher1, skB) in
+  let <A, Na> = mess1 in
+  event IN_R_1(<A, Na>);
+  new Nb;
+  event OUT_R_1(aenc(<A, Na, Nb, Tb>, Kbs));
+  out(aenc(<A, Na, Nb, Tb>, Kbs));
+  out(aenc(Nb, pkS));
+  in(cypher2);
+  let mess2 = adec(cypher2, skB) in
+  let <B, Kab, Tb> = mess2 in
+  event IN_R_2(<B, Kab, Tb>);
+  event SessionBuilt_B(B, A, Kab);
+  event Session_B(B, A, Kab)
+
+let Server_Response_S(Kas, Kbs, pkA, pkB) =
+  in(cypher1);
+  let mess1 = adec(cypher1, Kas) in
+  let <B, Na, Kab, Tb> = mess1 in
+  event IN_S_1(<B, Na, Kab, Tb>);
+  new Nb;
+  event OUT_S_1(aenc(<A, Kab, Tb>, Kbs));
+  out(aenc(<A, Kab, Tb>, Kbs));
+  out(aenc(Nb, pkB));
+  event IN_S_2(Nb);
+  event OUT_S_2(aenc(<B, Kab, Tb>, Kas));
+  out(aenc(<B, Kab, Tb>, Kas));
+  event SessionBuilt_S(A, B, Kab);
+  event Session_S(A, B, Kab)
+
+let Transmission_to_B(A, B, Kab) =
+  in(cypher);
+  let mess = adec(cypher, Kab) in
+  let Mb = mess in
+  event IN_T(Mb);
+  out(aenc(Mb, Kab))
+
+let First_Message_Exchange_A(A, B, Kab) =
+  in(cypher);
+  let mess = adec(cypher, Kab) in
+  let Ma = mess in
+  event IN_F(<Ma, {A, Kab, Tb}Kbs>);
+  out(aenc(Ma, Kab));
+  out(aenc({A, Kab, Tb}, Kbs))
+
+let Response_B(B, A, Kab) =
+  in(cypher);
+  let mess = adec(cypher, Kab) in
+  let Ma = mess in
+  event IN_R(Ma);
+  let Mb = <B, Ma> in
+  event OUT_R(aenc(Mb, Kab));
+  out(aenc(Mb, Kab))
+
+let Final_Acknowledgment_A(A, B, Kab) =
+  in(cypher);
+  let mess = adec(cypher, Kab) in
+  let Mb = mess in
+  event IN_FA(Mb)
+
+process:
+!(
+  new skA; out(pk(skA)); event Honest_A(pk(skA));
+  !(
+    new skB; out(pk(skB)); event Honest_B(pk(skB));
+    new pkS; out(pk(pkS)); event Honest_S(pkS);
+    let Kbs = pk(skB) in
+    (!Initial_Request_A(skA, pkS) | !Request_Forwarding_B(skB, pkS, Kbs) | !Server_Response_S(pk(skA), Kbs, pkA, pkB) | !Transmission_to_B(A, B, Kab) | !First_Message_Exchange_A(A, B, Kab) | !Response_B(B, A, Kab) | !Final_Acknowledgment_A(A, B, Kab))
+  )
+)   
+end

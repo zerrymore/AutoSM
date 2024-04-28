@@ -1,0 +1,45 @@
+theory SSH_protocol
+begin
+
+functions: pk/1, hash/1, aenc/2, adec/2, sign/2, check/2
+equations: adec(aenc(m,pk(sk)),sk)=m, check(sign(m,sk),pk(sk))=m
+
+let Client(pkS, VC, VS, IC, IS, KS, p, g, q)=      
+  new x;
+  let e = g^x mod p in
+  event ClientSendE(e);
+  out(e);
+  in(cypher);
+  let < =KS, f, s> = cypher in
+  event ClientReceiveKSFS(KS, f, s);
+  let K = f^x mod p in
+  let H = hash(VC || VS || IC || IS || KS || e || f || K) in
+  event ClientCheckSignature(H, s);
+  if check(s, pkS) = H then
+    event ClientVerifiedSignature(H, s)
+  else
+    0
+  
+let Server(skS, VC, VS, IC, IS, KS, p, g, q) =  
+  in(e);
+  event ServerReceiveE(e);
+  new y;
+  let f = g^y mod p in
+  let K = e^y mod p in
+  let H = hash(VC || VS || IC || IS || KS || e || f || K) in
+  let s = sign(H, skS) in
+  event ServerSendKSFS(KS, f, s);
+  out(<KS, f, s>);
+  event ServerBuiltH(K, H, s)
+
+process:
+!(
+  new skS; out(pk(skS)); event HonestS(pk(skS));
+  !(
+    new VC; new VS; new IC; new IS; new KS; new p; new g; new q; 
+    out(VC); out(VS); out(IC); out(IS); out(KS); out(p); out(g); out(q); 
+    event HonestC(VC, VS, IC, IS, KS, p, g, q);
+    (!Client(pk(skS), VC, VS, IC, IS, KS, p, g, q) | !Server(skS, VC, VS, IC, IS, KS, p, g, q))
+  )
+)   
+end

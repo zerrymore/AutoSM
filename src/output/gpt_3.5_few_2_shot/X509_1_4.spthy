@@ -1,0 +1,35 @@
+theory CCITT_X509_V1_protocol
+begin
+
+functions: pk/1, sk/1, h/1, aenc/2, adec/2, sign/2, verify/2
+equations: verify(sign(m, sk(A)), pk(A)) = m
+
+let Alice(Ta, Na, Xa, Ya, pkB, skA) = 
+  let encrypted = aenc(<A, Ta, Na, B, Xa, {Ya}pkB>, pkB) in
+  let signed = sign(<A, Ta, Na, B, Xa, {Ya}pkB, {h(<A, Ta, Na, B, Xa, {Ya}pkB>)}skA>, skA) in
+  let message = <A, Ta, Na, B, Xa, {Ya}pkB, {h(<A, Ta, Na, B, Xa, {Ya}pkB>)}skA> in
+  out(message)
+
+let Bob(pkA, skB) =
+  in(message);
+  let <A, Ta, Na, B, Xa, encrypted, signed> = message in
+  let decrypted = adec(encrypted, skB) in
+  let <Ya> = decrypted in
+  let hash = h(<A, Ta, Na, B, Xa, encrypted>) in
+  let verified = verify(signed, pkA) in
+  if verified and hash = h(<A, Ta, Na, B, Xa, encrypted, signed>) then
+    out("Message is authentic and verified")
+  else
+    out("Message is not authentic or verified")
+
+process:
+!(
+  let pkA = pk(A); out(pkA);
+  let pkB = pk(B); out(pkB);
+  !(
+    new skA; event HonestA(pkA, skA);
+    new skB; event HonestB(pkB, skB);
+    (!Alice(Ta, Na, Xa, Ya, pkB, skA) | !Bob(pkA, skB))
+  )
+)
+end

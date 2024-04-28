@@ -1,0 +1,43 @@
+theory Server_Authentication_protocol
+begin
+
+functions: senc/2, sdec/2
+equations: sdec(senc(m, k), k) = m
+
+let Alice(A, B) =
+  new Na;
+  event OUT_I_1(senc(<A, B, Na>, Kas));
+  event OUT_I_2(senc(Na, Kas));
+  out(senc(<A, B, Na>, Kas));
+  out(senc(Na, Kas));
+  in(cypher1);
+  let <mess1, mess2> = sdec(cypher1, Kas) in
+  let <=Na, xKab, cypher2> = mess1 in
+  let <=Kab, xA> = sdec(cypher2, Kbs) in
+  event IN_I_3(xKab, senc(<Kab, A>, Kbs));
+  event SessionBuilt(A, B, Kab, xKab, xA);
+  event Session(A, B, Na, Nb, Kab)
+
+let Bob(B) =
+  in(cypher1);
+  let <mess1, mess2> = sdec(cypher1, Kbs) in
+  let <=Kab, xA> = mess1 in
+  event IN_R_1(xA, senc(<Kab, A>, Kbs));
+  new Nb;
+  event OUT_R_1(senc(Nb, Kab));
+  out(senc(Nb, Kab));
+  in(cypher2);
+  let <=Nb> = sdec(cypher2, Kab) in
+  event IN_R_2(Nb, senc(Nb, Kab));
+  event SessionBuilt(B, A, Kab, xA, Nb)
+  
+process:
+!(
+  new Kas, Kbs;
+  let A = "Alice";
+  let B = "Bob";
+  event Honest(A);
+  event Honest(B);
+  (!Alice(A, B) | !Bob(B))
+)
+end

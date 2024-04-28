@@ -1,0 +1,43 @@
+theory Woo_Lam_Pi_f_protocol
+begin
+
+functions: senc/2, sdec/2
+equations: sdec(senc(m,k),k)=m
+
+let Alice(A, B, Kas, Kbs) = 
+  event beginA(A,B);
+  out(A);
+  in(Nb);
+  let M = senc(<A, B, Nb>, Kas) in
+  out(M);
+  event endA(A,B)
+
+let Bob(A, B, Kas, Kbs) = 
+  event beginB(A,B);
+  in(A);
+  new Nb;
+  out(Nb);
+  in(M);
+  let M1 = senc(<M, B, Nb>, Kbs) in
+  out(M1);
+  in(M2);
+  let <A, B, Nb> = sdec(M2, Kbs) in
+  event endB(A,B)
+
+let Server(A, B, Kas, Kbs) = 
+  event beginS(A,B);
+  in(M1);
+  let <M, B, Nb> = sdec(M1, Kbs) in
+  let <A, B, Nb> = sdec(M, Kas) in
+  let M2 = senc(<A, B, Nb>, Kbs) in
+  out(M2);
+  event endS(A,B)
+
+process:
+!(
+  new Kas; new Kbs;
+  let A = "Alice"; let B = "Bob";
+  out(A); out(B); out(Kas); out(Kbs);
+  (!Alice(A, B, Kas, Kbs) | !Bob(A, B, Kas, Kbs) | !Server(A, B, Kas, Kbs))
+)
+end

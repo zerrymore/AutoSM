@@ -1,0 +1,32 @@
+theory SSH_Protocol
+begin
+
+functions: hash/1, pow/2, mod/2, sign/2, verify/3
+equations: verify(sign(m, sk), m, pk(sk)) = true
+
+let Client(p, g, q, V_S, V_C, K_S, I_C, I_S) = 
+  new x;
+  let e = mod(pow(g, x), p) in
+  out(e);
+  in(K_S, f, s);
+  let K = mod(pow(f, x), p) in
+  let H = hash(<V_C, V_S, I_C, I_S, K_S, e, f, K>) in
+  if verify(s, H, K_S) then
+    event SessionBuiltC(K, H)
+
+let Server(p, g, q, V_S, V_C, K_S, I_C, I_S) =
+  new y;
+  let f = mod(pow(g, y), p) in
+  out(K_S, f, sign(hash(<V_C, V_S, I_C, I_S, K_S, e, f, K>), K_S));
+  in(e);
+  let K = mod(pow(e, y), p) in
+  let H = hash(<V_C, V_S, I_C, I_S, K_S, e, f, K>) in
+  event SessionBuiltS(K, H)
+
+process:
+!(
+  new p, g, q, V_S, V_C, K_S, I_C, I_S;
+  out(p, g, q, V_S, V_C, K_S, I_C, I_S);
+  !Client(p, g, q, V_S, V_C, K_S, I_C, I_S) | !Server(p, g, q, V_S, V_C, K_S, I_C, I_S)
+)
+end

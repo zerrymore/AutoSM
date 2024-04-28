@@ -1,0 +1,43 @@
+theory Kerberos_protocol
+begin
+
+functions: senc/2, sdec/2
+equations: sdec(senc(m, k), k) = m
+
+let Alice(Kas, idA, idB, idS) = 
+  new Na;
+  out(<idA, Na>);
+  in(cypher1);
+  let < =idB, Kab, =Na, Nb> = sdec(cypher1, Kas) in
+  out(cypher2);
+  in(cypher3);
+  let =Nb = sdec(cypher3, Kab) in
+  0
+
+let Bob(Kbs, idA, idB, idS) =
+  in(<xidA, xNa>);
+  new Nb;
+  out(<idB, senc(<xidA, xNa, Nb>, Kbs)>);
+  in(cypher2);
+  let < =idA, Kab> = sdec(cypher2, Kbs) in
+  out(senc(Nb, Kab));
+  0
+
+let Server(Kas, Kbs, idA, idB, idS) =
+  in(< =idB, cypher>);
+  let <xidA, xNa, xNb> = sdec(cypher, Kbs) in
+  new Kab;
+  out(senc(<idB, Kab, xNa, xNb>, Kas));
+  out(senc(<xidA, Kab>, Kbs));
+  0
+
+process:
+!(
+    new Kas; new Kbs; 
+    let idA = id(Kas); out(idA);
+    let idB = id(Kbs); out(idB);
+    let idS = id(Kas, Kbs); out(idS);
+    (!Alice(Kas, idA, idB, idS)  | !Bob(Kbs, idA, idB, idS) | !Server(Kas, Kbs, idA, idB, idS))
+  )
+)
+end

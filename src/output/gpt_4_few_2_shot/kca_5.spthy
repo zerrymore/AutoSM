@@ -1,0 +1,40 @@
+theory Kerberos_protocol
+begin
+
+functions: senc/2, sdec/2, pk/1
+equations: sdec(senc(m, k), k) = m
+
+let A(Kas, idA, idB, idS, Kbs) =
+  new Na;
+  out(idA, idB, Na);
+  in(pack1, pack2, Nb);
+  let < =idA, =idB, =Na, Kab> = sdec(pack1, Kas) in
+  let =Na = sdec(pack2, Kab) in
+  out(senc(Nb, Kab));
+  event SessionA(Kab, Na, Nb)
+
+let S(Kas, idA, idB, Kbs) = 
+  in(xidA, xidB, xNa);
+  new Kab;
+  let pack1 = senc(<xidA, xidB, xNa, Kab>, Kas) in
+  let pack2 = senc(<xidA, xidB, Kab>, Kbs) in
+  out(pack1, pack2, xNa);
+  event SessionS(Kab, xNa)
+
+let B(Kbs, idA, idB, idS, Kas) = 
+  in(pack1, pack2, xNa);
+  let <xidA, xidB, Kab> = sdec(pack2, Kbs) in
+  new Nb;
+  out(pack1, senc(xNa, Kab), Nb);
+  in(cypher);
+  let =Nb = sdec(cypher, Kab) in
+  event SessionB(Kab, xNa, Nb)
+
+process:
+!(
+  new Kas; new Kbs;
+  let idA = pk(Kas); let idB = pk(Kbs); let idS = pk(Kas);
+  out(idA); out(idB); out(idS);
+  (!A(Kas, idA, idB, idS, Kbs) | !S(Kas, idA, idB, Kbs) | !B(Kbs, idA, idB, idS, Kas))
+)
+end

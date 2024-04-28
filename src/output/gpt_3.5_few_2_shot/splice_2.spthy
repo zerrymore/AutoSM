@@ -1,0 +1,53 @@
+theory SPLICE_AS_protocol
+begin
+
+functions: pk/1, sk/1, aenc/2, adec/2, sign/2, verify/3
+equations: adec(aenc(m,pk(sk)),sk)=m, verify(m, sign(m, sk(pk)))=true
+
+let Client(C, S, N1) =
+  event OUT_1(<C, S, N1>);
+  out(<C, S, N1>);
+  in(cert);
+  let <AS, <AS, C, N1, pk(S)>> = cert in
+  event IN_2(cert);
+  event SessionBuiltC(pk(S), N1)
+
+let AuthServer(AS) =
+  in(req);
+  let <C, S, N1> = req in
+  event IN_1(<C, S, N1>);
+  event SessionRequested(C, S, N1);
+  event SessionBuiltAS(pk(S), pk(AS));
+  event OUT_2(<AS, <AS, C, N1, pk(S)>>);
+  out(<AS, <AS, C, N1, pk(S)>>)
+
+let Server(S) =
+  in(msg);
+  let <C, S, {C, T, L, {N2}pk(S)}sk(C)> = msg in
+  event IN_3(msg);
+  event SessionBuiltS(pk(C), N2);
+  event OUT_3(<S, C, N3>);
+  out(<S, C, N3>);
+  in(cert);
+  let <AS, <AS, S, N3, pk(C)>> = cert in
+  event IN_4(cert);
+  event SessionBuiltS(pk(C), N3);
+  event SessionConfirmed(S, C, N2);
+  event OUT_4(<S, C, {S, inc(N2)}pk(C)>);
+  out(<S, C, {S, inc(N2)}pk(C)>)
+
+process:
+!(
+  new AS;
+  let pkAS = pk(AS) in
+  !(
+    new C;
+    let pkC = pk(C) in
+    !(
+      new S;
+      let pkS = pk(S) in
+      (!Client(C, S, N1) | !AuthServer(AS) | !Server(S))
+    )
+  )
+)
+end

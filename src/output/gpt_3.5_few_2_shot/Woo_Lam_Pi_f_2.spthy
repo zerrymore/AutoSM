@@ -1,0 +1,48 @@
+theory Woo_Lam_Pi_f_protocol
+begin
+
+functions: id/1, nonce/1, senc/2, sdec/2
+equations: sdec(senc(m, k), k) = m
+
+let Alice(S, Kas, idA, idB) =
+  event OUT_A_1(idA);
+  new Nb;
+  event OUT_A_2(idA, idB, Nb);
+  let msg = <idA, idB, Nb> in
+  let enc_msg = senc(msg, Kas) in
+  event OUT_A_3(enc_msg);
+  out(enc_msg);
+  in(enc_msg_bob);
+  event IN_A_4(enc_msg_bob);
+  out(enc_msg_bob)
+
+let Bob(S, Kbs, idB) =
+  in(enc_msg_alice);
+  event IN_B_1(enc_msg_alice);
+  let msg_alice = sdec(enc_msg_alice, Kbs) in
+  let <idA, idB, Nb> = msg_alice in
+  event IN_B_2(idA, idB, Nb);
+  let msg_bob = <idA, idB, Nb> in
+  let enc_msg_bob = senc(msg_bob, Kbs) in
+  event OUT_B_3(enc_msg_bob);
+  out(enc_msg_bob)
+
+let Server(S, Kas, Kbs) =
+  in(enc_msg_alice);
+  event IN_S_1(enc_msg_alice);
+  let msg_alice = sdec(enc_msg_alice, Kas) in
+  let <idA, idB, Nb> = msg_alice in
+  event IN_S_2(idA, idB, Nb);
+  let msg_bob = <idA, idB, Nb> in
+  let enc_msg_bob = senc(msg_bob, Kbs) in
+  event OUT_S_3(enc_msg_bob);
+  out(enc_msg_bob)
+
+process:
+!(
+  new S; new Kas; new Kbs;
+  let idA = id(S);
+  let idB = id(S);
+  (!Alice(S, Kas, idA, idB) | !Bob(S, Kbs, idB) | !Server(S, Kas, Kbs))
+)
+end

@@ -1,0 +1,71 @@
+theory Needham_Schroeder_Key_Distribution_protocol
+begin
+
+functions: pk/1, aenc/2, adec/2
+equations: adec(aenc(m,pk(sk)),sk)=m
+
+let A_B(skA, pkB)=
+  new Na;
+  event OUT_A_1(pk(skA), Na);
+  out(aenc(<pk(skA), Na>, pkB));
+  in(cypher1);
+  let mess1 = adec(cypher1, skA) in
+  let <A,Na,Nb> = mess1 in
+  event IN_A_2(A, Na, Nb, aenc(<A, Na, Nb>, pk(skA)));
+  event OUT_A_2(aenc(<A, Kab, Na, Nb>, pk(skA)));
+  out(aenc(<A, Kab, Na, Nb>, pk(skA)));
+  in(cypher2);
+  let mess2 = adec(cypher2, skA) in
+  let <B, Kab> = mess2 in
+  event IN_A_3(B, Kab, aenc(<B, Kab>, pk(skA)));
+  event OUT_A_3(aenc(<Nb>, Kab));
+  out(aenc(<Nb>, Kab));
+  event SessionBuiltA(pk(skA), Kab, Na, Nb);
+  event SessionA(pk(skA), pkB, Na, Nb)
+  
+let B_S(skB, pkS) =
+  in(cypher1);
+  let mess1 = adec(cypher1, skB) in
+  let <A, Na> = mess1 in
+  event IN_B_1(A, Na, aenc(<A, Na, Nb>, pk(skB)));
+  new Nb;
+  event OUT_B_1(aenc(<A, Na, Nb>, pk(skB)));
+  out(aenc(<A, Na, Nb>, pk(skB)));
+  in(cypher2);
+  let mess2 = adec(cypher2, skB) in
+  let <B, Kab, Na, Nb> = mess2 in
+  event IN_B_2(B, Kab, Na, Nb, aenc(<B, Kab, Na, Nb>, pk(skB)));
+  event OUT_B_2(aenc(<B, Kab, Na, Nb>, pkS));
+  out(aenc(<B, Kab, Na, Nb>, pkS));
+  in(cypher3);
+  let mess3 = adec(cypher3, skB) in
+  let <A, Kab> = mess3 in
+  event IN_B_3(A, Kab, aenc(<A, Kab>, pk(skB)));
+  event SessionBuiltB(pk(skB), A, Kab, Na, Nb);
+  event SessionB(pkS, pk(skB), A, Na, Nb)
+
+let S_A(pkS, skA) =
+  in(cypher1);
+  let mess1 = adec(cypher1, skA) in
+  let <A, Na, Nb> = mess1 in
+  event IN_S_1(A, Na, Nb, aenc(<A, Na, Nb>, pkS));
+  new Kab;
+  event OUT_S_1(aenc(<B, Kab, Na, Nb>, pk(skA)));
+  out(aenc(<B, Kab, Na, Nb>, pk(skA)));
+  event OUT_S_2(aenc(<A, Kab>, pk(skB)));
+  out(aenc(<A, Kab>, pk(skB)));
+  event SessionBuiltS(pkS, skA, A, B, Kab, Na, Nb);
+  event SessionS(pkS, pk(skA), pk(skB), A, B, Kab, Na, Nb)
+
+process:
+!(
+  new skA; out(pk(skA)); event HonestA(pk(skA));
+  !(
+    new skB; out(pk(skB)); event HonestB(pk(skB));
+    !(
+      new pkS; out(pkS); event HonestS(pkS);
+      (!A_B(skA, pk(skB)) | !B_S(skB, pkS) | !S_A(pkS, skA))
+    )
+  )
+)
+end

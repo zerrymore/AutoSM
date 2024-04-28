@@ -1,0 +1,47 @@
+theory asymmetric_protocol
+begin
+
+functions: pk/1, aenc/2, adec/2
+equations: adec(aenc(m,pk(sk)),sk)=m
+
+let Alice(pubB, privA) =
+  new Na;
+  let message1 = <'A', Na> in
+  let cypher1 = aenc(message1, pubB) in
+  out(cypher1);
+  in(cypher2);
+  let <A, Na_enc> = adec(cypher2, privA) in
+  let <=Na, =A> = Na_enc in
+  new Nb;
+  let message3 = <Na, Nb> in
+  let cypher3 = aenc(message3, pubA) in
+  out(cypher3);
+  in(cypher4);
+  let <Na_dec, Nb_enc> = adec(cypher4, privA) in
+  let dec(Na) = Na_dec in
+  let <=Na, =Nb> = Nb_enc in
+  out(aenc(Nb, pubB));
+  0
+
+let Bob(pubA, privB) =
+  in(cypher1);
+  let <A, Na_enc> = adec(cypher1, privB) in
+  let <=Na, =A> = Na_enc in
+  new Nb;
+  let message2 = <Na, Nb> in
+  let cypher2 = aenc(message2, pubA) in
+  out(cypher2);
+  in(cypher3);
+  let Nb_dec = adec(cypher3, privB) in
+  let dec(Nb) = Nb_dec in
+  out(aenc(dec(Na), pubA));
+  0
+
+process:
+!(
+  new pubA; new privA; out(pubA); out(privA);
+  new pubB; new privB; out(pubB); out(privB);
+  (!Alice(pubB, privA) | !Bob(pubA, privB))
+)
+
+end

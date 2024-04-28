@@ -1,0 +1,50 @@
+theory Alice_Bob_Protocol
+begin
+
+functions: pk/1, sk/1, aenc/2, adec/2
+equations: adec(aenc(m,pk(sk)),sk)=m
+
+let Alice(pubB, skA) =
+  new Na;
+  let message = <A, Na> in
+  let encrypted_message = aenc(message, pubB) in
+  event OUT_A_1(encrypted_message);
+  out(encrypted_message);
+  in(encrypted_nonce);
+  let decrypted_nonce = adec(encrypted_nonce, skA) in
+  let received_Na = proj1(decrypted_nonce) in
+  new Nb;
+  let message_to_send = <received_Na, Nb> in
+  let encrypted_message_to_send = aenc(message_to_send, pubA) in
+  event OUT_A_2(encrypted_message_to_send);
+  out(encrypted_message_to_send);
+  in(encrypted_response);
+  let decrypted_response = adec(encrypted_response, skA) in
+  let received_Nb = proj1(decrypted_response) in
+  event IN_A_3(received_Nb);
+  0
+
+let Bob(pubA, skB) =
+  in(encrypted_message);
+  let decrypted_message = adec(encrypted_message, skB) in
+  let received_A = proj1(decrypted_message) in
+  let received_Na = proj2(decrypted_message) in
+  event IN_B_1(received_A, received_Na);
+  new Nb;
+  let message_to_send = <received_Na, Nb> in
+  let encrypted_message_to_send = aenc(message_to_send, pubA) in
+  event OUT_B_2(encrypted_message_to_send);
+  out(encrypted_message_to_send);
+  in(encrypted_response);
+  let decrypted_response = adec(encrypted_response, skB) in
+  let received_Nb = proj1(decrypted_response) in
+  event IN_B_3(received_Nb);
+  0
+
+process:
+!(
+  new pubA, skA; event HonestA(pubA);
+  new pubB, skB; event HonestB(pubB);
+  (!Alice(pubB, skA) | !Bob(pubA, skB))
+)
+end

@@ -1,0 +1,40 @@
+theory SSH_protocol
+begin
+
+functions: hash/1, exp/3, verify/3
+equations: verify(s, H, K_S) = true
+
+let C(p, g, q, V_S, V_C, K_S, I_C, I_S) =
+  new x;
+  let e = exp(g, x, p) in
+  event OUT_C_1(e);
+  out(e);
+  in(f, K_S, s);
+  let K = exp(f, x, p) in
+  let H = hash(V_C || V_S || I_C || I_S || K_S || e || f || K) in
+  event IN_C_2(K_S, f, s);
+  event SessionBuiltC(K_S, x, f);
+  if verify(s, H, K_S) then
+    event SessionC(V_C, V_S, I_C, I_S, K_S, e, f, K)
+  else
+    event InvalidSignatureC
+
+let S(p, g, q, V_S, V_C, K_S, I_C, I_S) =
+  new y;
+  let f = exp(g, y, p) in
+  in(e);
+  event IN_S_1(e);
+  let K = exp(e, y, p) in
+  let H = hash(V_C || V_S || I_C || I_S || K_S || e || f || K) in
+  let s = sign(H, private_key(K_S)) in
+  event OUT_S_2(K_S, f, s);
+  out(K_S, f, s);
+  event SessionBuiltS(K_S, e, y);
+  event SessionS(V_C, V_S, I_C, I_S, K_S, e, f, K)
+
+process:
+!(
+  new p, g, q, V_S, V_C, K_S, I_C, I_S;
+  (!C(p, g, q, V_S, V_C, K_S, I_C, I_S) | !S(p, g, q, V_S, V_C, K_S, I_C, I_S))
+)
+end

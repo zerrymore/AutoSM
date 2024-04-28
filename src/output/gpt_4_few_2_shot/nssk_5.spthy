@@ -1,0 +1,39 @@
+theory Needham_Schroeder_Symmetric_Key_protocol
+begin
+
+functions: senc/2, sdec/2
+equations: sdec(senc(m,k),k)=m
+
+let Alice(Kas, Kbs, S, B) = 
+  new Na;
+  out(<Na, S, B>, Kas);
+  in(cypher);
+  let < =Na, =B, Kab, cypher1> = sdec(cypher, Kas) in
+  out(cypher1);
+  in(cypher2);
+  let Nb = sdec(cypher2, Kab) in
+  out(senc(Nb, Kab))
+
+let Server(Kas, Kbs, A, B) = 
+  in(<Na, =A, =B>);
+  new Kab;
+  out(senc(<Na, B, Kab, senc(<Kab, A>, Kbs)>, Kas))
+
+let Bob(Kbs, Kab, A) = 
+  in(cypher);
+  let < =Kab, =A> = sdec(cypher, Kbs) in
+  new Nb;
+  out(senc(Nb, Kab));
+  in(cypher2);
+  let =Nb = sdec(cypher2, Kab) in
+  0
+
+process:
+!(
+  new Kas; new Kbs;
+  let A = id(Kas); out(A);
+  let B = id(Kbs); out(B);
+  let S = id(Kas, Kbs); out(S);
+  (!Alice(Kas, Kbs, S, B) | !Server(Kas, Kbs, A, B) | !Bob(Kbs, Kab, A))
+)
+end

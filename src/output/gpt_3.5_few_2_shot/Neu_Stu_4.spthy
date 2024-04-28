@@ -1,0 +1,56 @@
+theory Needham_Schroeder_Public_Key_Protocol
+begin
+
+functions: pk/1, aenc/2, adec/2
+equations: adec(aenc(m,pk(sk)),sk)=m
+
+let A(Na) =
+  event OUT_A_1(<A, Na>);
+  out(<A, Na>);
+  in(cypher1);
+  let mess1 = adec(cypher1, Kbs) in
+  let <B, Na, Tb> = mess1 in
+  event IN_A_2(<B, Na, Tb>);
+  new Nb;
+  let package1 = aenc(<B, Na, Kab, Tb>, Kas) in
+  let package2 = aenc(<A, Kab, Tb>, Kbs) in
+  event OUT_A_2(package1, package2, Nb);
+  out(package1, package2, Nb);
+  in(cypher2);
+  let mess2 = adec(cypher2, Kab) in
+  let Mb = mess2 in
+  event IN_A_3(Mb);
+  let enc_Ma = aenc(Ma, Kab) in
+  event OUT_A_3(enc_Ma);
+  out(enc_Ma)
+
+let B() =
+  in(cypher1, cypher2);
+  let mess1 = adec(cypher1, Kbs) in
+  let <A, Na, Tb> = mess1 in
+  event IN_B_1(<A, Na, Tb>);
+  let mess2 = adec(cypher2, Kab) in
+  let enc_Ma = mess2 in
+  event IN_B_2(enc_Ma);
+  let Mb = Mb in
+  event OUT_B_1(Mb);
+  out(Mb);
+  let enc_Mb = aenc(Mb, Kab) in
+  event OUT_B_2(enc_Mb);
+  out(enc_Mb)
+
+process:
+!(
+  new Kbs, Kas;
+  !(
+    new Kab;
+    !(
+      new Ma;
+      !(
+        new Mb;
+        (!A(Na) | !B())
+      )
+    )
+  )
+)
+end

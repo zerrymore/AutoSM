@@ -1,0 +1,56 @@
+theory Needham_Schroeder_Symmetric_Key_protocol
+begin
+
+functions: senc/2, sdec/2
+equations: sdec(senc(m, k), k) = m
+
+let A(kas, kab, I, A, B) = 
+  new Na;
+  let message1 = senc(<Na, I, A, B>, kas) in
+  event OUT_A_1(message1);
+  out(message1);
+  in(message3);
+  let <Nb, kab> = sdec(message3, kab) in
+  event IN_A_2(Nb, kab);
+  event SessionBuilt(A, B, kab);
+
+let B(kbs, kab, I, A, B) =
+  in(message1);
+  let <Na, I1, A1, B1> = sdec(message1, kas) in
+  let message2 = senc(<Nb, I1, A1, B1>, kbs) in
+  event IN_B_1(Na, I1, A1, B1);
+  event OUT_B_1(message2);
+  out(message2);
+  in(message3);
+  let <Na1, kab1> = sdec(message3, kbs) in
+  event IN_B_2(Na1, kab1);
+  event SessionBuilt(A1, B1, kab1);
+
+let S(kas, kbs) =
+  in(message1);
+  let <Na, I, A, B> = sdec(message1, kas) in
+  in(message2);
+  let <Nb, I1, A1, B1> = sdec(message2, kbs) in
+  let kab = <Na, Nb> in
+  let message3 = senc(<Na, kab>, kas) || senc(<Nb, kab>, kbs) in
+  event IN_S_1(Na, I, A, B);
+  event IN_S_2(Nb, I1, A1, B1);
+  event OUT_S(message3);
+  out(message3);
+
+process:
+!(
+  new kas, kab;
+  let I = fresh;
+  let A = fresh;
+  let B = fresh;
+  event HonestA(kas, kab);
+  event HonestB(kas, kab);
+  event HonestS(kas, kbs);
+  !(
+    !A(kas, kab, I, A, B) |
+    !B(kbs, kab, I, A, B) |
+    !S(kas, kbs)
+  )
+)
+end

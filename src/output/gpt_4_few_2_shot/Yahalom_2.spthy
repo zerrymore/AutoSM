@@ -1,0 +1,41 @@
+theory Needham_Schroeder_Symmetric_Key_protocol
+begin
+
+functions: senc/2, sdec/2
+equations: sdec(senc(m, k), k) = m
+
+let Alice(Kas, idA, idB, idS) = 
+  new Na;
+  out(idA, Na);    
+  in(cypher1);
+  let < =idB, Kab, =Na, xNb> = sdec(cypher1, Kas) in
+  in(cypher2);
+  let <=idA, =Kab> = sdec(cypher2, Kas) in
+  out(cypher2, senc(xNb, Kab));
+  event SessionBuiltA(idA, idB, Na, xNb, Kab)
+
+let Bob(Kbs, idA, idB, idS) =
+  in(xidA, xNa);
+  new Nb;
+  out(idB, senc(<xidA, xNa, Nb>, Kbs));
+  in(cypher);
+  let <=idA, Kab> = sdec(cypher, Kbs) in
+  in(xcypher);
+  let =Nb = sdec(xcypher, Kab) in
+  event SessionBuiltB(idA, idB, xNa, Nb, Kab)
+
+let Server(Kas, Kbs, idA, idB, idS) =
+  in(=idB, cypher);
+  let <xidA, xNa, xNb> = sdec(cypher, Kbs) in
+  new Kab;
+  out(senc(<idB, Kab, xNa, xNb>, Kas), senc(<xidA, Kab>, Kbs));
+  event SessionBuiltS(idA, idB, xNa, xNb, Kab)
+
+process:
+!(
+  new Kas; new Kbs;
+  let idA = id(Kas); let idB = id(Kbs); let idS = id(Kas, Kbs);
+  out(idA); out(idB); out(idS);
+  (!Alice(Kas, idA, idB, idS) | !Bob(Kbs, idA, idB, idS) | !Server(Kas, Kbs, idA, idB, idS))
+)
+end

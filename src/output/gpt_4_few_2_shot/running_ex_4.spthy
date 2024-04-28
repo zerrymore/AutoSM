@@ -1,0 +1,31 @@
+theory Client_Server_Key_Confirmation
+begin
+
+functions: pk/1, aenc/2, adec/2, h/1
+equations: adec(aenc(m,pk(sk)),sk)=m
+
+let Client(pkS)=      
+  new k;
+  event OUT_C_1(aenc(k,pkS));
+  out(aenc(k,pkS));  
+  in(hash);
+  let =h(k) = hash in
+  event IN_C_2(h(k), hash);
+  event SessionClient(pkS, k) 
+  
+let Server(skS) =  
+  in(cypher);
+  let k = adec(cypher,skS) in
+  event IN_S_1(k,aenc(k,pk(skS)));
+  event OUT_S_1(h(k));
+  out(h(k));
+  event SessionServer(skS,k)
+
+process:
+!(
+  new skS; out(pk(skS)); event HonestS(skS);
+  !(
+    !Client(pk(skS)) | !Server(skS)
+  )
+)   
+end

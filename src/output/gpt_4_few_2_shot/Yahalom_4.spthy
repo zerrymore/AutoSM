@@ -1,0 +1,47 @@
+theory Needham_Schroeder_Symmetric_Key_protocol
+begin
+
+functions: senc/2, sdec/2
+equations: sdec(senc(m,k),k)=m
+
+let Alice(Kas, idA, idB, idS)=      
+  new Na;
+  out(idA, Na); 
+  in(cypher);
+  let mess = sdec(cypher,Kas) in
+  let < =idB, Kab, =Na, Nb> = mess in
+  out(idB, senc(Nb, Kab));
+  event SessionBuiltA(idA, idB, idS, Kas, Kab, Na, Nb);
+  event SessionA(idA, idB, idS, Kas, Kab, Na) 
+  
+let Bob(Kbs, idA, idB, idS) =  
+  in(idA, xNa);
+  new Nb;
+  out(idS, senc(<idA, xNa, Nb>, Kbs));
+  in(cypher);
+  let mess = sdec(cypher,Kbs) in
+  let < =idA, Kab> = mess in
+  in(xNb);
+  let =Nb = sdec(xNb, Kab) in
+  event SessionBuiltB(idA, idB, idS, Kbs, Kab, xNa, Nb);
+  event SessionB(idA, idB, idS, Kbs, Kab, xNa)
+
+let Server(Kas, Kbs, idA, idB, idS) =
+  in(cypher);
+  let mess = sdec(cypher, Kbs) in
+  let <xidA, xNa, Nb> = mess in
+  new Kab;
+  out(idA, senc(<idB, Kab, xNa, Nb>, Kas));
+  out(idB, senc(<xidA, Kab>, Kbs));
+  event SessionBuiltS(idA, idB, idS, Kas, Kbs, Kab, xNa, Nb);
+  event SessionS(idA, idB, idS, Kas, Kbs, Kab, xNa)
+
+process:
+!(
+  new Kas; new Kbs; 
+  let idA = id(Kas); out(idA);
+  let idB = id(Kbs); out(idB);
+  let idS = id(Kas, Kbs); out(idS);
+  (!Alice(Kas, idA, idB, idS)  | !Bob(Kbs, idA, idB, idS) | !Server(Kas, Kbs, idA, idB, idS))
+)   
+end

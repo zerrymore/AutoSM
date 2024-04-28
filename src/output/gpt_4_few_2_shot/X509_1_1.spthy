@@ -1,0 +1,35 @@
+theory CCITT_X509_version_1_protocol
+begin
+
+functions: pk/1, sk/1, h/5, senc/2, aenc/2, adec/2, sign/2, verify/3
+equations: 
+  adec(aenc(m,pk(sk)),sk) = m,
+  verify(sign(m,sk),m,pk(sk)) = true
+
+let Alice(skA, pkB, B) =      
+  new Ta;
+  new Na;
+  new Xa;
+  new Ya;
+  let cypher = aenc(Ya, pkB) in
+  let signed_part = sign(h(Ta, Na, B, Xa, cypher), skA) in
+  let message = <A, Ta, Na, B, Xa, cypher, signed_part> in
+  event Alice_Sends_Message(message);
+  out(message)
+
+let Bob(skB, pkA, A, message) =  
+  let <xA, xTa, xNa, =B, xXa, cypher, signed_part> = message in
+  event Bob_Receives_Message(message);
+  if verify(signed_part, h(xTa, xNa, B, xXa, cypher), pkA) = true then
+    let xYa = adec(cypher, skB) in
+    event Bob_Decrypts_Message(<xA, xTa, xNa, B, xXa, xYa>)
+
+process:
+!(
+  new skA; out(pk(skA)); event HonestA(pk(skA));
+  new skB; out(pk(skB)); event HonestB(pk(skB));
+  !(
+    Alice(skA, pk(skB), B) | Bob(skB, pk(skA), A, message)
+  )
+)   
+end

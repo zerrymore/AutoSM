@@ -1,0 +1,42 @@
+theory Needham_Schroeder_Symmetric_Key_protocol
+begin
+
+functions: senc/2, sdec/2, pk/1
+equations: sdec(senc(m,k),k)=m
+
+let A(Kas, Kbs, idA, idB, S) =   
+  new Na;
+  out(S, <idA, idB, Na>);
+  in(cypher);
+  let <xPackage1, xPackage2, xNb> = sdec(cypher, Kas) in
+  let <xidA, xidB, =Na, xKab> = sdec(xPackage1, Kas) in
+  let =Na = sdec(xPackage2, xKab) in
+  out(senc(xNb, xKab));
+  event SessionBuiltA(xKab, Na, xNb)
+
+let S(Kas, Kbs, idA, idB) = 
+  in(xidA, xidB, xNa);
+  new Kab;
+  let Package1 = senc(<idA, idB, xNa, Kab>, Kas) in
+  let Package2 = senc(<idA, idB, xNa, Kab>, Kbs) in
+  out(Package1, Package2);
+  event SessionBuiltS(Kab, xNa)
+
+let B(Kas, Kbs, idA, idB, S) = 
+  in(xPackage1, xPackage2);
+  let <xidA, xidB, xNa, xKab> = sdec(xPackage2, Kbs) in
+  new Nb;
+  out(senc(<xPackage1, senc(Na, Kab), Nb>, Kbs));
+  in(cypher);
+  let =Nb = sdec(cypher, xKab) in
+  event SessionBuiltB(xKab, xNa, Nb)
+
+process:
+!(
+  new Kas; new Kbs; out(pk(Kas)); out(pk(Kbs)); event HonestS(pk(Kas), pk(Kbs));
+  !(
+    new idA; new idB; out(idA); out(idB); event HonestA(idA); event HonestB(idB);
+    (!A(Kas, Kbs, idA, idB, S) | !S(Kas, Kbs, idA, idB) | !B(Kas, Kbs, idA, idB, S))
+  )
+)   
+end

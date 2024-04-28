@@ -1,0 +1,35 @@
+theory SigFox_Protocol
+begin
+
+functions: pk/1, sk/1, aenc/2, adec/2, sign/2, verify/3
+equations: adec(aenc(m,pk(sk)),sk)=m
+           verify(m, sig, pk(sk)) = true
+
+let Server(pkA, skA, pkB) =
+  new na;
+  let message = aenc(<pkA, na>, pkB) in
+  let signature = sign(message, skA) in
+  event OUT_A(message, signature);
+  out(message, signature);
+  0
+
+let Client(pkA, skB) =
+  in(message, signature);
+  event IN_B(message, signature);
+  let decrypted_message = adec(message, pkB) in
+  let <pkA, na> = decrypted_message in
+  let verified = verify(message, signature, pkA) in
+  event VerificationResult(verified);
+  0
+
+process:
+!(
+  new pkA, skA, pkB;
+  event HonestA(pkA, skA);
+  event HonestB(pkB, skB);
+  !(
+    !Server(pkA, skA, pkB) |
+    !Client(pkA, skB)
+  )
+)
+end

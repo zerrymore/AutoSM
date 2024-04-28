@@ -1,0 +1,57 @@
+theory SPLICE_AS_protocol
+begin
+
+functions: pk/1, sk/1, aenc/2, adec/2, inc/1
+equations: adec(aenc(m,pk(sk)),sk)=m
+
+let Client(C, S, AS, skC, pkS, pkAS)=      
+  new N1;
+  event OUT_C_1(<C, S, N1>);
+  out(<C, S, N1>);
+  in(cert);
+  let <AS, mess> = cert in
+  let <AS, C, =N1, =pkS> = adec(mess, skC) in
+  event IN_C_2(<AS, C, N1, pkS>, cert);
+  new T, L, N2;
+  event OUT_C_3(<C, S, aenc(<C, T, L, N2>, pkS)>);
+  out(<C, S, aenc(<C, T, L, N2>, pkS)>);
+  in(final);
+  let <S, C, mess> = final in
+  let <S, =inc(N2)> = adec(mess, skC) in
+  event IN_C_4(<S, inc(N2)>, final)
+
+let AS(C, S, skAS)=  
+  in(req1);
+  let <xC, xS, xN1> = req1 in
+  event IN_AS_1(<xC, xS, xN1>, req1);
+  event OUT_AS_2(<AS, aenc(<AS, xC, xN1, pk(xS)>, skAS)>);
+  out(<AS, aenc(<AS, xC, xN1, pk(xS)>, skAS)>);
+  in(req2);
+  let <xS, xC, xN3> = req2 in
+  event IN_AS_3(<xS, xC, xN3>, req2);
+  event OUT_AS_4(<AS, aenc(<AS, xS, xN3, pk(xC)>, skAS)>);
+  out(<AS, aenc(<AS, xS, xN3, pk(xC)>, skAS)>)
+
+let Server(C, S, AS, skS, pkC, pkAS)=  
+  in(init);
+  let <xC, S, mess> = init in
+  let <xC, xT, xL, xN2> = adec(mess, skS) in
+  event IN_S_1(<xC, xT, xL, xN2>, init);
+  new N3;
+  event OUT_S_2(<S, xC, N3>);
+  out(<S, xC, N3>);
+  in(cert);
+  let <AS, mess> = cert in
+  let <AS, S, =N3, =pkC> = adec(mess, skS) in
+  event IN_S_3(<AS, S, N3, pkC>, cert);
+  event OUT_S_4(<S, C, aenc(<S, inc(xN2)>, pkC)>);
+  out(<S, C, aenc(<S, inc(xN2)>, pkC)>)
+
+process:
+!(
+  new skC, skS, skAS; 
+  out(pk(skC)); out(pk(skS)); out(pk(skAS)); 
+  event HonestC(pk(skC)); event HonestS(pk(skS)); event HonestAS(pk(skAS));
+  (!Client(pk(skC), pk(skS), pk(skAS), skC, pk(skS), pk(skAS)) | !AS(pk(skC), pk(skS), skAS) | !Server(pk(skC), pk(skS), pk(skAS), skS, pk(skC), pk(skAS)))
+)   
+end

@@ -1,0 +1,31 @@
+theory CCITT_X509_version_1_protocol
+begin
+
+functions: pk/1, sk/1, aenc/2, adec/2, senc/2, sdec/2, h/5
+equations: adec(aenc(m,pk(sk)),sk)=m, sdec(senc(m,sk),pk(sk))=m
+
+let Alice(skA, pkB, B)=      
+  new Ta;
+  new Na;
+  new Xa;
+  new Ya;
+  let cypher = aenc(Ya, pkB) in
+  let signature = senc(h(Ta, Na, B, Xa, cypher), skA) in
+  out(<A, Ta, Na, B, Xa, cypher, signature>);
+
+let Bob(skB, pkA, A, Xa, Ya) =  
+  in(mess);
+  let <xA, xTa, xNa, =B, =Xa, cypher, signature> = mess in
+  let =Ya = adec(cypher, skB) in
+  let =h(xTa, xNa, B, Xa, cypher) = sdec(signature, pkA) in
+  0
+
+process:
+!(
+  new skA; out(pk(skA)); event HonestA(pk(skA));
+  new skB; out(pk(skB)); event HonestB(pk(skB));
+  new Xa; out(Xa); event HonestXa(Xa);
+  new Ya; out(Ya); event HonestYa(Ya);
+  (!Alice(skA, pk(skB), B) | !Bob(skB, pk(skA), A, Xa, Ya))
+)   
+end

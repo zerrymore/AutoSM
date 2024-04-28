@@ -1,0 +1,41 @@
+theory Woo_Lam_Pi_f_protocol
+begin
+
+functions: senc/2, sdec/2
+equations: sdec(senc(m, k), k) = m
+
+let Alice(Kas, A, B, S) = 
+  out(A);
+  in(Nb);
+  let cypher = senc(<A, B, Nb>, Kas) in
+  out(cypher);
+
+let Bob(Kbs, A, B, S) = 
+  in(A);
+  new Nb;
+  out(Nb);
+  in(cypher);
+  let cypher2 = senc(<cypher, B, Nb>, Kbs) in
+  out(cypher2);
+  in(cypher3);
+  let <A, B, Nb> = sdec(cypher3, Kbs) in
+  0
+
+let Server(Kas, Kbs, A, B, S) = 
+  in(cypher2);
+  let <cypher, B, Nb> = sdec(cypher2, Kbs) in
+  let <A, B, Nb> = sdec(cypher, Kas) in
+  let cypher3 = senc(<A, B, Nb>, Kbs) in
+  out(cypher3);
+
+process:
+!(
+  new Kas;
+  new Kbs;
+  let A = id(Kas);
+  let B = id(Kbs);
+  let S = id(Kas, Kbs);
+  out(A, B, S);
+  (!Alice(Kas, A, B, S) | !Bob(Kbs, A, B, S) | !Server(Kas, Kbs, A, B, S))
+)
+end

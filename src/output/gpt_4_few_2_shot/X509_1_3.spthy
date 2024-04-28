@@ -1,0 +1,29 @@
+theory CCITT_X509_v1_protocol
+begin
+
+functions: pk/1, sk/1, aenc/2, adec/2, senc/2, sdec/2, h/1
+equations: adec(aenc(m,pk(sk)),sk)=m, sdec(senc(m,sk),pk(sk))=m
+
+let A(skA, pkB)=      
+  new Ta; new Na; new Xa; new Ya;
+  let encrypted_part = aenc(Ya, pkB) in
+  let signed_part = senc(h(<Ta, Na, B, Xa, encrypted_part>), skA) in
+  let message = <A, Ta, Na, B, Xa, encrypted_part, signed_part> in
+  event OUT_A(message);
+  out(message);
+  
+let B(skB, pkA) =  
+  in(message);
+  let <xA, xTa, xNa, =B, xXa, encrypted_part, signed_part> = message in
+  let xYa = adec(encrypted_part, skB) in
+  let =h(<xTa, xNa, B, xXa, encrypted_part>) = sdec(signed_part, pkA) in
+  event IN_B(message);
+  event SessionB(pkA,pk(skB),xTa)
+
+process:
+!(
+  new skA; out(pk(skA)); event HonestA(pk(skA));
+  new skB; out(pk(skB)); event HonestB(pk(skB));
+  (!A(skA, pk(skB)) | !B(skB, pk(skA)))
+)   
+end

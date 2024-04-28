@@ -1,0 +1,57 @@
+theory Mutual_Authentication_Protocol
+begin
+
+functions: senc/2, sdec/2, pk/1
+equations: sdec(senc(m, k), k) = m
+
+let A(Kas, Kbs, idA, idB, idS) = 
+  new Na;
+  event Send_Nonce_A(Na);
+  out(<idA, Na>); 
+  in(cypher1);
+  let {<idB, Na, Kab, Tb>, =<idA, Kab, Tb>} = sdec(cypher1, Kas) in
+  out(senc(<idA, Kab, Tb>, Kbs));
+  out(senc(Nb, Kab));
+  in(cypher2);
+  let {Ma, =<idA, Kab, Tb>} = sdec(cypher2, Kab) in
+  out(senc(Mb, Kab));
+  in(cypher3);
+  let =Mb = sdec(cypher3, Kab) in
+  event Authenticated_A();
+  0
+
+let B(Kas, Kbs, idA, idB, idS) = 
+  in(<idA, xNa>);
+  new Nb;
+  new Tb;
+  out(<idB, senc(<idA, xNa, Tb>, Kbs), Nb>);
+  in(cypher1);
+  let {<idA, Kab, Tb>, =Nb} = sdec(cypher1, Kbs) in
+  in(cypher2);
+  let =Nb = sdec(cypher2, Kab) in
+  new Ma;
+  out(senc({Ma, <idA, Kab, Tb>}, Kab));
+  in(cypher3);
+  let {=Ma} = sdec(cypher3, Kab) in
+  new Mb;
+  out(senc(Mb, Kab));
+  event Authenticated_B();
+  0
+
+let S(Kas, Kbs, idA, idB, idS) = 
+  in(<idB, cypher, xNb>);
+  let {idA, Na, Tb} = sdec(cypher, Kbs) in
+  new Kab;
+  out(senc({<idB, Na, Kab, Tb>, <idA, Kab, Tb>}, Kas));
+  out(xNb);
+  0
+
+process:
+!(
+  new Kas; new Kbs;
+  let idA = pk(Kas); out(idA);
+  let idB = pk(Kbs); out(idB);
+  let idS = pk(Kas, Kbs); out(idS);
+  (!A(Kas, Kbs, idA, idB, idS) | !B(Kas, Kbs, idA, idB, idS) | !S(Kas, Kbs, idA, idB, idS))
+)
+end

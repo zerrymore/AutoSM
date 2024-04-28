@@ -1,0 +1,43 @@
+theory Otway_Rees_protocol
+begin
+
+functions: senc/2, sdec/2
+equations: sdec(senc(m, k), k) = m
+
+let A(kas, kab, idA, idB, idS) = 
+  new Na; new I;
+  let message1 = <I, idA, idB, senc(<Na, I, idA, idB>, kas)> in
+  out(message1);
+
+let B(kbs, idA, idB, idS) =
+  in(message1);
+  new Nb;
+  let message2 = <message1, senc(<Nb, I, idA, idB>, kbs)> in
+  out(message2, idS);
+
+let S(kas, kbs, idA, idB, idS) =
+  in(message2, =idS);
+  let <message1, =senc(<Nb, I, idA, idB>, kbs)> = message2 in
+  let <I, =idA, =idB, =senc(<Na, =I, =idA, =idB>, kas)> = message1 in
+  new kab;
+  let message3 = <I, senc(<Na, kab>, kas), senc(<Nb, kab>, kbs)> in
+  out(message3, idB);
+
+let B'(kbs, kas, idA, idB, idS) =
+  in(message3, =idB);
+  let <I, x, =senc(<Nb, kab>, kbs)> = message3 in
+  let message4 = <I, x> in
+  out(message4, idA);
+
+let A'(kas, kab, idA, idB, idS) =
+  in(message4, =idA);
+  let <I, =senc(<Na, =kab>, kas)> = message4 in
+  0
+
+process:
+!(
+  new kas; new kbs; new kab;
+  let idA = id(kas); let idB = id(kbs); let idS = id(kas, kbs);
+  (!A(kas, kab, idA, idB, idS) | !B(kbs, idA, idB, idS) | !S(kas, kbs, idA, idB, idS) | !B'(kbs, kas, idA, idB, idS) | !A'(kas, kab, idA, idB, idS))
+)
+end
