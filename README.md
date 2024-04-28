@@ -16,10 +16,6 @@ conda create -n llm4V python=3.10
 conda activate llm4V
 pip install -r requirements.txt
 ```
-optional*
-```
-pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
-```
 
 ## 🚀 Get Started
 
