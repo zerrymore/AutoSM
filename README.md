@@ -6,10 +6,6 @@ This repo contains code and test cases for our automated tool. The general front
 
 This tool can generate formal specifications (symbolic model) for a protocol automatically from unstructed natural language, empowered by LLMs' powered ability for semantic parsing. Comparing with existing text-to-code tasks, we pay more attention on the soundness of the general translation process, i.e., the output of the tool should be consistent with the unstructed natural language description semantically. We try to make as much control as possible for the overall process, though "black-box" LLM is introduced.
 
-<p align="center">
-    <img src=".src/../static/images/overall.png" width="700">
-</p>
-
 The tool can be divided into two parts, parser and translator roughly. The parser translates input natural language into @$\lambda$ lambda calculus. To capture and resolve the ambiguity and incompleteness of natural language, it generates a set of sub-calculus corrresponding to the original language fragments and allow users to amend (including add, delete and edit) them manually. The generated @$\lambda$ is transformed to an executable code snippet, which is checked by applying some program analysis techniques further. Once it passes the checks, an alice&bob style specification will be extracted, then it is translated to Multiset Rewriting Rules (MSRs), which can be accepted by the state-of-art protocol verifier-Tamarin.
 
 ## 🛠️ Setup
