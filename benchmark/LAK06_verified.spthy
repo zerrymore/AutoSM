@@ -1,0 +1,77 @@
+theory LAK06
+begin
+
+builtins: xor, hashing
+
+let Reader(k) = 
+!(
+  new r0;
+  event OnlyOnce('init_reader');
+  out(r0);
+  in(message0);
+  let <r1, h(=r0 XOR r1 XOR =k)> = message0 in 
+  event Commit(<'R','T',<k,r0,r1>>);
+  event Running(<'T','R',<k,r0,r1>>);
+  out(h(h(r0 XOR r1 XOR k) XOR k XOR r0))
+)
+
+let Tag(k) = 
+!(  
+  in(r0);
+  new r1;
+  event Running(<'R','T',<k,r0,r1>>);
+  out(<r1, h(r0 XOR r1 XOR k)>);
+  in(h(h(=r0 XOR =r1 XOR =k) XOR =k XOR =r0));
+  event Commit(<'T','R',<k,r0,r1>>);
+  event FinTag()
+)
+
+process:
+!(new k;
+  event OnlyOnce('setup');
+  event Create(k);
+  ( Tag(k) || Reader(k) )
+)
+
+lemma executable:
+  exists-trace
+  " (Ex #i. FinTag()@i)
+  & (All x #i1 #i2. OnlyOnce(x)@i1 & OnlyOnce(x)@i2 ==> #i1 = #i2)"
+
+// PROVEN, instant autoproof
+lemma helpingSecrecy[reuse]:
+  "All k #i. 
+     Create(k)@i ==> not(Ex #j. K(k)@j)"
+
+// PROVEN, autoproof (~1 minute CPU)
+lemma noninjectiveagreementTAG[use_induction]:
+  "All t #i. 
+    Commit(<'T','R',t>) @i
+    ==> (Ex #j. Running(<'T','R',t>) @j)"
+
+// FALSIFIED, quick autoproof
+lemma noninjectiveagreementREADER[use_induction]:
+  "All t #i. 
+    Commit(<'R','T',t>) @i
+    ==> (Ex #j. Running(<'R','T',t>) @j)"
+
+end
+
+
+
+// ==============================================================================
+// summary of summaries:
+
+// analyzed: LAK06.spthy
+
+//   processing time: 139.49s
+  
+//   WARNING: 1 wellformedness check failed!
+//            The analysis results might be wrong!
+  
+//   executable (exists-trace): verified (9 steps)
+//   helpingSecrecy (all-traces): verified (3 steps)
+//   noninjectiveagreementTAG (all-traces): verified (3568 steps)
+//   noninjectiveagreementREADER (all-traces): falsified - found trace (13 steps)
+
+// ==============================================================================

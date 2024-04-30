@@ -1,0 +1,62 @@
+free att:channel.
+fun adec(bitstring,bitstring):bitstring.
+fun aenc(bitstring,bitstring):bitstring.
+fun fst(bitstring):bitstring.
+fun okay():bitstring.
+fun pair(bitstring,bitstring):bitstring.
+fun pk(bitstring):bitstring.
+fun sign(bitstring,bitstring):bitstring.
+fun snd(bitstring):bitstring.
+fun verify(bitstring,bitstring,bitstring):bitstring.
+event eHonestA(bitstring).
+event eHonestB(bitstring).
+event eRecv(bitstring,bitstring).
+event eSecretA(bitstring).
+event eSecretB(bitstring).
+event eSend(bitstring,bitstring).
+equation forall x_1:bitstring, x_2:bitstring;   adec(aenc(x_1, pk(x_2)), x_2) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   fst((x_1, x_2)) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   snd((x_1, x_2)) = x_2.
+equation forall x_1:bitstring, x_2:bitstring;   verify(sign(x_1, x_2), x_1, pk(x_2)) = okay.
+(*executable*)
+query A:bitstring, B:bitstring, m:bitstring, i:time, j:time;
+ (event(eSend( A, m ))@i) && (event(eRecv( B, m ))@j)
+.
+(*secret_A*)
+query n:bitstring, i:time, j:time;
+ (event(eSecretA( n ))@i) ==> (not(attacker( n )@j))
+.
+(*secret_B*)
+query n:bitstring, i:time, j:time;
+ ((event(eSecret( n ))@i) && (event(eRole( sB ))@i)) ==>
+ (not(attacker( n )@j))
+.
+let Server(skS_1:bitstring, pkS_1:bitstring, pkD_1:bitstring)=
+    new Na_1:bitstring;
+    let msg_1:bitstring=aenc((pkS_1, Na_1), pkD_1) in
+    let sig_1:bitstring=sign(msg_1, skS_1) in
+    event eSend( pkS_1, msg_1 );
+    event eSecretA( Na_1 );
+    out(att,(msg_1, sig_1)).
+let Device(skD_1:bitstring, pkD_1:bitstring, pkS_1:bitstring)=
+    in(att,(msg_1:bitstring, sig_1:bitstring));
+    let (=pkS_1, Na_1:bitstring)=adec(msg_1, skD_1) in
+    let (=verify(sig_1, msg_1, pkS_1))=okay in 
+        (event eRecv( pkD_1, msg_1 );
+         event eSecretB( Na_1 )).
+
+
+process
+    !
+    (new skS_1:bitstring;
+     out(att,pk(skS_1));
+     event eHonestA( pk(skS_1) );
+     !
+     (new skD_1:bitstring;
+      out(att,pk(skD_1));
+      event eHonestB( pk(skD_1) );
+      !
+      (((Server(skS_1, pk(skS_1), pk(skD_1)))
+      | (!
+         (Device(skD_1, pk(skD_1), pk(skS_1))))))))
+

@@ -1,0 +1,106 @@
+const g:bitstring.
+free att:channel.
+free sserver_sign:bitstring.
+free suser_answer:bitstring.
+free suser_auth:bitstring.
+free suserauth_pk_ok:bitstring.
+fun exp(bitstring,bitstring):bitstring.
+fun fst(bitstring):bitstring.
+fun hash(bitstring):bitstring.
+fun kdfPtoS(bitstring):bitstring.
+fun kdfStoP(bitstring):bitstring.
+fun okay():bitstring.
+fun pair(bitstring,bitstring):bitstring.
+fun pk(bitstring):bitstring.
+fun sdec(bitstring,bitstring):bitstring.
+fun senc(bitstring,bitstring):bitstring.
+fun sign(bitstring,bitstring):bitstring.
+fun snd(bitstring):bitstring.
+fun verify(bitstring,bitstring,bitstring):bitstring.
+event eAcceptP(bitstring,bitstring,bitstring,bitstring).
+event eAcceptP2(bitstring,bitstring,bitstring,bitstring).
+event eAcceptS(bitstring,bitstring,bitstring,bitstring).
+event eAcceptS2(bitstring,bitstring,bitstring,bitstring).
+event eKeyP(bitstring).
+event eKeyS2(bitstring).
+equation forall a:bitstring,b:bitstring; exp( exp(g,a),b) = exp(exp(g,b),a).
+equation forall x_1:bitstring, x_2:bitstring;   fst((x_1, x_2)) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   sdec(senc(x_1, x_2), x_2) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   snd((x_1, x_2)) = x_2.
+equation forall x_1:bitstring, x_2:bitstring;   verify(sign(x_1, x_2), x_1, pk(x_2)) = okay.
+(*secretP*)
+query k:bitstring, i:time, j:time;
+ (event(eKeyP( k ))@i) && (attacker( k )@j)
+.
+(*injPS*)
+query a:bitstring, b:bitstring, skP:bitstring, skP2:bitstring,
+      skS:bitstring, i:time, j:time;
+ (event(eAcceptP( a, b, skS, skP ))@i) ==>
+ ((j < i) && (event(eAcceptS( a, b, skS, skP2 ))@j))
+.
+(*injSP*)
+query a:bitstring, b:bitstring, skP:bitstring, skS:bitstring, i:time,
+      j:time;
+ (event(eAcceptS2( a, b, skS, skP ))@i) ==>
+ ((j < i) && (event(eAcceptP2( a, b, skS, skP ))@j))
+.
+(*secretS*)
+query k:bitstring, i:time, j:time;
+ (event(eKeyS2( k ))@i) && (attacker( k )@j)
+.
+(*executableS2*)
+query h:bitstring, k:bitstring, skP:bitstring, skS:bitstring, i:time;
+ event(eAcceptS2( k, h, skS, skP ))@i
+.
+let P(pkS_1:bitstring, skP_1:bitstring, pkP_1:bitstring)=
+    new a_1:bitstring;
+    let gA_1:bitstring=exp(g, a_1) in
+    out(att,gA_1);
+    in(att,(sig_1:bitstring, (opks_1:bitstring, B_1:bitstring)));
+    let (=pkS_1)=opks_1 in 
+        (let h_1:bitstring=hash((pkS_1, (gA_1, B_1))) in
+         let k_1:bitstring=exp(B_1, a_1) in
+         let (=verify(sig_1, (sserver_sign, h_1), pkS_1))=okay in 
+             (event eAcceptP( gA_1, B_1, pkS_1, pkP_1 );
+              event eKeyP( k_1 );
+              let kPS_1:bitstring=kdfPtoS((k_1, h_1)) in
+              let kSP_1:bitstring=kdfStoP((k_1, h_1)) in
+              out(att,senc((suser_auth, pkP_1), kPS_1));
+              in(att,userauth_answer_1:bitstring);
+              let (=sdec(userauth_answer_1, kSP_1))=suserauth_pk_ok in 
+                  (event eAcceptP2( gA_1, B_1, pkS_1, pkP_1 );
+                   out(att,senc((suser_answer, (h_1, sign(h_1, skP_1))), kPS_1))))).
+let S(skS_1:bitstring, pkS_1:bitstring, pkP_1:bitstring)=
+    in(att,gA_1:bitstring);
+    new b_1:bitstring;
+    let gB_1:bitstring=exp(g, b_1) in
+    let h_1:bitstring=hash((pkS_1, (gA_1, gB_1))) in
+    let k_1:bitstring=exp(gA_1, b_1) in
+    event eAcceptS( gA_1, gB_1, pkS_1, pkP_1 );
+    let sig_1:bitstring=sign((sserver_sign, h_1), skS_1) in
+    out(att,(sig_1, (pkS_1, gB_1)));
+    let kPS_1:bitstring=kdfPtoS((k_1, h_1)) in
+    let kSP_1:bitstring=kdfStoP((k_1, h_1)) in
+    in(att,userauth_1:bitstring);
+    let mess_1:bitstring=sdec(userauth_1, kPS_1) in
+    let (=suser_auth, =pkP_1)=mess_1 in
+    out(att,senc(suserauth_pk_ok, kSP_1));
+    in(att,signans_1:bitstring);
+    let mess2_1:bitstring=sdec(signans_1, kPS_1) in
+    let (=suser_answer, (=h_1, sig2_1:bitstring))=mess2_1 in
+    let (=verify(sig2_1, h_1, pkP_1))=okay in 
+        (event eAcceptS2( gA_1, gB_1, pkS_1, pkP_1 );
+         event eKeyS2( k_1 )).
+
+
+process
+    !
+    (new skS_1:bitstring;
+     out(att,pk(skS_1));
+     !
+     (new skP_1:bitstring;
+      out(att,pk(skP_1));
+      !
+      (((P(pk(skS_1), skP_1, pk(skP_1)))
+      | (S(skS_1, pk(skS_1), pk(skP_1)))))))
+

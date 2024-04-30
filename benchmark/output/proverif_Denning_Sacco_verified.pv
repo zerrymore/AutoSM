@@ -1,0 +1,84 @@
+free att:channel.
+fun fst(bitstring):bitstring.
+fun id(bitstring):bitstring.
+fun pair(bitstring,bitstring):bitstring.
+fun sdec(bitstring,bitstring):bitstring.
+fun senc(bitstring,bitstring):bitstring.
+fun snd(bitstring):bitstring.
+event eAUTO_IN_TERM_2_0_0_1_1_1_1__A_2(bitstring,bitstring).
+event eAUTO_OUT_TERM_2_0_0_1_1_1_1__A_2(bitstring).
+event eCommitA(bitstring,bitstring,bitstring).
+event eCommitB(bitstring,bitstring,bitstring).
+event eRunningA(bitstring,bitstring,bitstring).
+event eSecret(bitstring,bitstring,bitstring).
+equation forall x_1:bitstring, x_2:bitstring;   fst((x_1, x_2)) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   sdec(senc(x_1, x_2), x_2) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   snd((x_1, x_2)) = x_2.
+(*AUTO_typing*)
+query m:bitstring, x:bitstring, i:time, j:time;
+ (event(eAUTO_IN_TERM_2_0_0_1_1_1_1__A_2( m, x ))@i) ==>
+ (((attacker( x )@j) && (j < i)) ||
+  ((event(eAUTO_OUT_TERM_2_0_0_1_1_1_1__A_2( m ))@j) && (j < i)))
+.
+(*executability*)
+query A:bitstring, B:bitstring, t:bitstring, i:time, j:time;
+ ((event(eCommitB( B, A, t ))@i) && (event(eCommitA( A, B, t ))@j)) &&
+ (j < i)
+.
+(*secrecy*)
+query A:bitstring, B:bitstring, k:bitstring, i:time, j:time;
+ (event(eSecret( A, B, k ))@i) ==> (not(attacker( k )@j))
+.
+(*noninjectiveagreement_B*)
+query A:bitstring, B:bitstring, t:bitstring, i:time, j:time;
+ (event(eCommitB( B, A, t ))@i) ==>
+ ((event(eRunningA( A, B, t ))@j) && (j < i))
+.
+(*injectiveagreement_B*)
+query A:bitstring, A2:bitstring, B:bitstring, B2:bitstring, t:bitstring,
+      i:time, i2:time, j:time;
+ (event(eCommitB( B, A, t ))@i) ==>
+ (((event(eRunningA( A, B, t ))@j) && (j < i)) &&
+  (not((event(eCommitB( B2, A2, t ))@i2) && (i2 <> i))))
+.
+let A(Kas_1:bitstring, idA_1:bitstring, idB_1:bitstring)=
+    out(att,(idA_1, idB_1));
+    in(att,cypher1_1:bitstring);
+    let msg1_1:bitstring=sdec(cypher1_1, Kas_1) in
+    let (=idB_1, (Kab_1:bitstring, (T_1:bitstring, cypher2_1:bitstring)))=msg1_1 in
+    event eAUTO_IN_TERM_2_0_0_1_1_1_1__A_2( cypher1_1, cypher2_1 );
+    event eCommitA( idA_1, idB_1, (Kab_1, T_1) );
+    event eRunningA( idA_1, idB_1, (Kab_1, T_1) );
+    event eSecret( idA_1, idB_1, Kab_1 );
+    out(att,cypher2_1).
+let B(Kbs_1:bitstring, idA_1:bitstring, idB_1:bitstring)=
+    in(att,cypher2_1:bitstring);
+    let msg1_1:bitstring=sdec(cypher2_1, Kbs_1) in
+    let (Kab_1:bitstring, (=idA_1, T_1:bitstring))=msg1_1 in
+    event eCommitB( idB_1, idA_1, (Kab_1, T_1) );
+    event eSecret( idB_1, idA_1, (Kab_1, T_1) ).
+let S(Kas_1:bitstring, Kbs_1:bitstring, idA_1:bitstring,
+      idB_1:bitstring)=
+    in(att,(=idA_1, =idB_1));
+    new Kab_1:bitstring;
+    new T_1:bitstring;
+    let cypher1_1:bitstring=senc((idB_1, (Kab_1, (T_1, senc((Kab_1, (idA_1, T_1)),
+                                                            Kbs_1)))),
+                                 Kas_1) in
+    event eAUTO_OUT_TERM_2_0_0_1_1_1_1__A_2( cypher1_1 );
+    out(att,cypher1_1).
+
+
+process
+    !
+    (new Kas_1:bitstring;
+     out(att,id(Kas_1));
+     new Kbs_1:bitstring;
+     out(att,id(Kbs_1));
+     !
+     (((A(Kas_1, id(Kas_1), id(Kbs_1)))
+     | (!
+        (((B(Kbs_1, id(Kas_1), id(Kbs_1)))
+        | (!
+           (S(Kas_1, Kbs_1, id(Kas_1), id(Kbs_1))))))))))
+

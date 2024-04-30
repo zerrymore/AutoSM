@@ -1,0 +1,121 @@
+free att:channel.
+fun aenc(bitstring,bitstring):bitstring.
+fun fst(bitstring):bitstring.
+fun pair(bitstring,bitstring):bitstring.
+fun pk(bitstring):bitstring.
+fun snd(bitstring):bitstring.
+event eHonestA(bitstring).
+event eHonestB(bitstring).
+event eIN_I_2_nr(bitstring,bitstring).
+event eIN_R_1_ni(bitstring,bitstring).
+event eIN_R_2(bitstring,bitstring).
+event eOUT_I_1(bitstring).
+event eOUT_I_2(bitstring).
+event eOUT_R_1(bitstring).
+event eRole_A().
+event eRole_B().
+event eSessionA(bitstring,bitstring,bitstring).
+event eSessionB(bitstring,bitstring,bitstring).
+event eSessionBuiltA(bitstring,bitstring,bitstring).
+event eSessionBuiltB(bitstring,bitstring,bitstring).
+equation forall x_1:bitstring, x_2:bitstring;   fst((x_1, x_2)) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   snd((x_1, x_2)) = x_2.
+reduc forall m:bitstring, sk:bitstring;   adec(aenc(m, pk(sk)), sk) = m.
+(*Confident_aux*)
+query Na:bitstring, Nb:bitstring, pka:bitstring, t1:time, t2:time;
+ (event(eSessionBuiltA( pka, Na, Nb ))@t1) && (attacker( Na )@t2)
+.
+(*SessionBuilt*)
+query Na:bitstring, Nb:bitstring, pka:bitstring, pkb:bitstring, t1:time,
+      t2:time;
+ (event(eSessionBuiltA( pka, Na, Nb ))@t1) &&
+ (event(eSessionBuiltB( pkb, Na, Nb ))@t2)
+.
+(*HonestImpl*)
+query Na:bitstring, Nb:bitstring, pka:bitstring, i:time, j:time;
+ (event(eSessionBuiltA( pka, Na, Nb ))@i) ==> (event(eHonestA( pka ))@j)
+.
+(*Confidentiality*)
+query Na:bitstring, Nb:bitstring, pka:bitstring, pkb:bitstring, i1:time,
+      i2:time, t1:time, t2:time, t3:time;
+ ((((event(eSessionBuiltA( pka, Na, Nb ))@t1) &&
+    (event(eSessionBuiltB( pkb, Na, Nb ))@t3)) &&
+   (attacker( Na )@t2)) &&
+  (event(eHonestA( pka ))@i1)) &&
+ (event(eHonestB( pkb ))@i2)
+.
+(*sec_of_A*)
+query Na:bitstring, pka:bitstring, pkb:bitstring, i1:time, i2:time,
+      t1:time, t2:time;
+ (((event(eSessionA( pka, pkb, Na ))@t1) && (attacker( Na )@t2)) &&
+  (event(eHonestA( pka ))@i1)) &&
+ (event(eHonestB( pkb ))@i2)
+.
+(*sec_of_B*)
+query Na:bitstring, pka:bitstring, pkb:bitstring, i1:time, i2:time,
+      t1:time, t2:time;
+ (((event(eSessionB( pka, pkb, Na ))@t1) && (attacker( Na )@t2)) &&
+  (event(eHonestA( pka ))@i1)) &&
+ (event(eHonestB( pkb ))@i2)
+.
+(*sec_of_B_test*)
+query Na:bitstring, Nb:bitstring, pka:bitstring, pkb:bitstring, i1:time,
+      i2:time, m1:time, m2:time, t1:time, t2:time;
+ (((((event(eSessionB( pka, pkb, Na ))@t1) && (attacker( Na )@t2)) &&
+    (event(eHonestA( pka ))@i1)) &&
+   (event(eHonestB( pkb ))@i2)) &&
+  (event(eSessionBuiltA( pka, Na, Nb ))@m1)) &&
+ (event(eSessionBuiltB( pkb, Na, Nb ))@m2)
+.
+(*sanity1*)
+query k:bitstring, pka:bitstring, pkb:bitstring, t1:time;
+ event(eSessionA( pka, pkb, k ))@t1
+.
+(*sanity2*)
+query k:bitstring, pka:bitstring, pkb:bitstring, t1:time;
+ event(eSessionB( pka, pkb, k ))@t1
+.
+let P(skA_1:bitstring, pkB_1:bitstring)=
+    event eRole_A( );
+    new Na_1:bitstring;
+    event eOUT_I_1( aenc((Na_1, pk(skA_1)), pkB_1) );
+    out(att,aenc((Na_1, pk(skA_1)), pkB_1));
+    in(att,cypher_1:bitstring);
+    let mess_1:bitstring=adec(cypher_1, skA_1) in
+    let (=Na_1, Nb_1:bitstring)=mess_1 in
+    event eIN_I_2_nr( Nb_1, aenc((Na_1, Nb_1), pk(skA_1)) );
+    event eOUT_I_2( aenc(Nb_1, pkB_1) );
+    out(att,aenc(Nb_1, pkB_1));
+    event eSessionBuiltA( pk(skA_1), Na_1, Nb_1 );
+    event eSessionA( pk(skA_1), pkB_1, Na_1 ).
+let Q(skB_1:bitstring, pkA_1:bitstring)=
+    event eRole_B( );
+    in(att,cypher1_1:bitstring);
+    let mess1_1:bitstring=adec(cypher1_1, skB_1) in
+    let (Na_1:bitstring, =pkA_1)=mess1_1 in
+    event eIN_R_1_ni( Na_1, aenc((Na_1, pkA_1), pk(skB_1)) );
+    new Nb_1:bitstring;
+    event eOUT_R_1( aenc((Na_1, Nb_1), pkA_1) );
+    out(att,aenc((Na_1, Nb_1), pkA_1));
+    in(att,cypher2_1:bitstring);
+    let mess2_1:bitstring=adec(cypher2_1, skB_1) in
+    let =Nb_1=mess2_1 in
+    event eIN_R_2( Nb_1, aenc(Nb_1, pk(skB_1)) );
+    event eSessionBuiltB( pk(skB_1), Na_1, Nb_1 );
+    event eSessionB( pkA_1, pk(skB_1), Na_1 ).
+
+
+process
+    !
+    (new skA_1:bitstring;
+     out(att,pk(skA_1));
+     event eHonestA( pk(skA_1) );
+     !
+     (new skB_1:bitstring;
+      out(att,pk(skB_1));
+      event eHonestB( pk(skB_1) );
+      !
+      (((P(skA_1, pk(skB_1)))
+      | (!
+         (Q(skB_1, pk(skA_1))))))))
+

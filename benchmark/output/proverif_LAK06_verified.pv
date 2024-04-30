@@ -1,0 +1,65 @@
+free att:channel.
+free sR:bitstring.
+free sT:bitstring.
+free sinit_reader:bitstring.
+free ssetup:bitstring.
+fun fst(bitstring):bitstring.
+fun h(bitstring):bitstring.
+fun pair(bitstring,bitstring):bitstring.
+fun snd(bitstring):bitstring.
+fun xor(bitstring,bitstring):bitstring.
+fun zero():bitstring.
+event eCommit(bitstring).
+event eCreate(bitstring).
+event eFinTag().
+event eOnlyOnce(bitstring).
+event eRunning(bitstring).
+equation forall x_1:bitstring, x_2:bitstring;   fst((x_1, x_2)) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   snd((x_1, x_2)) = x_2.
+(*executable*)
+(*(∃ #i. FinTag( ) @ #i) ∧
+  (∀ x #i1 #i2.
+    ((OnlyOnce( x ) @ #i1) ∧ (OnlyOnce( x ) @ #i2)) ⇒ (#i1 = #i2))*)
+(*helpingSecrecy*)
+query k:bitstring, i:time, j:time;
+ (event(eCreate( k ))@i) ==> (not(attacker( k )@j))
+.
+(*noninjectiveagreementTAG*)
+query t:bitstring, i:time, j:time;
+ (event(eCommit( (sT, (sR, t)) ))@i) ==>
+ (event(eRunning( (sT, (sR, t)) ))@j)
+.
+(*noninjectiveagreementREADER*)
+query t:bitstring, i:time, j:time;
+ (event(eCommit( (sR, (sT, t)) ))@i) ==>
+ (event(eRunning( (sR, (sT, t)) ))@j)
+.
+let Reader(k_1:bitstring)=
+    !
+    (new r0_1:bitstring;
+     event eOnlyOnce( sinit_reader );
+     out(att,r0_1);
+     in(att,message0_1:bitstring);
+     let (r1_1:bitstring, h(xor(=k_1, xor(=r0_1, r1_1:bitstring))))=message0_1 in
+     event eCommit( (sR, (sT, (k_1, (r0_1, r1_1)))) );
+     event eRunning( (sT, (sR, (k_1, (r0_1, r1_1)))) );
+     out(att,h(xor(k_1, xor(r0_1, h(xor(k_1, xor(r0_1, r1_1)))))))).
+let Tag(k_1:bitstring)=
+    !
+    (in(att,r0_1:bitstring);
+     new r1_1:bitstring;
+     event eRunning( (sR, (sT, (k_1, (r0_1, r1_1)))) );
+     out(att,(r1_1, h(xor(k_1, xor(r0_1, r1_1)))));
+     in(att,h(xor(=k_1, xor(=r0_1, h(xor(=k_1, xor(=r0_1, =r1_1)))))));
+     event eCommit( (sT, (sR, (k_1, (r0_1, r1_1)))) );
+     event eFinTag( )).
+
+
+process
+    !
+    (new k_1:bitstring;
+     event eOnlyOnce( ssetup );
+     event eCreate( k_1 );
+     ((Tag(k_1))
+    | (Reader(k_1))))
+

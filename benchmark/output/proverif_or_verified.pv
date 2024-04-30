@@ -1,0 +1,155 @@
+free att:channel.
+free s1:bitstring.
+free s2:bitstring.
+free s3:bitstring.
+free s4:bitstring.
+fun fst(bitstring):bitstring.
+fun id(bitstring):bitstring.
+fun pair(bitstring,bitstring):bitstring.
+fun sdec(bitstring,bitstring):bitstring.
+fun senc(bitstring,bitstring):bitstring.
+fun snd(bitstring):bitstring.
+event eCommit_A(bitstring,bitstring,bitstring).
+event eCommit_B(bitstring,bitstring,bitstring).
+event eCommit_S_A(bitstring,bitstring,bitstring).
+event eCommit_S_B(bitstring,bitstring,bitstring).
+event eHonestA(bitstring).
+event eHonestB(bitstring).
+event eRunning_A(bitstring,bitstring,bitstring).
+event eRunning_B(bitstring,bitstring,bitstring).
+event eRunning_S(bitstring,bitstring,bitstring).
+event eSecret(bitstring,bitstring,bitstring).
+event eSessionA(bitstring,bitstring,bitstring).
+event eSessionB(bitstring,bitstring,bitstring).
+equation forall x_1:bitstring, x_2:bitstring;   fst((x_1, x_2)) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   sdec(senc(x_1, x_2), x_2) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   snd((x_1, x_2)) = x_2.
+(*Secrecy*)
+(*∃ A B m #i. (Secret( A, B, m ) @ #i) ∧ (∃ #r. K( m ) @ #r)*)
+(*injectiveagreement_B*)
+query A:bitstring, A2:bitstring, B:bitstring, B2:bitstring, t:bitstring,
+      i:time, i2:time, j:time;
+ (event(eCommit_B( A, B, t ))@i) ==>
+ (((event(eRunning_S( A, B, t ))@j) && (j < i)) &&
+  (not((event(eCommit_B( A2, B2, t ))@i2) && (i2 <> i))))
+.
+(*agreement_B*)
+query A:bitstring, B:bitstring, t:bitstring, i:time, j:time;
+ (event(eCommit_B( A, B, t ))@i) ==>
+ ((event(eRunning_S( A, B, t ))@j) && (j < i))
+.
+(*injectiveagreement_A*)
+query A:bitstring, A2:bitstring, B:bitstring, B2:bitstring, t:bitstring,
+      i:time, i2:time, j:time;
+ (event(eCommit_A( A, B, t ))@i) ==>
+ (((event(eRunning_S( A, B, t ))@j) && (j < i)) &&
+  (not((event(eCommit_A( A2, B2, t ))@i2) && (i2 <> i))))
+.
+(*agreement_A*)
+query A:bitstring, B:bitstring, t:bitstring, i:time, j:time;
+ (event(eCommit_A( A, B, t ))@i) ==>
+ ((event(eRunning_S( A, B, t ))@j) && (j < i))
+.
+(*injectiveagreement_S*)
+(*(∀ A B t #i.
+    (Commit_S_A( A, B, t ) @ #i) ⇒
+    (∃ #j.
+      ((Running_A( A, B, t ) @ #j) ∧ (#j < #i)) ∧
+      (¬(∃ A2 B2 #i2. (Commit_S_A( A2, B2, t ) @ #i2) ∧ (¬(#i2 = #i)))))) ∧
+  (∀ A B t #i.
+    (Commit_S_B( A, B, t ) @ #i) ⇒
+    (∃ #j.
+      ((Running_B( A, B, t ) @ #j) ∧ (#j < #i)) ∧
+      (¬(∃ A2 B2 #i2. (Commit_S_B( A2, B2, t ) @ #i2) ∧ (¬(#i2 = #i))))))*)
+(*agreement_S*)
+(*(∀ A B t #i.
+    (Commit_S_A( A, B, t ) @ #i) ⇒
+    (∃ #j. (Running_A( A, B, t ) @ #j) ∧ (#j < #i))) ∧
+  (∀ A B t #i.
+    (Commit_S_B( A, B, t ) @ #i) ⇒
+    (∃ #j. (Running_B( A, B, t ) @ #j) ∧ (#j < #i)))*)
+(*executability*)
+(*(((((∀ A A2 B B2 t t2 #i #j.
+        ((Running_A( A, B, t ) @ #i) ∧ (Running_A( A2, B2, t2 ) @ #j)) ⇒
+        (#i = #j)) ∧
+      (∀ A A2 B B2 t t2 #i #j.
+        ((Running_B( A, B, t ) @ #i) ∧ (Running_B( A2, B2, t2 ) @ #j)) ⇒
+        (#i = #j))) ∧
+     (∀ A A2 B B2 t t2 #i #j.
+       ((Running_S( A, B, t ) @ #i) ∧ (Running_S( A2, B2, t2 ) @ #j)) ⇒
+       (#i = #j))) ∧
+    (∀ A A2 B B2 t t2 #i #j.
+      ((Commit_A( A, B, t ) @ #i) ∧ (Commit_A( A2, B2, t2 ) @ #j)) ⇒
+      (#i = #j))) ∧
+   (∀ A A2 B B2 t t2 #i #j.
+     ((Commit_B( A, B, t ) @ #i) ∧ (Commit_B( A2, B2, t2 ) @ #j)) ⇒
+     (#i = #j))) ∧
+  (∃ A B t t2 t3 #i #j #k #l #m.
+    ((((((((Running_A( A, B, t ) @ #i) ∧ (Running_B( A, B, t2 ) @ #j)) ∧
+          (#i < #j)) ∧
+         (Running_S( A, B, t3 ) @ #k)) ∧
+        (#j < #k)) ∧
+       (Commit_B( A, B, t3 ) @ #l)) ∧
+      (#k < #l)) ∧
+     (Commit_A( A, B, t3 ) @ #m)) ∧
+    (#l < #m))*)
+let A(Kas_1:bitstring, A_1:bitstring, B_1:bitstring)=
+    new m_1:bitstring;
+    new Na_1:bitstring;
+    let msg1_1:bitstring=(m_1, (A_1, (B_1, senc((s1, (Na_1, (m_1, (A_1, B_1)))),
+                                                Kas_1)))) in
+    event eRunning_A( A_1, B_1, (m_1, Na_1) );
+    out(att,msg1_1);
+    in(att,msg2_1:bitstring);
+    let (=m_1, senc((=s3, (=Na_1, Kab_1:bitstring)), =Kas_1))=msg2_1 in
+    event eCommit_A( A_1, B_1, (m_1, Kab_1) );
+    event eSecret( A_1, B_1, Kab_1 );
+    event eSessionA( A_1, B_1, Kab_1 );
+    event eSecret( A_1, B_1, Kab_1 ).
+let B(Kbs_1:bitstring, A_1:bitstring, B_1:bitstring)=
+    in(att,msg_1:bitstring);
+    let (m_1:bitstring, (=A_1, (=B_1, c_1:bitstring)))=msg_1 in
+    new Nb_1:bitstring;
+    let msg2_1:bitstring=(m_1, (A_1, (B_1, (c_1, senc((s2, (Nb_1, (m_1, (A_1, B_1)))),
+                                                      Kbs_1))))) in
+    event eRunning_B( A_1, B_1, (m_1, Nb_1) );
+    out(att,msg2_1);
+    in(att,msg3_1:bitstring);
+    let (=m_1, (package1_1:bitstring, senc((=s4, (=Nb_1, Kab_1:bitstring)),
+                                           =Kbs_1)))=msg3_1 in
+    let msg4_1:bitstring=(m_1, package1_1) in
+    event eSecret( A_1, B_1, Kab_1 );
+    event eSessionB( A_1, B_1, Kab_1 );
+    event eCommit_B( A_1, B_1, (m_1, Kab_1) );
+    out(att,msg4_1).
+let Server(Kas_1:bitstring, Kbs_1:bitstring, A_1:bitstring,
+           B_1:bitstring)=
+    in(att,msg_1:bitstring);
+    let (m_1:bitstring, (=A_1, (=B_1, (senc((=s1, (Na_1:bitstring, (m_1:bitstring, (=A_1, =B_1)))),
+                                            =Kas_1), senc((=s2, (Nb_1:bitstring, (m_1:bitstring, (=A_1, =B_1)))),
+                                                          =Kbs_1)))))=msg_1 in
+    new Kab_1:bitstring;
+    let msg2_1:bitstring=(m_1, (senc((s3, (Na_1, Kab_1)),
+                                     Kas_1), senc((s4, (Nb_1, Kab_1)), Kbs_1))) in
+    event eSecret( A_1, B_1, Kab_1 );
+    event eRunning_S( A_1, B_1, (m_1, Kab_1) );
+    event eCommit_S_A( A_1, B_1, (m_1, Na_1) );
+    event eCommit_S_B( A_1, B_1, (m_1, Nb_1) );
+    out(att,msg2_1).
+
+
+process
+    !
+    (new Kas_1:bitstring;
+     event eHonestA( id(Kas_1) );
+     new Kbs_1:bitstring;
+     event eHonestB( id(Kbs_1) );
+     out(att,id(Kas_1));
+     out(att,id(Kbs_1));
+     !
+     (((A(Kas_1, id(Kas_1), id(Kbs_1)))
+     | (!
+        (((B(Kbs_1, id(Kas_1), id(Kbs_1)))
+        | (!
+           (Server(Kas_1, Kbs_1, id(Kas_1), id(Kbs_1))))))))))
+

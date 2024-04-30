@@ -1,0 +1,92 @@
+const g:bitstring.
+free att:channel.
+fun adec(bitstring,bitstring):bitstring.
+fun aenc(bitstring,bitstring):bitstring.
+fun exp(bitstring,bitstring):bitstring.
+fun fst(bitstring):bitstring.
+fun h(bitstring):bitstring.
+fun id(bitstring):bitstring.
+fun okay():bitstring.
+fun pair(bitstring,bitstring):bitstring.
+fun pk(bitstring):bitstring.
+fun sdec(bitstring,bitstring):bitstring.
+fun senc(bitstring,bitstring):bitstring.
+fun sign(bitstring,bitstring):bitstring.
+fun snd(bitstring):bitstring.
+fun verify(bitstring,bitstring,bitstring):bitstring.
+fun xor(bitstring,bitstring):bitstring.
+fun zero():bitstring.
+event eHonestA(bitstring).
+event eHonestB(bitstring).
+event eHonestIdA(bitstring).
+event eHonestIdB(bitstring).
+equation forall a:bitstring,b:bitstring; exp( exp(g,a),b) = exp(exp(g,b),a).
+equation forall x_1:bitstring, x_2:bitstring;   adec(aenc(x_1, pk(x_2)), x_2) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   fst((x_1, x_2)) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   sdec(senc(x_1, x_2), x_2) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   snd((x_1, x_2)) = x_2.
+equation forall x_1:bitstring, x_2:bitstring;   verify(sign(x_1, x_2), x_1, pk(x_2)) = okay.
+let A(Kas_1:bitstring, idA_1:bitstring, idB_1:bitstring)=
+    new Na_1:bitstring;
+    out(att,(idA_1, Na_1));
+    in(att,cypher_1:bitstring);
+    let (msg1_1:bitstring, (msg2_1:bitstring, Nb_1:bitstring))=cypher_1 in
+    let (=idB_1, (=Na_1, (Kab_1:bitstring, Tb_1:bitstring)))=sdec(msg1_1,
+                                                                  Kas_1) in
+    out(att,(msg2_1, senc(Nb_1, Kab_1)));
+    new Ma_1:bitstring;
+    out(att,(Ma_1, msg2_1));
+    in(att,cypher2_1:bitstring);
+    let (Mb_1:bitstring, msg3_1:bitstring)=cypher2_1 in
+    let =Ma_1=sdec(msg3_1, Kab_1) in
+    out(att,senc(Mb_1, Kab_1)).
+let B(Kbs_1:bitstring, idA_1:bitstring, idB_1:bitstring)=
+    in(att,cypher3_1:bitstring);
+    let (=idA_1, Na_1:bitstring)=cypher3_1 in
+    new Tb_1:bitstring;
+    new Nb_1:bitstring;
+    out(att,(idB_1, (senc((idA_1, (Na_1, Tb_1)), Kbs_1), Nb_1)));
+    in(att,cypher4_1:bitstring);
+    let (msg4_1:bitstring, msg5_1:bitstring)=cypher4_1 in
+    let (=idA_1, (Kab_1:bitstring, =Tb_1))=sdec(msg4_1, Kbs_1) in
+    let =Nb_1=sdec(msg5_1, Kab_1) in
+    in(att,cypher5_1:bitstring);
+    let (Ma_1:bitstring, msg6_1:bitstring)=cypher5_1 in
+    let (=idA_1, (=Kab_1, =Tb_1))=sdec(msg6_1, Kbs_1) in
+    new Mb_1:bitstring;
+    out(att,(Mb_1, senc(Ma_1, Kab_1)));
+    in(att,cypher7_1:bitstring);
+    let =Mb_1=sdec(cypher7_1, Kab_1) in
+    0.
+let S(Kas_1:bitstring, Kbs_1:bitstring, idA_1:bitstring,
+      idB_1:bitstring)=
+    in(att,cypher8_1:bitstring);
+    let (=idB_1, (msg7_1:bitstring, Nb_1:bitstring))=cypher8_1 in
+    let (=idA_1, (Na_1:bitstring, Tb_1:bitstring))=sdec(msg7_1, Kbs_1) in
+    new Kab_1:bitstring;
+    out(att,(senc((idB_1, (Na_1, (Kab_1, Tb_1))),
+                  Kas_1), (senc((idA_1, (Kab_1, Tb_1)), Kbs_1), Nb_1))).
+
+
+process
+    !
+    (new Kas_1:bitstring;
+     new Kbs_1:bitstring;
+     out(att,id(Kas_1));
+     out(att,id(Kbs_1));
+     event eHonestA( id(Kas_1) );
+     event eHonestB( id(Kbs_1) );
+     !
+     (new idA_1:bitstring;
+      new idB_1:bitstring;
+      out(att,id(idA_1));
+      out(att,id(idB_1));
+      event eHonestIdA( id(idA_1) );
+      event eHonestIdB( id(idB_1) );
+      !
+      (((A(Kas_1, id(idA_1), id(idB_1)))
+      | (!
+         (((B(Kbs_1, id(idA_1), id(idB_1)))
+         | (!
+            (S(Kas_1, Kbs_1, id(idA_1), id(idB_1)))))))))))
+

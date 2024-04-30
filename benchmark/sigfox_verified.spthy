@@ -1,0 +1,93 @@
+theory sigfox_PKC begin
+/*
+ * Protocol:	sigfox implementation
+ * Modeler: 	Jun Young Kim 
+ * Described in: 
+ * Date: 	 
+ *
+ * Status: 	 Working
+ */
+
+builtins: asymmetric-encryption,signing 
+/* We formalize the following protocol:
+*/
+//1. A -> B: {B,na}sk(A)
+
+// Public key infrastructure 
+// rule Register_pk: 
+// [ Fr(~ltkA) ] --> 
+// [ !Ltk($A, ~ltkA) , !Pk($A, pk(~ltkA)), Out(pk(~ltkA))]
+
+// // Compromising an agent's long-term key 
+// rule Reveal_ltk: 
+// [ !Ltk(A, ltkA) ] --[ Reveal(A) ]-> [ Out(ltkA)]
+// //
+// // Role A sends first message 
+// rule Send_key: 
+// let msg = aenc(<A, ~na>, pkB)
+// 	sig = sign(msg,ltkA) in
+// [ Fr(~na), !Ltk(A, ltkA), !Pk(B, pkB) ]
+// --[ Send(A, msg), Secret(~na), Role('A'),Honest(A),Honest(B)]-> 
+// [ St_A_1(A, ltkA, pkB, B, ~na),Out(<msg, sig>)]
+
+// // Role B receives first message 
+// rule Receive_key: 
+// let msg = aenc(<A, na>, pkB) in
+// [ !Ltk(B,ltkB),!Pk(A, pkA), In(<msg, sig>)]
+// --[ Eq(verify(sig,msg,pkA),true),Recv(B, msg), Secret(na), Honest(B), Honest(A), Role('B')]->[]
+// //[ St_B_1(B, ltkB, pkA, A, na) ]
+
+
+let Server(skS, pkS, pkD) =
+  new Na;
+  let msg = aenc(<pkS, Na>, pkD) in
+  let sig = sign(msg, skS) in
+  event Send(pkS, msg);
+  event SecretA(Na);
+  out(<msg, sig>)
+
+let Device(skD, pkD, pkS) =
+  in(<msg, sig>);
+  let <=pkS, Na> = adec(msg, skD) in
+  if verify(sig, msg, pkS)=true then
+    event Recv(pkD, msg);
+	event SecretB(Na)
+
+process:
+    !(
+      new skS; out(pk(skS)); event HonestA(pk(skS));
+      !(
+        new skD; out(pk(skD)); event HonestB(pk(skD));
+        (!Server(skS, pk(skS), pk(skD))  | !Device(skD, pk(skD), pk(skS))   )
+      )
+    ) 
+
+ 
+
+lemma executable: exists-trace 
+"Ex A B m #i #j. Send(A,m)@i & Recv(B,m) @j"
+
+lemma secret_A: all-traces 
+	"All n #i. SecretA(n) @i  ==> (not (Ex #j. K(n)@j))"
+	
+lemma secret_B: all-traces 
+	"All n #i. Secret(n) @i & Role('B') @i ==> (not (Ex #j. K(n)@j)) "
+	
+end
+
+
+// ==============================================================================
+// summary of summaries:
+
+// analyzed: temp.spthy
+
+//   processing time: 1.14s
+  
+//   WARNING: 2 wellformedness check failed!
+//            The analysis results might be wrong!
+  
+//   executable (exists-trace): verified (6 steps)
+//   secret_A (all-traces): verified (4 steps)
+//   secret_B (all-traces): verified (2 steps)
+
+// ==============================================================================

@@ -1,0 +1,143 @@
+free att:channel.
+free s1:bitstring.
+free s2:bitstring.
+free s3:bitstring.
+free s4:bitstring.
+free s5:bitstring.
+free sA:bitstring.
+free sB:bitstring.
+fun dec(bitstring):bitstring.
+fun fst(bitstring):bitstring.
+fun id(bitstring):bitstring.
+fun inc(bitstring):bitstring.
+fun pair(bitstring,bitstring):bitstring.
+fun senc(bitstring,bitstring):bitstring.
+fun snd(bitstring):bitstring.
+event eAUTO_IN_TERM_0_0_0_1_1_1_1__letsencnapkkbskabmbkasmsg_1_1111111111111111___VARIANT_1(bitstring,bitstring).
+event eAUTO_IN_TERM_1_0_0_1__insencnbkab_0_1111111111111111111___VARIANT_1(bitstring,bitstring).
+event eAUTO_OUT_TERM_0_0_0_1_1_1_1__letsencnapkkbskabmbkasmsg_1_1111111111111111___VARIANT_1(bitstring).
+event eAUTO_OUT_TERM_1_0_0_1__insencnbkab_0_1111111111111111111___VARIANT_1(bitstring).
+event eB_OUT_4(bitstring).
+event eCommit_A(bitstring,bitstring,bitstring).
+event eCommit_B(bitstring,bitstring,bitstring).
+event eRunning_A(bitstring,bitstring,bitstring).
+event eRunning_B(bitstring,bitstring,bitstring).
+event eSecret(bitstring,bitstring,bitstring).
+equation forall x:bitstring;   inc(dec(x)) = x.
+equation forall x_1:bitstring, x_2:bitstring;   fst((x_1, x_2)) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   snd((x_1, x_2)) = x_2.
+reduc forall k:bitstring, m:bitstring;   sdec(senc(m, k), k) = m.
+(*AUTO_typing*)
+(*(∀ x m #i.
+    (AUTO_IN_TERM_0_0_0_1_1_1_1__letsencnapkkbskabmbkasmsg_1_1111111111111111___VARIANT_1( m,
+                                                                                           x
+     ) @ #i) ⇒
+    ((∃ #j. (!KU( x ) @ #j) ∧ (#j < #i)) ∨
+     (∃ #j.
+       (AUTO_OUT_TERM_0_0_0_1_1_1_1__letsencnapkkbskabmbkasmsg_1_1111111111111111___VARIANT_1( m
+        ) @ #j) ∧
+       (#j < #i)))) ∧
+  (∀ x m #i.
+    (AUTO_IN_TERM_1_0_0_1__insencnbkab_0_1111111111111111111___VARIANT_1( m,
+                                                                          x
+     ) @ #i) ⇒
+    ((∃ #j. (!KU( x ) @ #j) ∧ (#j < #i)) ∨
+     (∃ #j.
+       (AUTO_OUT_TERM_1_0_0_1__insencnbkab_0_1111111111111111111___VARIANT_1( m
+        ) @ #j) ∧
+       (#j < #i))))*)
+(*executability*)
+query A:bitstring, B:bitstring, kab:bitstring, nb:bitstring, i:time,
+      j:time, k:time, m:time;
+ (((((event(eCommit_B( A, B, (sA, (sB, (dec(nb), kab))) ))@i) &&
+     (event(eCommit_A( A, B, (sA, (sB, (nb, kab))) ))@j)) &&
+    (j < i)) &&
+   (event(eRunning_A( A, B, (sA, (sB, (dec(nb), kab))) ))@m)) &&
+  (event(eRunning_B( A, B, (sA, (sB, (nb, kab))) ))@k)) &&
+ (k < j)
+.
+(*Secrecy*)
+(*∃ A B m #i. (Secret( A, B, m ) @ #i) ∧ (∃ #r. K( m ) @ #r)*)
+(*injectiveagreement_B*)
+query A:bitstring, A2:bitstring, B:bitstring, B2:bitstring, t:bitstring,
+      i:time, i2:time, j:time;
+ (event(eCommit_B( A, B, t ))@i) ==>
+ (((event(eRunning_A( A, B, t ))@j) && (j < i)) &&
+  (not((event(eCommit_B( A2, B2, t ))@i2) && (i2 <> i))))
+.
+(*agreement_B*)
+query A:bitstring, B:bitstring, t:bitstring, i:time, j:time;
+ (event(eCommit_B( A, B, t ))@i) ==>
+ ((event(eRunning_A( A, B, t ))@j) && (j < i))
+.
+(*injectiveagreement_A*)
+query A:bitstring, A2:bitstring, B:bitstring, B2:bitstring, t:bitstring,
+      i:time, i2:time, j:time;
+ (event(eCommit_A( A, B, t ))@i) ==>
+ (((event(eRunning_B( A, B, t ))@j) && (j < i)) &&
+  (not((event(eCommit_A( A2, B2, t ))@i2) && (i2 <> i))))
+.
+(*agreement_A*)
+query A:bitstring, B:bitstring, t:bitstring, i:time, j:time;
+ (event(eCommit_A( A, B, t ))@i) ==>
+ ((event(eRunning_B( A, B, t ))@j) && (j < i))
+.
+let A(Kas_1:bitstring, idA_1:bitstring, idB_1:bitstring)=
+    new Na_1:bitstring;
+    out(att,(s1, (idA_1, (idB_1, Na_1))));
+    in(att,cypher_1:bitstring);
+    let (=s2, (=Na_1, (=idB_1, (Kab_1:bitstring, message2_1:bitstring))))=sdec(cypher_1,
+                                                                               Kas_1) in
+    event eAUTO_IN_TERM_0_0_0_1_1_1_1__letsencnapkkbskabmbkasmsg_1_1111111111111111___VARIANT_1( cypher_1,
+                                                                                                 message2_1
+          );
+    out(att,message2_1);
+    in(att,cypher2_1:bitstring);
+    let (=s4, Nb_1:bitstring)=sdec(cypher2_1, Kab_1) in
+    event eAUTO_IN_TERM_1_0_0_1__insencnbkab_0_1111111111111111111___VARIANT_1( cypher2_1,
+                                                                                Nb_1
+          );
+    event eRunning_A( idA_1, idB_1, (sA, (sB, (dec(Nb_1), Kab_1))) );
+    event eCommit_A( idA_1, idB_1, (sA, (sB, (Nb_1, Kab_1))) );
+    out(att,senc((s5, dec(Nb_1)), Kab_1)).
+let B(Kbs_1:bitstring, idA_1:bitstring)=
+    in(att,cypher3_1:bitstring);
+    let (=s3, (Kab_1:bitstring, =idA_1))=sdec(cypher3_1, Kbs_1) in
+    new Nb_1:bitstring;
+    event eRunning_B( idA_1, id(Kbs_1), (sA, (sB, (Nb_1, Kab_1))) );
+    event eSecret( idA_1, id(Kbs_1), Kab_1 );
+    event eAUTO_OUT_TERM_1_0_0_1__insencnbkab_0_1111111111111111111___VARIANT_1( senc((s4, Nb_1),
+                                                                                      Kab_1)
+          );
+    out(att,senc((s4, Nb_1), Kab_1));
+    event eB_OUT_4( senc((s4, Nb_1), Kab_1) );
+    in(att,cypher4_1:bitstring);
+    let Nb_dec_1:bitstring=sdec(cypher4_1, Kab_1) in
+    let (=s5, dec(=Nb_1))=Nb_dec_1 in
+    event eCommit_B( idA_1, id(Kbs_1), (sA, (sB, (dec(Nb_1), Kab_1))) ).
+let S(Kas_1:bitstring, Kbs_1:bitstring, idA_1:bitstring,
+      idB_1:bitstring)=
+    new Kab_1:bitstring;
+    in(att,(=s1, (=idA_1, (=idB_1, Na_1:bitstring))));
+    let message1_1:bitstring=(s2, (Na_1, (idB_1, (Kab_1, senc((s3, (Kab_1, idA_1)),
+                                                              Kbs_1))))) in
+    let cypher_1:bitstring=senc(message1_1, Kas_1) in
+    event eSecret( idA_1, idB_1, Kab_1 );
+    event eAUTO_OUT_TERM_0_0_0_1_1_1_1__letsencnapkkbskabmbkasmsg_1_1111111111111111___VARIANT_1( cypher_1
+          );
+    out(att,cypher_1).
+
+
+process
+    !
+    (new Kas_1:bitstring;
+     new Kbs_1:bitstring;
+     out(att,id(Kas_1));
+     out(att,id(Kbs_1));
+     !
+     (((A(Kas_1, id(Kas_1), id(Kbs_1)))
+     | (!
+        (((B(Kbs_1, id(Kas_1)))
+        | (!
+           (S(Kas_1, Kbs_1, id(Kas_1), id(Kbs_1))))))))))
+

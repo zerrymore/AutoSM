@@ -1,0 +1,48 @@
+free att:channel.
+fun adec(bitstring,bitstring):bitstring.
+fun aenc(bitstring,bitstring):bitstring.
+fun fst(bitstring):bitstring.
+fun h(bitstring):bitstring.
+fun pair(bitstring,bitstring):bitstring.
+fun pk(bitstring):bitstring.
+fun snd(bitstring):bitstring.
+event eAnswerRequest(bitstring,bitstring).
+event eSessKeyC(bitstring,bitstring).
+equation forall x_1:bitstring, x_2:bitstring;   adec(aenc(x_1, pk(x_2)), x_2) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   fst((x_1, x_2)) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   snd((x_1, x_2)) = x_2.
+(*Client_session_key_secrecy*)
+query S:bitstring, k:bitstring, i:time, j:time;
+ (event(eSessKeyC( S, k ))@i) && (attacker( k )@j)
+.
+(*Client_auth*)
+query S:bitstring, k:bitstring, a:time, i:time;
+ (event(eSessKeyC( S, k ))@i) ==> (event(eAnswerRequest( S, k ))@a)
+.
+let Client(skC_1:bitstring, pkS_1:bitstring)=
+    new k_1:bitstring;
+    let message_1:bitstring=aenc(k_1, pkS_1) in
+    out(att,message_1);
+    in(att,cipher_1:bitstring);
+    let h(=k_1)=cipher_1 in
+    event eSessKeyC( pkS_1, k_1 ).
+let Server(skS_1:bitstring, pkC_1:bitstring, pkS_1:bitstring)=
+    in(att,request_1:bitstring);
+    let key_1:bitstring=adec(request_1, skS_1) in
+    event eAnswerRequest( pkS_1, key_1 );
+    let H_1:bitstring=h(key_1) in
+    out(att,H_1).
+
+
+process
+    !
+    (new sks_1:bitstring;
+     out(att,pk(sks_1));
+     !
+     (new skc_1:bitstring;
+      out(att,pk(skc_1));
+      !
+      (((Client(skc_1, pk(sks_1)))
+      | (!
+         (Server(sks_1, pk(skc_1), pk(sks_1))))))))
+
