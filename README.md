@@ -7,7 +7,7 @@ This repo contains a benchmark for symbolic model synthesis and a tool with web-
 This tool can generate formal specifications (symbolic model) for a protocol automatically from unstructed natural language, empowered by LLMs' powered ability for semantic parsing. Comparing with existing text-to-code tasks, we pay more attention on the soundness of the general translation process, i.e., the output of the tool should be consistent with the unstructed natural language description semantically. We try to make as much control as possible for the overall process, though "black-box" LLM is introduced.
 
 <!-- ![My Image](static/images/workflow.jpg){ width=50% } -->
-<img src="static/images/workflow.jpg" style="width: 40%; height: auto;">
+<img src="static/images/workflow.jpg" style="width: 25%; height: auto;">
 
 1. **Lccg:** a LLM-powered CCG parser, which takes protocol documents as input, parses them into lambda calculus expressions (that are defined specifically for modeling security protocols).
 2. **L-repair:** which repairs the broken specifications with static analysis techniques and user interaction to make them well-formed.
