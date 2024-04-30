@@ -37,16 +37,9 @@ let S(Kas, Kbs, idA, idB) =
   event AUTO_IN_TERM_0_0_0_1_1_1_1_0_1_1_1__S_to_B( cypher5, Nb);
   let message3 = senc(<'3', idA, idB, Nb>, Kbs) in
   out(message3); 0
-/*
-Step1: Determine the datatype and origination of signature's argument. 
-In this case:
-There are three roles: `Alice` corresponding to `let A(idA, Kas, idB) =`, `Bob` corresponding to `let B(idB, Kbs, idA) =` and `Server` corresponding to `let S(Kas, Kbs, idA, idB, Nb) =`. 
-For Alice, `idA` and `idB` are identities, `Kas` is the shared key between Alice and Server. 
-For Bob, `idA` and `idB` are identities, `Kbs` is the shared key between Bob and Server. 
-For Server, `Kas` and `Kbs` are shared keys, `idA` and `idB` are identities, `Nb` is nonce. 
-Step2: Determine the corresponding relationships between different roles in the protocol, generate the top specification for different roles.
-In this case:
-*/
+
+
+  
 process:
 !(   
   new Kas; out(id(Kas)); event HonestA(id(Kas));

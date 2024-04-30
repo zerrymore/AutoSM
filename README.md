@@ -41,10 +41,3 @@ The tool can be divided into two parts, parser and translator roughly. The parse
 Here gives an overivew for the general workflow of the tool. We use a toy example to illustrate how user can interact with the tool and how tool can generate formal specificaions and check the results automatically.
 
 
-
-### Config parameter 
-
-
-## 🖖 Acknowledge
-
-The frontend our tool is based on `nl2spec`, which is a novel tool applying LLMs to derive formal specifications in temporal logics. We preserve the feature which allows user to incorperate and edit the generated formal specifciations.

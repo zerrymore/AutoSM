@@ -41,20 +41,13 @@ let S(Kas, Kbs, idA, idB) =
   let <=idA,Na,Tb> = sdec(msg7, Kbs) in
   new Kab;
   out(<senc(<idB,Na,Kab,Tb>, Kas), senc(<idA,Kab,Tb>, Kbs), Nb>); 0
-/**//*
-Step1: Determine the datatype and origination of signature's argument. 
-In this case:
-There are three roles: `Alice` corresponding to `let A(Kas, idA, idB) =`, `Bob` corresponding to `let B(Kbs, idA, idB) =` and `Server` corresponding to `let S(Kas, Kbs, idA, idB) =`.
-For Alice, `Kas` is a symmetric key which be a fresh nonce, `idA` and `idB` are identities of Alice and Bob respectively.
-For Bob, `Kbs` is a symmetric key which be a fresh nonce, `idA` and `idB` are identities of Alice and Bob respectively.
-For Server, `Kas` and `Kbs` are symmetric keys, `idA` and `idB` are identities of Alice and Bob respectively.
-Step2: Determine the corresponding relationships between different roles in the protocol, generate the top specification for different roles.
-In this case:
-*/
+
+
+
 process:
-!(   // 1. There can be unbounded number of Alice, Bob and Server.
+!(   
   new Kas; new Kbs; out(id(Kas)); out(id(Kbs)); event HonestA(id(Kas)); event HonestB(id(Kbs));
-  !(   // 2. Alice, Bob and Server can establish unbounded sessions.
+  !(   
     new idA; new idB; out(id(idA)); out(id(idB)); event HonestIdA(id(idA)); event HonestIdB(id(idB));
     (   !A(Kas, id(idA), id(idB)) | !B(Kbs, id(idA), id(idB)) | !S(Kas, Kbs, id(idA), id(idB))  )
   )

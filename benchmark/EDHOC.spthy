@@ -36,28 +36,10 @@ let I2(~skI:skey) =         // Initiator using signatures
    let K_2e:skey = hkdfexpand(PRK_2e, <TH_2,'TagK_2e'>) in
    let PRK_3e2m = PRK_2e in
    let K_2m:skey = hkdfexpand(PRK_3e2m, <TH_2,'TagK_2m'>) in
-   // decypher using K_2e
-
-   /**
-   ================= Section 4.5.2 Responder Message 2 =================
-   o  Decrypt CIPHERTEXT_2.  The decryption process depends on the
-      method, see Section 4.5.2.
-
-   o  Verify that the identity of the Responder is an allowed identity
-      for this connection, see Section 3.2.
-    */
    let plaintext_2 = sdec(cypher_2,K_2e) in
    let <pkR,signed,rAD_2> = plaintext_2 in
    let MAC_2 = senc(<TH_2,pkR,rAD_2>,K_2m) in
    if verify(signed,< pkR,TH_2,rAD_2,MAC_2>,pkR) = true then
-
-      /**
-      ================= Section 4.5.3 Responder Message 3 =================
-      o  Compute the transcript hash TH_3 = H(TH_2 , CIPHERTEXT_2, data_3)
-      where H() is the hash function in the the selected cipher suite.
-      The transcript hash TH_3 is a CBOR encoded bstr and the input to
-      the hash function is a CBOR Sequence.
-       */
       let TH_3 = hash(<TH_2,cypher_2,rC_R>) in
 	   let PRK_4x3m = PRK_3e2m in
       event AcceptI(pk(~skI),pkR,PRK_3e2m,PRK_4x3m);
@@ -69,92 +51,21 @@ let I2(~skI:skey) =         // Initiator using signatures
 
 let R(~skR:skey) =
    in(<mcorr,gA,rC_I,rAD>);
-   /*
-   Generate an ephemeral ECDH key pair as specified in Section 5 of
-   [SP-800-56A] using the curve in the selected cipher suite and
-   format it as a COSE_Key.  Let G_Y be the 'x' parameter of the COSE_Key.
-   */
    new ~b;
    let gB = 'g'^~b in
-
-   /*
-   o  Choose a connection identifier C_R and store it for the length of
-      the protocol.
-
-   o  Compute the transcript hash TH_2 = H(message_1, data_2) where H()
-      is the hash function in the selected cipher suite.  The transcript
-      hash TH_2 is a CBOR encoded bstr and the input to the hash
-      function is a CBOR Sequence.
-   */
    let TH_2 = hash(<mcorr,gA,rC_I,rAD,rC_I,gB,'C_R'>) in
-
-   /* 
-   ================= Section 3.8 key derivation =================
-      PRK_2e = HMAC-SHA-256( salt, G_XY ) */
    let PRK_2e = hkdfextract('null', gA^~b) in
-
-
    let K_2e:skey = hkdfexpand(PRK_2e, <TH_2,'TagK_2e'>) in
    if mcorr = 'm1' then   // we merge mcorr = 1 and mcorr =3, static DH auth used
       out('notimplementedyet')
-      //out(senc( <pk(~skS),MAC_2 >  ,K_2e))
     else
-      /*
-      ================= Section 3.8 key derivation =================
-      o  If the Reponder authenticates with a static Diffie-Hellman key,
-         then PRK_3e2m = HKDF-Extract( PRK_2e, G_RX ), where G_RX is the
-         ECDH shared secret calculated from G_R and X, or G_X and R, else
-         PRK_3e2m = PRK_2e.
-
-      o  If the Initiator authenticates with a static Diffie-Hellman key,
-         then PRK_4x3m = HKDF-Extract( PRK_3e2m, G_IY ), where G_IY is the
-         ECDH shared secret calculated from G_I and Y, or G_Y and I, else
-         PRK_4x3m = PRK_3e2m
-      */
       let PRK_3e2m = PRK_2e in
-
-
-      /*
-      ?????
-      */
       let K_2m:skey = hkdfexpand(PRK_3e2m, <TH_2,'TagK_2m'>) in
       let MAC_2 = senc(<TH_2,pk(~skR),'AD_2'>,K_2m) in
-
-
-      /*
-      ================= Section 4.5.2 Responder Message 2 =================
-      If the Reponder authenticates with a static Diffie-Hellman key
-      (method equals 1 or 3), then Signature_or_MAC_2 is MAC_2.  If the
-      Reponder authenticates with a signature key (method equals 0 or
-      2), then Signature_or_MAC_2 is the 'signature' of a COSE_Sign1
-      object as defined in Section 4.4 of [RFC8152] using the signature
-      algorithm in the selected cipher suite, the private authentication
-      key of the Responder, and the following parameters:
-      ....
-
-       COSE constructs the input to the Signature Algorithm as:
-      *  The key is the private authentication key of the Responder.
-      *  The message M to be signed =
-         [ "Signature1", << ID_CRED_R >>, << TH_2, CRED_R, ? AD_2 >>,
-         MAC_2 ]
-      */
       let Signed2 = sign(<pk(~skR),TH_2,'AD_2',MAC_2> ,~skR) in
       let cypher_2 = senc( <pk(~skR),Signed2,'AD_2' >  ,K_2e) in
       event DerivedR(pk(~skR),PRK_3e2m);
-
-      /*
-       CIPHERTEXT_2 is the ciphertext resulting from XOR encrypting a
-      plaintext with the following common parameters:
-
-      *  plaintext = ( ID_CRED_R / bstr_identifier, Signature_or_MAC_2,
-         ? AD_2 )
-      *  CIPHERTEXT_2 = plaintext XOR K_2e
-
-      *  K_2e = EDHOC-KDF( PRK_2e, TH_2, "K_2e", length ), where length
-         is the length of the plaintext.
-      */
       out(<rC_I,gB,'C_R',cypher_2>);
-
       in(<'C_R', cypher_3,rAD_3>);
       let TH_3 = hash(<TH_2,cypher_2,'C_R'>) in
       let PRK_4x3m = PRK_3e2m in

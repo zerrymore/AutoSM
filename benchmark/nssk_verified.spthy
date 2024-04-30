@@ -45,19 +45,12 @@ let S(Kas, Kbs, idA, idB) =
   event Secret(idA, idB, Kab);   // Added
   event AUTO_OUT_TERM_0_0_0_1_1_1_1__letsencnapkkbskabmbkasmsg_1_1111111111111111___VARIANT_1( cypher );
   out(cypher); 0
-  /*
-Step1: Determine the datatype and origination of signature's argument. 
-In this case:
-There are three roles: `Alice` corresponding to `let A(Kas, idA, idB) =`, `Bob` corresponding to `let B(Kbs, idA) =` and `Server` corresponding to `let S(Kas, Kbs, idA, idB) =`. 
-For Alice, `Kas` is symmetric key which be a fresh nonce, the identity of Alice `idA` and Bob `idB` are known publicly, which can constructed via `id(Kas)`.  
-For Bob, `Kbs` is symmetric key which be a fresh nonce, and the identity of Alice `idA` is known publicly, which can constructed via `id(Kbs)`.  
-For Server, `Kas` and `Kbs` are symmetric keys which be fresh nonces, the identity of Alice `idA` and Bob `idB` are known publicly, which can constructed via `id(Kas)` and `id(Kbs)`.  
-Step2: Determine the corresponding relationships between different roles in the protocol, generate the top specification for different roles.
-In this case:
-*/
+
+
+
 process:
-!(    // 1. There can be unbounded number of servers.
-  new Kas; new Kbs; out(id(Kas)); out(id(Kbs));   // the identity is known publicly, which is sent out
+!(    
+  new Kas; new Kbs; out(id(Kas)); out(id(Kbs));   
     // 3. The Alice, Bob and server are running in parallel.
     (!A(Kas, id(Kas), id(Kbs))  | !B(Kbs, id(Kas)) | !S(Kas, Kbs, id(Kas), id(Kbs)))  
   )

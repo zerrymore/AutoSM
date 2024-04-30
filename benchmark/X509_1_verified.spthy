@@ -87,9 +87,6 @@ lemma Session_key_honest_setup:
 
 //   processing time: 8.98s
 
-//   WARNING: 1 wellformedness check failed!
-//            The analysis results might be wrong!
-
 //   Secrecy (all-traces): verified (17 steps)
 //   injectiveagreement_B (all-traces): falsified - found trace (15 steps)
 //   agreement_B (all-traces): verified (11 steps)

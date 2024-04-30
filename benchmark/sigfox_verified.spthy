@@ -1,42 +1,5 @@
 theory sigfox_PKC begin
-/*
- * Protocol:	sigfox implementation
- * Modeler: 	Jun Young Kim 
- * Described in: 
- * Date: 	 
- *
- * Status: 	 Working
- */
-
 builtins: asymmetric-encryption,signing 
-/* We formalize the following protocol:
-*/
-//1. A -> B: {B,na}sk(A)
-
-// Public key infrastructure 
-// rule Register_pk: 
-// [ Fr(~ltkA) ] --> 
-// [ !Ltk($A, ~ltkA) , !Pk($A, pk(~ltkA)), Out(pk(~ltkA))]
-
-// // Compromising an agent's long-term key 
-// rule Reveal_ltk: 
-// [ !Ltk(A, ltkA) ] --[ Reveal(A) ]-> [ Out(ltkA)]
-// //
-// // Role A sends first message 
-// rule Send_key: 
-// let msg = aenc(<A, ~na>, pkB)
-// 	sig = sign(msg,ltkA) in
-// [ Fr(~na), !Ltk(A, ltkA), !Pk(B, pkB) ]
-// --[ Send(A, msg), Secret(~na), Role('A'),Honest(A),Honest(B)]-> 
-// [ St_A_1(A, ltkA, pkB, B, ~na),Out(<msg, sig>)]
-
-// // Role B receives first message 
-// rule Receive_key: 
-// let msg = aenc(<A, na>, pkB) in
-// [ !Ltk(B,ltkB),!Pk(A, pkA), In(<msg, sig>)]
-// --[ Eq(verify(sig,msg,pkA),true),Recv(B, msg), Secret(na), Honest(B), Honest(A), Role('B')]->[]
-// //[ St_B_1(B, ltkB, pkA, A, na) ]
-
 
 let Server(skS, pkS, pkD) =
   new Na;

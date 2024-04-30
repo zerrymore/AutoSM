@@ -1,9 +1,6 @@
 theory Denning_Sacco
 begin
 
-// time: 2024-04-04 16:41:27.979841
-// database id: 5
-
 functions: id/1
 builtins: symmetric-encryption
 let A(Kas, idA, idB) =

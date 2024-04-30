@@ -1,12 +1,5 @@
-theory nslSapicV2
+theory nsl
 
-/* ---------------------Aonther Verision of NSL sapic+ model---------------------------
- *  Author: synthesis by tools.                                    
- *  The model is under Delvo-Yao, i.e., any key will not be leaked.
- *  But the wide-known attach for the protocol should be under eCK,
- *  If you want to cover the attack, add key reveal statements, then
- *  sec_B will be falsified, the conterexample represents the attach.
- --------------------------------------------------------------------------------------*/
 
 begin
 

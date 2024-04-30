@@ -1,15 +1,5 @@
 
-/*
- * Protocol: SSH
-
-   Proverif : everything in a second.
-
-   Tamarin : everything in 1 minute
-*/
-
-
-
-theory temp
+theory SSH
 
 begin
 
