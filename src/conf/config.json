@@ -1,10 +1,7 @@
 {
   "API_URL": "https://api.openai.com/v1/chat/completions",
-  "API_URL_BASE": "",
-  "open_ai_api_key": "",
-  "proxy": "http://192.168.31.173:4780",
-  "https_proxy": "http://192.168.31.173:4780",
-  "http_proxy": "http://192.168.31.173:4780",
+  "API_URL_BASE": "https://api.chatanywhere.tech",
+  "open_ai_api_key": "sk-FSLtGYthWKfY6yB9mrX0XIhLCDj1fK3ijFu0aEmtd7qUHpBW",
   "conversation_max_tokens": 2048,
   "expires_in_seconds": 3600  
 }

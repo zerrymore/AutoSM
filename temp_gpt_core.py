@@ -58,16 +58,32 @@ class BaseChatClass:
     def __init__(self, conversation_list=[], continuous_talking=True, useOpenKey=False) -> None:
         # set API KEY
         if useOpenKey:
-            openai.api_base = os.environ.get("API_URL_BASE")
-            openai.api_key = os.environ.get("OPENAI_API_KEY")
-            # openai.proxy = ""
+            openai.api_key = os.environ.get("OPENKEY_API_KEY")
+            openai.api_base = os.environ.get("OPENKEY_URL_BASE")
+            openai.proxy = ""
         else:
             openai.api_key = os.environ.get("OPENAI_API_KEY")
             openai.api_base = os.environ.get("API_URL_BASE")
+            openai.proxy = os.environ.get("HTTP_PROXY") or os.environ.get("http_proxy")
         
+        
+        openai.api_base = "https://api.chatanywhere.tech"
+        openai.api_key = "sk-n7gpfjVS5yuseJ0RywY611wm8cB7n0rxUZFasiNC3UQJjHZI"
+        openai.api_key = "sk-Tl62Od13xCGGrPkU4aggClKMhCjLOxyE7AC626EKGCQJmUP0"
+        openai.api_key = "sk-kSNZymoynHQSJUEPdXgKuZot67iZaMyA28OufJTasxcKlPiQ"
+        openai.api_key = "sk-IUc5tIFdpKlDExrznpDx9DcfULTxvkxr5EgjAA6Wqs99hSIf"
+        openai.api_key = "sk-A2JSAVicH4F13H5JQhxUS5vsCWxQf5sadF97X3gNu6N8SFgB"
+        openai.api_key = "sk-22H4Rmmi8gLpJZLgOjYNQjeX3CFJgXK6E8Q9BVcPOaGj3Vsm"
+        openai.api_key = "sk-KLKryPz1zkLVSJC1TaioVFd6DjPUu3eBpzVR0SWJQxruwTkd"
+        openai.api_key = "sk-MGSLKh59GLUcUzq2PUO0GFLfEZUCkqD21ukI8r6JUzkK22Fv"
+        openai.api_key = "sk-JdBLhZlsFuc3xzAzrxcEuayQxY58xhXLBDAWvDJZmaSzjzZ3"
+        openai.api_key = "sk-FSLtGYthWKfY6yB9mrX0XIhLCDj1fK3ijFu0aEmtd7qUHpBW"
+        # 初始化对话列表，可以加入一个key为system的字典，有助于形成更加个性化的回答
+        # self.conversation_list = [{'role':'system','content':'你是一个非常友善的助手'}]
         self.conversation_list = conversation_list
         self.continuous_talking = continuous_talking
     
+    # 打印对话
     def show_conversation(self, msg_list):
         for msg in msg_list:
             if msg['role'] == 'user':
@@ -77,6 +93,7 @@ class BaseChatClass:
     
     # 提示chatgpt
     def get_respone(self, prompt, model="gpt-3.5-turbo", maxTokens=2048, temperature_arg=0.5, stream_out=True, stop_str=None, n_choices=1):
+        # 下面这一步是把用户的问题也添加到对话列表中，这样下一次问问题的时候就能形成上下文了
 
         if self.continuous_talking:
             self.conversation_list.append({"role":"user", "content":prompt})

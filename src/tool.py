@@ -12,6 +12,9 @@ from utils.gen_html import loadText, sapic_hl_gen
 from gpt.gen_msc import calculus_to_msc
 from gpt.parser import *
 import datetime
+from conf.jsoninfo import load_json_config
+
+load_json_config()
 
 DETERMINE_TEMPLATE = """\
 Description: <The protocol text I give you>           
