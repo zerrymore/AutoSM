@@ -6,7 +6,13 @@ This repo contains a benchmark for symbolic model synthesis and a tool with web-
 
 This tool can generate formal specifications (symbolic model) for a protocol automatically from unstructed natural language, empowered by LLMs' powered ability for semantic parsing. Comparing with existing text-to-code tasks, we pay more attention on the soundness of the general translation process, i.e., the output of the tool should be consistent with the unstructed natural language description semantically. We try to make as much control as possible for the overall process, though "black-box" LLM is introduced.
 
-The tool can be divided into two parts, parser and translator roughly. The parser translates input natural language into @$\lambda$ lambda calculus. To capture and resolve the ambiguity and incompleteness of natural language, it generates a set of sub-calculus corrresponding to the original language fragments and allow users to amend (including add, delete and edit) them manually. The generated @$\lambda$ is transformed to an executable code snippet, which is checked by applying some program analysis techniques further. Once it passes the checks, an alice&bob style specification will be extracted, then it is translated to Multiset Rewriting Rules (MSRs), which can be accepted by the state-of-art protocol verifier-Tamarin.
+![My Image](./static/images/workflow.jpg)
+
+1. **Lccg:** a LLM-powered CCG parser, which takes protocol documents as input, parses them into lambda calculus expressions (that are defined specifically for modeling security protocols).
+2. **L-repair:** which repairs the broken specifications with static analysis techniques and user interaction to make them well-formed.
+3. **Algorithm T:** which transforms the lambda expressions into **Sapic+** specification **P**.
+4. **Compiler:** which takes the well-formed **Sapic+** process **P** as input and compiles it into models **R** accepted by the protocol verifiers (**Tamarin**, **DeepSec**, and **ProVerif**) directly.
+
 
 ## 🛠️ Setup
 
@@ -35,6 +41,36 @@ The tool can be divided into two parts, parser and translator roughly. The parse
     ```
 - add ```--debug``` for debug mode.
 - Then open web-based tool at http://127.0.0.1:5000
+
+
+## Directories structure
+```
+⚒️ AutoSM 
+├── 📂 benchmark
+│ ├── 📝 nsl.txt 
+│ ├── ...
+│ ├── 📜 nsl_verified.spthy
+│ └── ...
+├── 📂 src
+| ├── 📂 gpt
+| | ├── 📜 BNF
+| | ├── ⚙️ parser.py
+| | ├── ⚙️ analysizer.py
+| | ├── ⚙️ translator.py
+| | └── ⚙️ prompts.py
+| └── 📂 utils
+├── 📂 static
+└── 📂 templates
+  └── 📜 home.html
+```
+
+- 📂 benchmark
+    - 📝 .txt: the protocol's description in natural langauge (**input** of our tool)
+    - 📜 _verified.spthy: the complete **Sapic+** file including the symbolic model and the properties encoded in first-order-logic (**FOL**).
+
+- 📂 src: the source code of our implementation
+- 📂 static: static configurations including images and .css file.
+- 📂 templates: html page of web-based frontend 
 
 ## 💬 User tutorial
 
