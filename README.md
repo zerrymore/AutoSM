@@ -34,13 +34,19 @@ This tool can generate formal specifications (symbolic model) for a protocol aut
 
 ## 🚀 Get Started
 
-- Configure openai API key in src/oai_key.txt,
+- Configure openai API key in src/conf/config.json,
+    ```json
+    {
+      "API_URL_BASE": <YOUR API URL BASE>,
+      "openai_api_key": <YOUR OPENAI KEY>,
+    }
+    ```
 - run the tool's frontend
     ```bash
     cd src
     python -m flask --app tool.py run
     ```
-- add ```--debug``` for debug mode.
+- (Optional) add ```--debug``` for debug mode.
 - Then open web-based tool at http://127.0.0.1:5000
 
 
