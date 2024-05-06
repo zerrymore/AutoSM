@@ -1,0 +1,328 @@
+theory X509_1 begin
+
+// Function signature and definition of the equational theory E
+
+functions: adec/2, aenc/2, fst/1, h/1, pair/2, pk/1, sign/2, snd/1,
+           true/0, verify/3
+equations:
+    adec(aenc(x.1, pk(x.2)), x.2) = x.1,
+    fst(<x.1, x.2>) = x.1,
+    snd(<x.1, x.2>) = x.2,
+    verify(sign(x.1, x.2), x.1, pk(x.2)) = true
+
+
+
+heuristic: p
+
+
+
+
+
+
+
+
+
+
+
+lemma Secrecy:
+  all-traces
+  "¬(∃ A B m #i.
+      (((Secret( A, B, m ) @ #i) ∧ (∃ #t. HonestA( A ) @ #t)) ∧
+       (∃ #t. HonestB( B ) @ #t)) ∧
+      (∃ #r. K( m ) @ #r))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B m #i.
+  (Secret( A, B, m ) @ #i)
+ ∧
+  (∃ #t. (HonestA( A ) @ #t)) ∧
+  (∃ #t. (HonestB( B ) @ #t)) ∧
+  (∃ #r. (K( m ) @ #r))"
+*/
+by sorry
+
+lemma injectiveagreement_B:
+  all-traces
+  "∀ A B t #i.
+    (Commit_B( A, B, t ) @ #i) ⇒
+    (∃ #j.
+      ((Running_A( A, B, t ) @ #j) ∧ (#j < #i)) ∧
+      (¬(∃ A2 B2 #i2. (Commit_B( A2, B2, t ) @ #i2) ∧ (¬(#i2 = #i)))))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B t #i.
+  (Commit_B( A, B, t ) @ #i)
+ ∧
+  ∀ #j.
+   (Running_A( A, B, t ) @ #j)
+  ⇒
+   ((¬(#j < #i)) ∨
+    (∃ A2 B2 #i2. (Commit_B( A2, B2, t ) @ #i2) ∧ ¬(#i2 = #i)))"
+*/
+by sorry
+
+lemma agreement_B:
+  all-traces
+  "∀ A B t #i.
+    (Commit_B( A, B, t ) @ #i) ⇒
+    (∃ #j. (Running_A( A, B, t ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B t #i.
+  (Commit_B( A, B, t ) @ #i)
+ ∧
+  ∀ #j. (Running_A( A, B, t ) @ #j) ⇒ ¬(#j < #i)"
+*/
+by sorry
+
+lemma Session_key_honest_setup:
+  exists-trace
+  "∃ A B t #i #j. (Running_A( A, B, t ) @ #i) ∧ (Commit_B( A, B, t ) @ #j)"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ A B t #i #j. (Running_A( A, B, t ) @ #i) ∧ (Commit_B( A, B, t ) @ #j)"
+*/
+by sorry
+
+rule (modulo E) Init[color=#ffffff, process="!"]:
+   [ ] --[ Init( ) ]-> [ !Semistate_1( ) ]
+
+rule (modulo E) p_1_[color=#ffffff, process="!"]:
+   [ !Semistate_1( ), Fr( skA.1 ) ]
+  -->
+   [ State_111( skA.1 ), Out( pk(skA.1) ) ]
+
+rule (modulo E) eventHonestApkskA_0_111[color=#ffffff,
+                                        process="event HonestA( pk(skA.1) );"]:
+   [ State_111( skA.1 ) ]
+  --[ HonestA( pk(skA.1) ) ]->
+   [ !Semistate_11111( skA.1 ) ]
+
+rule (modulo E) p_1_1111[color=#ffffff, process="!"]:
+   [ !Semistate_11111( skA.1 ), Fr( skB.1 ) ]
+  -->
+   [ State_1111111( skA.1, skB.1 ), Out( pk(skB.1) ) ]
+
+rule (modulo E) eventHonestBpkskB_0_1111111[color=#ffffff,
+                                            process="event HonestB( pk(skB.1) );"]:
+   [ State_1111111( skA.1, skB.1 ) ]
+  --[ HonestB( pk(skB.1) ) ]->
+   [ !Semistate_111111111( skA.1, skB.1 ) ]
+
+rule (modulo E) eventRoleAskA_0_11111111111[color=#408050,
+                                            process="event Role_A( skA.1 );"]:
+   [
+   State_11111111111( skA.1, skB.1 ), Fr( ta.1 ), Fr( na.1 ), Fr( xa.1 ),
+   Fr( Ya.1 )
+   ]
+  --[ Role_A( skA.1 ) ]->
+   [ State_1111111111111111( Ya.1, na.1, skA.1, skB.1, ta.1, xa.1 ) ]
+
+rule (modulo E) eventRunningApkskApkskBABxaYa_0_1111111111111111[color=#408050,
+                                                                 process="event Running_A( pk(skA.1), pk(skB.1), <'A', 'B', xa.1, Ya.1> );"]:
+   [ State_1111111111111111( Ya.1, na.1, skA.1, skB.1, ta.1, xa.1 ) ]
+  --[ Running_A( pk(skA.1), pk(skB.1), <'A', 'B', xa.1, Ya.1> ) ]->
+   [ State_11111111111111111( Ya.1, na.1, skA.1, skB.1, ta.1, xa.1 ) ]
+
+rule (modulo E) eventSecretApkskApkskBYa_0_11111111111111111[color=#408050,
+                                                             process="event SecretA( pk(skA.1), pk(skB.1), Ya.1 );"]:
+   [ State_11111111111111111( Ya.1, na.1, skA.1, skB.1, ta.1, xa.1 ) ]
+  --[ SecretA( pk(skA.1), pk(skB.1), Ya.1 ) ]->
+   [ State_111111111111111111( Ya.1, na.1, skA.1, skB.1, ta.1, xa.1 ) ]
+
+rule (modulo E) eventOutApkskAtanapkskBxaaencYapkskBhtanapkskBxaaencYapkskBsignhtanapkskBxaaencYapkskBskA_0_111111111111111111[color=#408050,
+                                                                                                                               process="event Out_A_1( <pk(skA.1), 
+          <ta.1, na.1, pk(skB.1), xa.1, aenc(Ya.1, pk(skB.1))>, 
+          h(<ta.1, na.1, pk(skB.1), xa.1, aenc(Ya.1, pk(skB.1))>), 
+          sign(h(<ta.1, na.1, pk(skB.1), xa.1, aenc(Ya.1, pk(skB.1))>),
+               skA.1)
+         >
+);"]:
+   [ State_111111111111111111( Ya.1, na.1, skA.1, skB.1, ta.1, xa.1 ) ]
+  --[
+  Out_A_1( <pk(skA.1), 
+            <ta.1, na.1, pk(skB.1), xa.1, aenc(Ya.1, pk(skB.1))>, 
+            h(<ta.1, na.1, pk(skB.1), xa.1, aenc(Ya.1, pk(skB.1))>), 
+            sign(h(<ta.1, na.1, pk(skB.1), xa.1, aenc(Ya.1, pk(skB.1))>), skA.1)>
+  )
+  ]->
+   [
+   Out( <pk(skA.1), <ta.1, na.1, pk(skB.1), xa.1, aenc(Ya.1, pk(skB.1))>, 
+         h(<ta.1, na.1, pk(skB.1), xa.1, aenc(Ya.1, pk(skB.1))>), 
+         sign(h(<ta.1, na.1, pk(skB.1), xa.1, aenc(Ya.1, pk(skB.1))>), skA.1)>
+   )
+   ]
+
+rule (modulo E) p_1_11111111[color=#ffffff, process="!"]:
+   [ !Semistate_111111111( skA.1, skB.1 ) ]
+  -->
+   [
+   !Semistate_11111111121( skA.1, skB.1 ), State_11111111111( skA.1, skB.1 )
+   ]
+
+rule (modulo E) p_1_1111111112[color=#ffffff, process="!"]:
+   [ !Semistate_11111111121( skA.1, skB.1 ), In( cipher.1 ) ]
+  --[ Role_B( skB.1 ) ]->
+   [ Let_111111111211111( cipher.1, cipher.1, skA.1, skB.1 ) ]
+
+rule (modulo E) letxmhasigcipher_1_11111111121111[color=#ffffff,
+                                                  process="let <x.1, m.2, ha.2, sig.1>=cipher.1"]:
+   [ Let_111111111211111( <x.1, m.2, ha.2, sig.1>, cipher.1, skA.1, skB.1 )
+   ]
+  -->
+   [ State_111111111211111( cipher.1, sig.1, skA.1, skB.1, x.1, ha.2, m.2 )
+   ]
+
+rule (modulo E) letpkskAx_0_111111111211111[color=#ffffff,
+                                            process="let pk(=skA.1)=x.1"]:
+   [ State_111111111211111( cipher.1, sig.1, skA.1, skB.1, x.1, ha.2, m.2 )
+   ]
+  -->
+   [
+   Let_1111111112111111( x.1, cipher.1, sig.1, skA.1, skB.1, x.1, ha.2, m.2
+   )
+   ]
+
+rule (modulo E) letpkskAx_1_111111111211111[color=#ffffff,
+                                            process="let pk(=skA.1)=x.1"]:
+   [
+   Let_1111111112111111( pk(skA.1), cipher.1, sig.1, skA.1, skB.1, x.1,
+                         ha.2, m.2
+   )
+   ]
+  -->
+   [ State_1111111112111111( cipher.1, sig.1, skA.1, skB.1, x.1, ha.2, m.2 )
+   ]
+
+rule (modulo E) lethmha_0_1111111112111111[color=#ffffff,
+                                           process="let h(=m.2)=ha.2"]:
+   [ State_1111111112111111( cipher.1, sig.1, skA.1, skB.1, x.1, ha.2, m.2 )
+   ]
+  -->
+   [
+   Let_11111111121111111( ha.2, cipher.1, sig.1, skA.1, skB.1, x.1, ha.2,
+                          m.2
+   )
+   ]
+
+rule (modulo E) lethmha_1_1111111112111111[color=#ffffff,
+                                           process="let h(=m.2)=ha.2"]:
+   [
+   Let_11111111121111111( h(m.2), cipher.1, sig.1, skA.1, skB.1, x.1, ha.2,
+                          m.2
+   )
+   ]
+  -->
+   [
+   State_11111111121111111( cipher.1, sig.1, skA.1, skB.1, x.1, ha.2, m.2 )
+   ]
+
+rule (modulo E) lettanapkskBxacipherm_0_11111111121111111[color=#ffffff,
+                                                          process="let <ta.2, na.2, pk(=skB.1), xa.2, cipher.2>=m.2"]:
+   [
+   State_11111111121111111( cipher.1, sig.1, skA.1, skB.1, x.1, ha.2, m.2 )
+   ]
+  -->
+   [
+   Let_111111111211111111( m.2, cipher.1, sig.1, skA.1, skB.1, x.1, ha.2,
+                           m.2
+   )
+   ]
+
+rule (modulo E) lettanapkskBxacipherm_1_11111111121111111[color=#ffffff,
+                                                          process="let <ta.2, na.2, pk(=skB.1), xa.2, cipher.2>=m.2"]:
+   [
+   Let_111111111211111111( <ta.2, na.2, pk(skB.1), xa.2, cipher.2>,
+                           cipher.1, sig.1, skA.1, skB.1, x.1, ha.2, m.2
+   )
+   ]
+  -->
+   [
+   State_111111111211111111( cipher.1, sig.1, skA.1, skB.1, x.1, cipher.2,
+                             ha.2, m.2, na.2, ta.2, xa.2
+   )
+   ]
+
+rule (modulo E) ifverifysighapkskAtrue_0_111111111211111111[color=#408040,
+                                                            process="if verify(sig.1, ha.2, pk(skA.1))=true"]:
+   [
+   State_111111111211111111( cipher.1, sig.1, skA.1, skB.1, x.1, cipher.2,
+                             ha.2, m.2, na.2, ta.2, xa.2
+   )
+   ]
+  --[ Pred_Eq( verify(sig.1, ha.2, pk(skA.1)), true ) ]->
+   [
+   State_1111111112111111111( cipher.1, sig.1, skA.1, skB.1, x.1, cipher.2,
+                              ha.2, m.2, na.2, ta.2, xa.2
+   )
+   ]
+
+rule (modulo E) eventCommitBxpkskBABxaadeccipherskB_0_1111111112111111111[color=#408040,
+                                                                          process="event Commit_B( x.1, pk(skB.1), <'A', 'B', xa.2, adec(cipher.2, skB.1)> );"]:
+   [
+   State_1111111112111111111( cipher.1, sig.1, skA.1, skB.1, x.1, cipher.2,
+                              ha.2, m.2, na.2, ta.2, xa.2
+   )
+   ]
+  --[ Commit_B( x.1, pk(skB.1), <'A', 'B', xa.2, adec(cipher.2, skB.1)> )
+  ]->
+   [
+   State_11111111121111111111( cipher.1, sig.1, skA.1, skB.1, x.1, cipher.2,
+                               ha.2, m.2, na.2, ta.2, xa.2
+   )
+   ]
+
+rule (modulo E) eventSecretxpkskBadeccipherskB_0_11111111121111111111[color=#408040,
+                                                                      process="event Secret( x.1, pk(skB.1), adec(cipher.2, skB.1) );"]:
+   [
+   State_11111111121111111111( cipher.1, sig.1, skA.1, skB.1, x.1, cipher.2,
+                               ha.2, m.2, na.2, ta.2, xa.2
+   )
+   ]
+  --[ Secret( x.1, pk(skB.1), adec(cipher.2, skB.1) ) ]->
+   [ ]
+
+rule (modulo E) ifverifysighapkskAtrue_1_111111111211111111[color=#408040,
+                                                            process="if verify(sig.1, ha.2, pk(skA.1))=true"]:
+   [
+   State_111111111211111111( cipher.1, sig.1, skA.1, skB.1, x.1, cipher.2,
+                             ha.2, m.2, na.2, ta.2, xa.2
+   )
+   ]
+  --[ Pred_Not_Eq( verify(sig.1, ha.2, pk(skA.1)), true ) ]->
+   [ ]
+
+restriction predicate_eq:
+  "∀ #i a b. (Pred_Eq( a, b ) @ #i) ⇒ (a = b)"
+  // safety formula
+
+restriction predicate_not_eq:
+  "∀ #i a b. (Pred_Not_Eq( a, b ) @ #i) ⇒ (¬(a = b))"
+  // safety formula
+
+restriction single_session:
+  "∀ #i #j. ((Init( ) @ #i) ∧ (Init( ) @ #j)) ⇒ (#i = #j)"
+  // safety formula
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end
+

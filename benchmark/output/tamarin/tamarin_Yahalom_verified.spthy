@@ -1,0 +1,533 @@
+theory Yahalom begin
+
+// Function signature and definition of the equational theory E
+
+functions: fst/1, id/1, pair/2, sdec/2[destructor], senc/2, snd/1
+equations:
+    fst(<x.1, x.2>) = x.1,
+    sdec(senc(m, k), k) = m,
+    snd(<x.1, x.2>) = x.2
+
+
+
+heuristic: p
+
+
+
+
+
+
+
+
+
+lemma AUTO_typing [sources, reuse]:
+  all-traces
+  "(∀ x m #i.
+     (AUTO_IN_TERM_1_0_1_0_1_1_1__S_1( m, x ) @ #i) ⇒
+     ((∃ #j. (!KU( x ) @ #j) ∧ (#j < #i)) ∨
+      (∃ #j. (AUTO_OUT_TERM_1_0_1_0_1_1_1__S_1( m ) @ #j) ∧ (#j < #i)))) ∧
+   (∀ x m #i.
+     (AUTO_IN_TERM_2_0_0_0_1_1_1_1__A_2( m, x ) @ #i) ⇒
+     ((∃ #j. (!KU( x ) @ #j) ∧ (#j < #i)) ∨
+      (∃ #j. (AUTO_OUT_TERM_2_0_0_0_1_1_1_1__A_2( m ) @ #j) ∧ (#j < #i))))"
+/*
+guarded formula characterizing all counter-examples:
+"((∃ x m #i.
+    (AUTO_IN_TERM_1_0_1_0_1_1_1__S_1( m, x ) @ #i)
+   ∧
+    (∀ #j. (!KU( x ) @ #j) ⇒ ¬(#j < #i)) ∧
+    (∀ #j. (AUTO_OUT_TERM_1_0_1_0_1_1_1__S_1( m ) @ #j) ⇒ ¬(#j < #i))) ∨
+  (∃ x m #i.
+    (AUTO_IN_TERM_2_0_0_0_1_1_1_1__A_2( m, x ) @ #i)
+   ∧
+    (∀ #j. (!KU( x ) @ #j) ⇒ ¬(#j < #i)) ∧
+    (∀ #j. (AUTO_OUT_TERM_2_0_0_0_1_1_1_1__A_2( m ) @ #j) ⇒ ¬(#j < #i))))"
+*/
+by sorry
+
+lemma executability:
+  exists-trace
+  "∃ A B kab na nb #i #j #k.
+    ((((CommitB( B, A, <kab, na, nb> ) @ #i) ∧
+       (CommitA( A, B, <na, nb> ) @ #j)) ∧
+      (#j < #i)) ∧
+     (Server( A, B, <kab, na, nb> ) @ #k)) ∧
+    (#k < #j)"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ A B kab na nb #i #j #k.
+  (CommitB( B, A, <kab, na, nb> ) @ #i) ∧
+  (CommitA( A, B, <na, nb> ) @ #j) ∧
+  (Server( A, B, <kab, na, nb> ) @ #k)
+ ∧
+  (#j < #i) ∧ (#k < #j)"
+*/
+by sorry
+
+lemma secrecy:
+  all-traces
+  "∀ A B k #i. (Secret( A, B, k ) @ #i) ⇒ (¬(∃ #j. K( k ) @ #j))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B k #i. (Secret( A, B, k ) @ #i) ∧ ∃ #j. (K( k ) @ #j)"
+*/
+by sorry
+
+lemma test [reuse]:
+  all-traces
+  "∀ A B t #i.
+    (CommitB( B, A, t ) @ #i) ⇒ (∃ #j. RunningA( A, B, t ) @ #j)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B t #i.
+  (CommitB( B, A, t ) @ #i) ∧ ∀ #j. (RunningA( A, B, t ) @ #j) ⇒ ⊥"
+*/
+by sorry
+
+lemma noninjectiveagreement_B:
+  all-traces
+  "∀ A B t #i.
+    (CommitB( B, A, t ) @ #i) ⇒
+    (∃ #j. (RunningA( A, B, t ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B t #i.
+  (CommitB( B, A, t ) @ #i)
+ ∧
+  ∀ #j. (RunningA( A, B, t ) @ #j) ⇒ ¬(#j < #i)"
+*/
+by sorry
+
+lemma noninjectiveagreement_A:
+  all-traces
+  "∀ A B t #i.
+    (CommitA( A, B, t ) @ #i) ⇒
+    (∃ #j. (RunningB( B, A, t ) @ #j) ∧ (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B t #i.
+  (CommitA( A, B, t ) @ #i)
+ ∧
+  ∀ #j. (RunningB( B, A, t ) @ #j) ⇒ ¬(#j < #i)"
+*/
+by sorry
+
+lemma injectiveagreement_B:
+  all-traces
+  "∀ A B t #i.
+    (CommitB( B, A, t ) @ #i) ⇒
+    (∃ #j.
+      ((RunningA( A, B, t ) @ #j) ∧ (#j < #i)) ∧
+      (¬(∃ A2 B2 #i2. (CommitB( B2, A2, t ) @ #i2) ∧ (¬(#i2 = #i)))))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B t #i.
+  (CommitB( B, A, t ) @ #i)
+ ∧
+  ∀ #j.
+   (RunningA( A, B, t ) @ #j)
+  ⇒
+   ((¬(#j < #i)) ∨
+    (∃ A2 B2 #i2. (CommitB( B2, A2, t ) @ #i2) ∧ ¬(#i2 = #i)))"
+*/
+by sorry
+
+lemma injectiveagreement_A:
+  all-traces
+  "∀ A B t #i.
+    (CommitA( A, B, t ) @ #i) ⇒
+    (∃ #j.
+      ((RunningB( B, A, t ) @ #j) ∧ (#j < #i)) ∧
+      (¬(∃ A2 B2 #i2. (CommitA( A2, B2, t ) @ #i2) ∧ (¬(#i2 = #i)))))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ A B t #i.
+  (CommitA( A, B, t ) @ #i)
+ ∧
+  ∀ #j.
+   (RunningB( B, A, t ) @ #j)
+  ⇒
+   ((¬(#j < #i)) ∨
+    (∃ A2 B2 #i2. (CommitA( A2, B2, t ) @ #i2) ∧ ¬(#i2 = #i)))"
+*/
+by sorry
+
+rule (modulo E) Init[color=#ffffff, process="!"]:
+   [ ] --[ Init( ) ]-> [ !Semistate_1( ) ]
+
+rule (modulo E) p_1_[color=#ffffff, process="!"]:
+   [ !Semistate_1( ), Fr( Kas.1 ), Fr( Kbs.1 ) ]
+  -->
+   [ State_1111( Kas.1, Kbs.1 ), Out( id(Kas.1) ) ]
+
+rule (modulo E) outidKbs_0_1111[color=#ffffff,
+                                process="out(id(Kbs.1));"]:
+   [ State_1111( Kas.1, Kbs.1 ) ]
+  -->
+   [ !Semistate_111111( Kas.1, Kbs.1 ), Out( id(Kbs.1) ) ]
+
+rule (modulo E) newNa_0_11111111[color=#408050, process="new Na.1;"]:
+   [ State_11111111( Kas.1, Kbs.1 ), Fr( Na.1 ) ]
+  -->
+   [ State_1111111111( Kas.1, Kbs.1, Na.1 ), Out( <id(Kas.1), Na.1> ) ]
+
+rule (modulo E) incyphercypher_0_1111111111[color=#408050,
+                                            process="in(<cypher1.1, cypher2.1>);"]:
+   [ State_1111111111( Kas.1, Kbs.1, Na.1 ), In( <cypher1.1, cypher2.1> ) ]
+  -->
+   [
+   Let_111111111111( <cypher1.1, Kas.1>, Kas.1, Kbs.1, Na.1, cypher1.1,
+                     cypher2.1
+   )
+   ]
+
+rule (modulo E) letmesssdeccypherKas_1_11111111111[color=#ffffff,
+                                                   process="let mess1.1=sdec(cypher1.1, Kas.1)"]:
+   [
+   Let_111111111111( <senc(mess1.1, k), k>, Kas.1, Kbs.1, Na.1, cypher1.1,
+                     cypher2.1
+   )
+   ]
+  -->
+   [ State_111111111111( Kas.1, Kbs.1, Na.1, cypher1.1, cypher2.1, mess1.1 )
+   ]
+
+rule (modulo E) letidKbsKabNaNbmess_0_111111111111[color=#ffffff,
+                                                   process="let <'2', id(=Kbs.1), Kab.1, =Na.1, Nb.1>=mess1.1"]:
+   [ State_111111111111( Kas.1, Kbs.1, Na.1, cypher1.1, cypher2.1, mess1.1 )
+   ]
+  -->
+   [
+   Let_1111111111111( mess1.1, Kas.1, Kbs.1, Na.1, cypher1.1, cypher2.1,
+                      mess1.1
+   )
+   ]
+
+rule (modulo E) letidKbsKabNaNbmess_1_111111111111[color=#ffffff,
+                                                   process="let <'2', id(=Kbs.1), Kab.1, =Na.1, Nb.1>=mess1.1"]:
+   [
+   Let_1111111111111( <'2', id(Kbs.1), Kab.1, Na.1, Nb.1>, Kas.1, Kbs.1,
+                      Na.1, cypher1.1, cypher2.1, mess1.1
+   )
+   ]
+  -->
+   [
+   State_1111111111111( Kab.1, Kas.1, Kbs.1, Na.1, Nb.1, cypher1.1,
+                        cypher2.1, mess1.1
+   )
+   ]
+
+rule (modulo E) eventAUTOINTERMAcypherNb_0_1111111111111[color=#408050,
+                                                         process="event AUTO_IN_TERM_2_0_0_0_1_1_1_1__A_2( cypher1.1, Nb.1 );"]:
+   [
+   State_1111111111111( Kab.1, Kas.1, Kbs.1, Na.1, Nb.1, cypher1.1,
+                        cypher2.1, mess1.1
+   )
+   ]
+  --[ AUTO_IN_TERM_2_0_0_0_1_1_1_1__A_2( cypher1.1, Nb.1 ) ]->
+   [
+   State_11111111111111( Kab.1, Kas.1, Kbs.1, Na.1, Nb.1, cypher1.1,
+                         cypher2.1, mess1.1
+   )
+   ]
+
+rule (modulo E) eventCommitAidKasidKbsNaNb_0_11111111111111[color=#408050,
+                                                            process="event CommitA( id(Kas.1), id(Kbs.1), <Na.1, Nb.1> );"]:
+   [
+   State_11111111111111( Kab.1, Kas.1, Kbs.1, Na.1, Nb.1, cypher1.1,
+                         cypher2.1, mess1.1
+   )
+   ]
+  --[ CommitA( id(Kas.1), id(Kbs.1), <Na.1, Nb.1> ) ]->
+   [
+   State_111111111111111( Kab.1, Kas.1, Kbs.1, Na.1, Nb.1, cypher1.1,
+                          cypher2.1, mess1.1
+   )
+   ]
+
+rule (modulo E) eventRunningAidKasidKbsKabNaNb_0_111111111111111[color=#408050,
+                                                                 process="event RunningA( id(Kas.1), id(Kbs.1), <Kab.1, Na.1, Nb.1> );"]:
+   [
+   State_111111111111111( Kab.1, Kas.1, Kbs.1, Na.1, Nb.1, cypher1.1,
+                          cypher2.1, mess1.1
+   )
+   ]
+  --[ RunningA( id(Kas.1), id(Kbs.1), <Kab.1, Na.1, Nb.1> ) ]->
+   [
+   State_1111111111111111( Kab.1, Kas.1, Kbs.1, Na.1, Nb.1, cypher1.1,
+                           cypher2.1, mess1.1
+   )
+   ]
+
+rule (modulo E) eventSecretidKasidKbsKab_0_1111111111111111[color=#408050,
+                                                            process="event Secret( id(Kas.1), id(Kbs.1), Kab.1 );"]:
+   [
+   State_1111111111111111( Kab.1, Kas.1, Kbs.1, Na.1, Nb.1, cypher1.1,
+                           cypher2.1, mess1.1
+   )
+   ]
+  --[ Secret( id(Kas.1), id(Kbs.1), Kab.1 ) ]->
+   [
+   State_11111111111111111( Kab.1, Kas.1, Kbs.1, Na.1, Nb.1, cypher1.1,
+                            cypher2.1, mess1.1
+   )
+   ]
+
+rule (modulo E) eventOUTAsencNbKab_0_11111111111111111[color=#408050,
+                                                       process="event OUT_A( senc(<'4', Nb.1>, Kab.1) );"]:
+   [
+   State_11111111111111111( Kab.1, Kas.1, Kbs.1, Na.1, Nb.1, cypher1.1,
+                            cypher2.1, mess1.1
+   )
+   ]
+  --[ OUT_A( senc(<'4', Nb.1>, Kab.1) ) ]->
+   [ Out( <cypher2.1, senc(<'4', Nb.1>, Kab.1)> ) ]
+
+rule (modulo E) p_1_11111[color=#ffffff, process="!"]:
+   [ !Semistate_111111( Kas.1, Kbs.1 ) ]
+  -->
+   [ !Semistate_11111121( Kas.1, Kbs.1 ), State_11111111( Kas.1, Kbs.1 ) ]
+
+rule (modulo E) inidKasNa_0_1111112111[color=#408040,
+                                       process="in(<id(=Kas.1), Na.2>);"]:
+   [ State_1111112111( Kas.1, Kbs.1 ), In( <id(Kas.1), Na.2> ), Fr( Nb.2 ) ]
+  --[ RunningB( id(Kbs.1), id(Kas.1), <Na.2, Nb.2> ) ]->
+   [ State_1111112111111( Kas.1, Kbs.1, Na.2, Nb.2 ) ]
+
+rule (modulo E) eventAUTOOUTTERMSsencidKasNaNbKbs_0_1111112111111[color=#408040,
+                                                                  process="event AUTO_OUT_TERM_1_0_1_0_1_1_1__S_1( senc(<'1', id(Kas.1), Na.2, Nb.2
+                                       >,
+                                       Kbs.1)
+);"]:
+   [ State_1111112111111( Kas.1, Kbs.1, Na.2, Nb.2 ) ]
+  --[
+  AUTO_OUT_TERM_1_0_1_0_1_1_1__S_1( senc(<'1', id(Kas.1), Na.2, Nb.2>,
+                                         Kbs.1)
+  )
+  ]->
+   [
+   State_111111211111111( Kas.1, Kbs.1, Na.2, Nb.2 ),
+   Out( senc(<'1', id(Kas.1), Na.2, Nb.2>, Kbs.1) )
+   ]
+
+rule (modulo E) incyphercypher_0_111111211111111[color=#408040,
+                                                 process="in(<cypher3.1, cypher4.1>);"]:
+   [
+   State_111111211111111( Kas.1, Kbs.1, Na.2, Nb.2 ),
+   In( <cypher3.1, cypher4.1> )
+   ]
+  -->
+   [
+   Let_11111121111111111( <cypher3.1, Kbs.1>, Kas.1, Kbs.1, cypher3.1,
+                          cypher4.1, Na.2, Nb.2
+   )
+   ]
+
+rule (modulo E) letmesssdeccypherKbs_1_1111112111111111[color=#ffffff,
+                                                        process="let mess2.1=sdec(cypher3.1, Kbs.1)"]:
+   [
+   Let_11111121111111111( <senc(mess2.1, k), k>, Kas.1, Kbs.1, cypher3.1,
+                          cypher4.1, Na.2, Nb.2
+   )
+   ]
+  -->
+   [
+   State_11111121111111111( Kas.1, Kbs.1, cypher3.1, cypher4.1, mess2.1,
+                            Na.2, Nb.2
+   )
+   ]
+
+rule (modulo E) letidKasKabmess_0_11111121111111111[color=#ffffff,
+                                                    process="let <'3', id(=Kas.1), Kab.2>=mess2.1"]:
+   [
+   State_11111121111111111( Kas.1, Kbs.1, cypher3.1, cypher4.1, mess2.1,
+                            Na.2, Nb.2
+   )
+   ]
+  -->
+   [
+   Let_111111211111111111( mess2.1, Kas.1, Kbs.1, cypher3.1, cypher4.1,
+                           mess2.1, Na.2, Nb.2
+   )
+   ]
+
+rule (modulo E) letidKasKabmess_1_11111121111111111[color=#ffffff,
+                                                    process="let <'3', id(=Kas.1), Kab.2>=mess2.1"]:
+   [
+   Let_111111211111111111( <'3', id(Kas.1), Kab.2>, Kas.1, Kbs.1, cypher3.1,
+                           cypher4.1, mess2.1, Na.2, Nb.2
+   )
+   ]
+  -->
+   [
+   State_111111211111111111( Kas.1, Kbs.1, cypher3.1, cypher4.1, mess2.1,
+                             Kab.2, Na.2, Nb.2
+   )
+   ]
+
+rule (modulo E) letNbsdeccypherKab_0_111111211111111111[color=#ffffff,
+                                                        process="let <'4', =Nb.2>=sdec(cypher4.1, Kab.2)"]:
+   [
+   State_111111211111111111( Kas.1, Kbs.1, cypher3.1, cypher4.1, mess2.1,
+                             Kab.2, Na.2, Nb.2
+   )
+   ]
+  -->
+   [
+   Let_1111112111111111111( sdec(cypher4.1, Kab.2), Kas.1, Kbs.1, cypher3.1,
+                            cypher4.1, mess2.1, Kab.2, Na.2, Nb.2
+   )
+   ]
+
+rule (modulo E) letNbsdeccypherKab_1_111111211111111111[color=#ffffff,
+                                                        process="let <'4', =Nb.2>=sdec(cypher4.1, Kab.2)"]:
+   [
+   Let_1111112111111111111( <'4', Nb.2>, Kas.1, Kbs.1, cypher3.1, cypher4.1,
+                            mess2.1, Kab.2, Na.2, Nb.2
+   )
+   ]
+  -->
+   [
+   State_1111112111111111111( Kas.1, Kbs.1, cypher3.1, cypher4.1, mess2.1,
+                              Kab.2, Na.2, Nb.2
+   )
+   ]
+
+rule (modulo E) eventINBcypherNb_0_1111112111111111111[color=#408040,
+                                                       process="event IN_B( cypher4.1, Nb.2 );"]:
+   [
+   State_1111112111111111111( Kas.1, Kbs.1, cypher3.1, cypher4.1, mess2.1,
+                              Kab.2, Na.2, Nb.2
+   )
+   ]
+  --[ IN_B( cypher4.1, Nb.2 ) ]->
+   [
+   State_11111121111111111111( Kas.1, Kbs.1, cypher3.1, cypher4.1, mess2.1,
+                               Kab.2, Na.2, Nb.2
+   )
+   ]
+
+rule (modulo E) eventCommitBidKbsidKasKabNaNb_0_11111121111111111111[color=#408040,
+                                                                     process="event CommitB( id(Kbs.1), id(Kas.1), <Kab.2, Na.2, Nb.2> );"]:
+   [
+   State_11111121111111111111( Kas.1, Kbs.1, cypher3.1, cypher4.1, mess2.1,
+                               Kab.2, Na.2, Nb.2
+   )
+   ]
+  --[ CommitB( id(Kbs.1), id(Kas.1), <Kab.2, Na.2, Nb.2> ) ]->
+   [
+   State_111111211111111111111( Kas.1, Kbs.1, cypher3.1, cypher4.1, mess2.1,
+                                Kab.2, Na.2, Nb.2
+   )
+   ]
+
+rule (modulo E) eventSecretidKbsidKasKab_0_111111211111111111111[color=#408040,
+                                                                 process="event Secret( id(Kbs.1), id(Kas.1), Kab.2 );"]:
+   [
+   State_111111211111111111111( Kas.1, Kbs.1, cypher3.1, cypher4.1, mess2.1,
+                                Kab.2, Na.2, Nb.2
+   )
+   ]
+  --[ Secret( id(Kbs.1), id(Kas.1), Kab.2 ) ]->
+   [ ]
+
+rule (modulo E) p_1_1111112[color=#ffffff, process="!"]:
+   [ !Semistate_11111121( Kas.1, Kbs.1 ) ]
+  -->
+   [ !Semistate_1111112121( Kas.1, Kbs.1 ), State_1111112111( Kas.1, Kbs.1 )
+   ]
+
+rule (modulo E) p_1_111111212[color=#ffffff, process="!"]:
+   [ !Semistate_1111112121( Kas.1, Kbs.1 ), In( cypher5.1 ) ]
+  -->
+   [ Let_1111112121111( <cypher5.1, Kbs.1>, Kas.1, Kbs.1, cypher5.1 ) ]
+
+rule (modulo E) letmesssdeccypherKbs_1_111111212111[color=#ffffff,
+                                                    process="let mess3.1=sdec(cypher5.1, Kbs.1)"]:
+   [ Let_1111112121111( <senc(mess3.1, k), k>, Kas.1, Kbs.1, cypher5.1 ) ]
+  -->
+   [ State_1111112121111( Kas.1, Kbs.1, cypher5.1, mess3.1 ) ]
+
+rule (modulo E) letidKasNaNbmess_0_1111112121111[color=#ffffff,
+                                                 process="let <'1', id(=Kas.1), Na.3, Nb.3>=mess3.1"]:
+   [ State_1111112121111( Kas.1, Kbs.1, cypher5.1, mess3.1 ) ]
+  -->
+   [ Let_11111121211111( mess3.1, Kas.1, Kbs.1, cypher5.1, mess3.1 ) ]
+
+rule (modulo E) letidKasNaNbmess_1_1111112121111[color=#ffffff,
+                                                 process="let <'1', id(=Kas.1), Na.3, Nb.3>=mess3.1"]:
+   [
+   Let_11111121211111( <'1', id(Kas.1), Na.3, Nb.3>, Kas.1, Kbs.1,
+                       cypher5.1, mess3.1
+   )
+   ]
+  -->
+   [ State_11111121211111( Kas.1, Kbs.1, cypher5.1, mess3.1, Na.3, Nb.3 ) ]
+
+rule (modulo E) eventAUTOINTERMScypherNaNb_0_11111121211111[color=#408051,
+                                                            process="event AUTO_IN_TERM_1_0_1_0_1_1_1__S_1( cypher5.1, <Na.3, Nb.3> );"]:
+   [
+   State_11111121211111( Kas.1, Kbs.1, cypher5.1, mess3.1, Na.3, Nb.3 ),
+   Fr( Kab.3 )
+   ]
+  --[ AUTO_IN_TERM_1_0_1_0_1_1_1__S_1( cypher5.1, <Na.3, Nb.3> ) ]->
+   [
+   State_1111112121111111( Kas.1, Kbs.1, cypher5.1, mess3.1, Kab.3, Na.3,
+                           Nb.3
+   )
+   ]
+
+rule (modulo E) eventServeridKasidKbsKabNaNb_0_1111112121111111[color=#408051,
+                                                                process="event Server( id(Kas.1), id(Kbs.1), <Kab.3, Na.3, Nb.3> );"]:
+   [
+   State_1111112121111111( Kas.1, Kbs.1, cypher5.1, mess3.1, Kab.3, Na.3,
+                           Nb.3
+   )
+   ]
+  --[ Server( id(Kas.1), id(Kbs.1), <Kab.3, Na.3, Nb.3> ) ]->
+   [
+   State_11111121211111111( Kas.1, Kbs.1, cypher5.1, mess3.1, Kab.3, Na.3,
+                            Nb.3
+   )
+   ]
+
+rule (modulo E) eventAUTOOUTTERMAsencidKbsKabNaNbKas_0_11111121211111111[color=#408051,
+                                                                         process="event AUTO_OUT_TERM_2_0_0_0_1_1_1_1__A_2( senc(<'2', id(Kbs.1), Kab.3, 
+                                          Na.3, Nb.3>,
+                                         Kas.1)
+);"]:
+   [
+   State_11111121211111111( Kas.1, Kbs.1, cypher5.1, mess3.1, Kab.3, Na.3,
+                            Nb.3
+   )
+   ]
+  --[
+  AUTO_OUT_TERM_2_0_0_0_1_1_1_1__A_2( senc(<'2', id(Kbs.1), Kab.3, Na.3, 
+                                            Nb.3>,
+                                           Kas.1)
+  )
+  ]->
+   [
+   Out( <senc(<'2', id(Kbs.1), Kab.3, Na.3, Nb.3>, Kas.1), 
+         senc(<'3', id(Kas.1), Kab.3>, Kbs.1)>
+   )
+   ]
+
+restriction single_session:
+  "∀ #i #j. ((Init( ) @ #i) ∧ (Init( ) @ #j)) ⇒ (#i = #j)"
+  // safety formula
+
+
+
+
+
+
+
+
+
+
+
+
+
+end
+

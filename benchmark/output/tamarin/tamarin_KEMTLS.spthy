@@ -1,0 +1,707 @@
+theory KEMTLS begin
+
+// Function signature and definition of the equational theory E
+
+functions: cert/1[private,destructor], fst/1, getcert/1[destructor],
+           hkdfexp/3, hkdfext/2, hmac/2, htrans/1, kemdec/2[destructor], kemenc/2,
+           kempk/1, pair/2, sdec/2, senc/2, snd/1
+equations:
+    fst(<x.1, x.2>) = x.1,
+    getcert(cert(m)) = m,
+    kemdec(kemenc(m, kempk(sk)), sk) = m,
+    sdec(senc(x.1, x.2), x.2) = x.1,
+    snd(<x.1, x.2>) = x.2
+
+
+
+heuristic: p
+
+
+
+
+
+
+
+
+
+lemma exec:
+  exists-trace "∃ #t. AcceptP( ) @ #t"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ #t. (AcceptP( ) @ #t)"
+*/
+by sorry
+
+lemma execbis:
+  exists-trace "∃ #t. AcceptS( ) @ #t"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ #t. (AcceptS( ) @ #t)"
+*/
+by sorry
+
+lemma false_secserv:
+  all-traces "¬(∃ #t1 #t2 sk. (ServerKey( sk ) @ #t1) ∧ (!KU( sk ) @ #t2))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ #t1 #t2 sk. (ServerKey( sk ) @ #t1) ∧ (!KU( sk ) @ #t2)"
+*/
+by sorry
+
+lemma auth:
+  all-traces
+  "∀ #t.
+    (AcceptP( ) @ #t) ⇒
+    ((∃ #s. (AcceptS( ) @ #s) ∧ (#s < #t)) ∨ (∃ #s2. Compromise( ) @ #s2))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ #t.
+  (AcceptP( ) @ #t)
+ ∧
+  (∀ #s. (AcceptS( ) @ #s) ⇒ ¬(#s < #t)) ∧
+  (∀ #s2. (Compromise( ) @ #s2) ⇒ ⊥)"
+*/
+by sorry
+
+lemma PFS_client:
+  all-traces
+  "∀ #t1 #t2 sk.
+    ((ClientKey( sk ) @ #t1) ∧ (!KU( sk ) @ #t2)) ⇒
+    (∃ #t3. (Compromise( ) @ #t3) ∧ (#t3 < #t1))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ #t1 #t2 sk.
+  (ClientKey( sk ) @ #t1) ∧ (!KU( sk ) @ #t2)
+ ∧
+  ∀ #t3. (Compromise( ) @ #t3) ⇒ ¬(#t3 < #t1)"
+*/
+by sorry
+
+rule (modulo E) Init[color=#ffffff, process="!"]:
+   [ ] --[ Init( ) ]-> [ !Semistate_1( ) ]
+
+rule (modulo E) inTCPACK_0_1111[color=#408051, process="in('TCPACK');"]:
+   [ State_1111( ), In( 'TCPACK' ), Fr( ske.1 ), Fr( rc.1 ) ]
+  -->
+   [
+   State_11111111( rc.1, ske.1 ), Out( <'CLIENTHello', kempk(ske.1), rc.1> )
+   ]
+
+rule (modulo E) inSERVERHellocters_0_11111111[color=#408051,
+                                              process="in(<'SERVERHello', cte.1, rs.1>);"]:
+   [ State_11111111( rc.1, ske.1 ), In( <'SERVERHello', cte.1, rs.1> ) ]
+  --[ Test( ) ]->
+   [ Let_11111111111( <cte.1, ske.1>, cte.1, rc.1, rs.1, ske.1 ) ]
+
+rule (modulo E) letssekemdeccteskeskey_1_1111111111[color=#ffffff,
+                                                    process="let sse.1=kemdec(cte.1, ske.1:skey)"]:
+   [
+   Let_11111111111( <kemenc(sse.1, kempk(sk)), sk>, cte.1, rc.1, rs.1, ske.1
+   )
+   ]
+  -->
+   [ State_11111111111( cte.1, rc.1, rs.1, ske.1, sse.1 ) ]
+
+rule (modulo E) inservercert_0_11111111111[color=#408051,
+                                           process="in(servercert.1);"]:
+   [
+   State_11111111111( cte.1, rc.1, rs.1, ske.1, sse.1 ), In( servercert.1 )
+   ]
+  -->
+   [
+   Let_1111111111111( sdec(servercert.1,
+                           hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived', 'null'),
+                                           sse.1),
+                                   'shsts', htrans(<kempk(ske.1), rc.1, cte.1, rs.1>))),
+                      cte.1, rc.1, rs.1, servercert.1, ske.1, sse.1
+   )
+   ]
+
+rule (modulo E) letServerCertcertpksdecservercerthkdfexphkdfexthkdfexphkdfextemptyemptyderivednullsseshstshtranskempkskeskeyrccters_1_111111111111[color=#ffffff,
+                                                                                                                                                   process="let <'ServerCert', certpk.1>=sdec(servercert.1,
+     hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived',
+                             'null'),
+                     sse.1),
+             'shsts', htrans(<kempk(ske.1:skey), rc.1, cte.1, rs.1>)))"]:
+   [
+   Let_1111111111111( <'ServerCert', certpk.1>, cte.1, rc.1, rs.1,
+                      servercert.1, ske.1, sse.1
+   )
+   ]
+  -->
+   [
+   State_1111111111111( certpk.1, cte.1, rc.1, rs.1, servercert.1, ske.1,
+                        sse.1
+   )
+   ]
+
+rule (modulo E) letpksgetcertcertpk_0_1111111111111[color=#ffffff,
+                                                    process="let pks.1=getcert(certpk.1)"]:
+   [
+   State_1111111111111( certpk.1, cte.1, rc.1, rs.1, servercert.1, ske.1,
+                        sse.1
+   )
+   ]
+  -->
+   [
+   Let_11111111111111( certpk.1, certpk.1, cte.1, rc.1, rs.1, servercert.1,
+                       ske.1, sse.1
+   )
+   ]
+
+rule (modulo E) letpksgetcertcertpk_1_1111111111111[color=#ffffff,
+                                                    process="let pks.1=getcert(certpk.1)"]:
+   [
+   Let_11111111111111( cert(pks.1), certpk.1, cte.1, rc.1, rs.1,
+                       servercert.1, ske.1, sse.1
+   )
+   ]
+  -->
+   [
+   State_11111111111111( certpk.1, cte.1, pks.1, rc.1, rs.1, servercert.1,
+                         ske.1, sse.1
+   )
+   ]
+
+rule (modulo E) newsss_0_11111111111111[color=#408051,
+                                        process="new sss.1;"]:
+   [
+   State_11111111111111( certpk.1, cte.1, pks.1, rc.1, rs.1, servercert.1,
+                         ske.1, sse.1
+   ),
+   Fr( sss.1 )
+   ]
+  -->
+   [
+   State_1111111111111111( certpk.1, cte.1, pks.1, rc.1, rs.1, servercert.1,
+                           ske.1, sse.1, sss.1
+   ),
+   Out( senc(<'ClientKem', kemenc(sss.1, pks.1)>,
+             hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived', 'null'),
+                             sse.1),
+                     'chsts', htrans(<kempk(ske.1), rc.1, cte.1, rs.1>)))
+   )
+   ]
+
+rule (modulo E) outsencClientFinishedhmachkdfexphkdfexthkdfexphkdfexthkdfexphkdfextemptyemptyderivednullsssderivedhtranskempkskeskeyrccterspkskemencssspksemptycfinishednullhtranskempkskeskeyrccterspkskemencssspkshkdfexphkdfexthkdfexphkdfextemptyemptyderivednullssscahstrhtranskempkskeskeyrccterspkskemencssspks_0_1111111111111111[color=#408051,
+                                                                                                                                                                                                                                                                                                                                          process="out(senc(<'ClientFinished', 
+      hmac(hkdfexp(hkdfext(hkdfexp(hkdfext(hkdfexp(hkdfext('empty',
+                                                           'empty'),
+                                                   'derived', 'null'),
+                                           sss.1),
+                                   'derived',
+                                   htrans(<kempk(ske.1:skey), rc.1, cte.1, rs.1, pks.1, 
+                                           kemenc(sss.1, pks.1)>)),
+                           'empty'),
+                   'cfinished', 'null'),
+           htrans(<kempk(ske.1:skey), rc.1, cte.1, rs.1, pks.1, 
+                   kemenc(sss.1, pks.1)>))
+     >,
+     hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived',
+                             'null'),
+                     sss.1),
+             'cahstr',
+             htrans(<kempk(ske.1:skey), rc.1, cte.1, rs.1, pks.1, 
+                     kemenc(sss.1, pks.1)>))));"]:
+   [
+   State_1111111111111111( certpk.1, cte.1, pks.1, rc.1, rs.1, servercert.1,
+                           ske.1, sse.1, sss.1
+   )
+   ]
+  -->
+   [
+   State_11111111111111111( certpk.1, cte.1, pks.1, rc.1, rs.1,
+                            servercert.1, ske.1, sse.1, sss.1
+   ),
+   Out( senc(<'ClientFinished', 
+              hmac(hkdfexp(hkdfext(hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'),
+                                                           'derived', 'null'),
+                                                   sss.1),
+                                           'derived',
+                                           htrans(<kempk(ske.1), rc.1, cte.1, rs.1, pks.1, 
+                                                   kemenc(sss.1, pks.1)>)),
+                                   'empty'),
+                           'cfinished', 'null'),
+                   htrans(<kempk(ske.1), rc.1, cte.1, rs.1, pks.1, kemenc(sss.1, pks.1)>))
+             >,
+             hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived', 'null'),
+                             sss.1),
+                     'cahstr',
+                     htrans(<kempk(ske.1), rc.1, cte.1, rs.1, pks.1, kemenc(sss.1, pks.1)>)))
+   )
+   ]
+
+rule (modulo E) inserverfin_0_11111111111111111[color=#408051,
+                                                process="in(serverfin.1);"]:
+   [
+   State_11111111111111111( certpk.1, cte.1, pks.1, rc.1, rs.1,
+                            servercert.1, ske.1, sse.1, sss.1
+   ),
+   In( serverfin.1 )
+   ]
+  -->
+   [
+   Let_1111111111111111111( sdec(serverfin.1,
+                                 hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived', 'null'),
+                                                 sss.1),
+                                         'sahstr',
+                                         htrans(<kempk(ske.1), rc.1, cte.1, rs.1, pks.1, kemenc(sss.1, pks.1)
+                                                >))),
+                            certpk.1, cte.1, pks.1, rc.1, rs.1, servercert.1, serverfin.1, ske.1,
+                            sse.1, sss.1
+   )
+   ]
+
+rule (modulo E) letServerFinishedSFsdecserverfinhkdfexphkdfexthkdfexphkdfextemptyemptyderivednullssssahstrhtranskempkskeskeyrccterspkskemencssspks_1_111111111111111111[color=#ffffff,
+                                                                                                                                                                        process="let <'ServerFinished', SF.1>=sdec(serverfin.1,
+     hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived',
+                             'null'),
+                     sss.1),
+             'sahstr',
+             htrans(<kempk(ske.1:skey), rc.1, cte.1, rs.1, pks.1, 
+                     kemenc(sss.1, pks.1)>)))"]:
+   [
+   Let_1111111111111111111( <'ServerFinished', SF.1>, certpk.1, cte.1,
+                            pks.1, rc.1, rs.1, servercert.1, serverfin.1, ske.1, sse.1, sss.1
+   )
+   ]
+  -->
+   [
+   State_1111111111111111111( SF.1, certpk.1, cte.1, pks.1, rc.1, rs.1,
+                              servercert.1, serverfin.1, ske.1, sse.1, sss.1
+   )
+   ]
+
+rule (modulo E) ifSFhmachkdfexphkdfexthkdfexphkdfexthkdfexphkdfextemptyemptyderivednullsssderivedhtranskempkskeskeyrccterspkskemencssspksemptysfinishednullhtranskempkskeskeyrccterspkskemencssspks_0_1111111111111111111[color=#408051,
+                                                                                                                                                                                                                          process="if SF.1=hmac(hkdfexp(hkdfext(hkdfexp(hkdfext(hkdfexp(hkdfext('empty',
+                                                     'empty'),
+                                             'derived', 'null'),
+                                     sss.1),
+                             'derived',
+                             htrans(<kempk(ske.1:skey), rc.1, cte.1, rs.1, pks.1, 
+                                     kemenc(sss.1, pks.1)>)),
+                     'empty'),
+             'sfinished', 'null'),
+     htrans(<kempk(ske.1:skey), rc.1, cte.1, rs.1, pks.1, 
+             kemenc(sss.1, pks.1)>))"]:
+   [
+   State_1111111111111111111( SF.1, certpk.1, cte.1, pks.1, rc.1, rs.1,
+                              servercert.1, serverfin.1, ske.1, sse.1, sss.1
+   )
+   ]
+  --[
+  Pred_Eq( SF.1,
+           hmac(hkdfexp(hkdfext(hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'),
+                                                        'derived', 'null'),
+                                                sss.1),
+                                        'derived',
+                                        htrans(<kempk(ske.1), rc.1, cte.1, rs.1, pks.1, kemenc(sss.1, pks.1)
+                                               >)),
+                                'empty'),
+                        'sfinished', 'null'),
+                htrans(<kempk(ske.1), rc.1, cte.1, rs.1, pks.1, kemenc(sss.1, pks.1)>))
+  )
+  ]->
+   [
+   State_11111111111111111111( SF.1, certpk.1, cte.1, pks.1, rc.1, rs.1,
+                               servercert.1, serverfin.1, ske.1, sse.1, sss.1
+   )
+   ]
+
+rule (modulo E) eventClientKeyhkdfexphkdfexthkdfexphkdfextemptyemptyderivednullssscaptrhtranskempkskeskeyrccterspkskemencssspkshmachkdfexphkdfexthkdfexphkdfexthkdfexphkdfextemptyemptyderivednullsssderivedhtranskempkskeskeyrccterspkskemencssspksemptycfinishednullhtranskempkskeskeyrccterspkskemencssspks_0_11111111111111111111[color=#408051,
+                                                                                                                                                                                                                                                                                                                                      process="event ClientKey( hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'),
+                                   'derived', 'null'),
+                           sss.1),
+                   'captr',
+                   htrans(<kempk(ske.1:skey), rc.1, cte.1, rs.1, pks.1, 
+                           kemenc(sss.1, pks.1), 
+                           hmac(hkdfexp(hkdfext(hkdfexp(hkdfext(hkdfexp(hkdfext('empty',
+                                                                                'empty'),
+                                                                        'derived', 'null'),
+                                                                sss.1),
+                                                        'derived',
+                                                        htrans(<kempk(ske.1:skey), rc.1, cte.1, 
+                                                                rs.1, pks.1, kemenc(sss.1, pks.1)
+                                                               >)),
+                                                'empty'),
+                                        'cfinished', 'null'),
+                                htrans(<kempk(ske.1:skey), rc.1, cte.1, rs.1, pks.1, 
+                                        kemenc(sss.1, pks.1)>))
+                          >))
+);"]:
+   [
+   State_11111111111111111111( SF.1, certpk.1, cte.1, pks.1, rc.1, rs.1,
+                               servercert.1, serverfin.1, ske.1, sse.1, sss.1
+   )
+   ]
+  --[
+  ClientKey( hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived',
+                                     'null'),
+                             sss.1),
+                     'captr',
+                     htrans(<kempk(ske.1), rc.1, cte.1, rs.1, pks.1, kemenc(sss.1, pks.1), 
+                             hmac(hkdfexp(hkdfext(hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'),
+                                                                          'derived', 'null'),
+                                                                  sss.1),
+                                                          'derived',
+                                                          htrans(<kempk(ske.1), rc.1, cte.1, rs.1, pks.1, 
+                                                                  kemenc(sss.1, pks.1)>)),
+                                                  'empty'),
+                                          'cfinished', 'null'),
+                                  htrans(<kempk(ske.1), rc.1, cte.1, rs.1, pks.1, kemenc(sss.1, pks.1)>))
+                            >))
+  )
+  ]->
+   [
+   State_111111111111111111111( SF.1, certpk.1, cte.1, pks.1, rc.1, rs.1,
+                                servercert.1, serverfin.1, ske.1, sse.1, sss.1
+   )
+   ]
+
+rule (modulo E) eventAcceptP_0_111111111111111111111[color=#408051,
+                                                     process="event AcceptP( );"]:
+   [
+   State_111111111111111111111( SF.1, certpk.1, cte.1, pks.1, rc.1, rs.1,
+                                servercert.1, serverfin.1, ske.1, sse.1, sss.1
+   )
+   ]
+  --[ AcceptP( ) ]->
+   [ ]
+
+rule (modulo E) ifSFhmachkdfexphkdfexthkdfexphkdfexthkdfexphkdfextemptyemptyderivednullsssderivedhtranskempkskeskeyrccterspkskemencssspksemptysfinishednullhtranskempkskeskeyrccterspkskemencssspks_1_1111111111111111111[color=#408051,
+                                                                                                                                                                                                                          process="if SF.1=hmac(hkdfexp(hkdfext(hkdfexp(hkdfext(hkdfexp(hkdfext('empty',
+                                                     'empty'),
+                                             'derived', 'null'),
+                                     sss.1),
+                             'derived',
+                             htrans(<kempk(ske.1:skey), rc.1, cte.1, rs.1, pks.1, 
+                                     kemenc(sss.1, pks.1)>)),
+                     'empty'),
+             'sfinished', 'null'),
+     htrans(<kempk(ske.1:skey), rc.1, cte.1, rs.1, pks.1, 
+             kemenc(sss.1, pks.1)>))"]:
+   [
+   State_1111111111111111111( SF.1, certpk.1, cte.1, pks.1, rc.1, rs.1,
+                              servercert.1, serverfin.1, ske.1, sse.1, sss.1
+   )
+   ]
+  --[
+  Pred_Not_Eq( SF.1,
+               hmac(hkdfexp(hkdfext(hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'),
+                                                            'derived', 'null'),
+                                                    sss.1),
+                                            'derived',
+                                            htrans(<kempk(ske.1), rc.1, cte.1, rs.1, pks.1, 
+                                                    kemenc(sss.1, pks.1)>)),
+                                    'empty'),
+                            'sfinished', 'null'),
+                    htrans(<kempk(ske.1), rc.1, cte.1, rs.1, pks.1, kemenc(sss.1, pks.1)>))
+  )
+  ]->
+   [ ]
+
+rule (modulo E) p_1_[color=#ffffff, process="!"]:
+   [ !Semistate_1( ) ]
+  -->
+   [ !Semistate_121( ), State_1111( ), Out( 'TCPSYN' ) ]
+
+rule (modulo E) p_1_12[color=#ffffff, process="!"]:
+   [ !Semistate_121( ), Fr( ~skS.1 ) ] --> [ !Semistate_12111( ~skS.1 ) ]
+
+rule (modulo E) p_1_1211111[color=#408051, process="!"]:
+   [ !Semistate_12111111( ~skS.1 ), In( 'TCPSYN' ) ]
+  -->
+   [ State_1211111111( ~skS.1 ), Out( 'TCPACK' ) ]
+
+rule (modulo E) inCLIENTHellopkerc_0_1211111111[color=#408051,
+                                                process="in(<'CLIENTHello', pke.2, rc.2>);"]:
+   [
+   State_1211111111( ~skS.1 ), In( <'CLIENTHello', pke.2, rc.2> ),
+   Fr( sse.2 ), Fr( rs.2 )
+   ]
+  -->
+   [
+   State_12111111111111( ~skS.1, pke.2, rc.2, rs.2, sse.2 ),
+   Out( <'SERVERHello', kemenc(sse.2, pke.2), rs.2> )
+   ]
+
+rule (modulo E) outsencServerCertcertkempkskSskeyhkdfexphkdfexthkdfexphkdfextemptyemptyderivednullsseshstshtranspkerckemencssepkers_0_12111111111111[color=#408051,
+                                                                                                                                                     process="out(senc(<'ServerCert', cert(kempk(~skS.1:skey))>,
+     hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived',
+                             'null'),
+                     sse.2),
+             'shsts', htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2>))));"]:
+   [ State_12111111111111( ~skS.1, pke.2, rc.2, rs.2, sse.2 ) ]
+  -->
+   [
+   State_121111111111111( ~skS.1, pke.2, rc.2, rs.2, sse.2 ),
+   Out( senc(<'ServerCert', cert(kempk(~skS.1))>,
+             hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived', 'null'),
+                             sse.2),
+                     'shsts', htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2>)))
+   )
+   ]
+
+rule (modulo E) inclientkem_0_121111111111111[color=#408051,
+                                              process="in(clientkem.1);"]:
+   [
+   State_121111111111111( ~skS.1, pke.2, rc.2, rs.2, sse.2 ),
+   In( clientkem.1 )
+   ]
+  -->
+   [
+   Let_12111111111111111( sdec(clientkem.1,
+                               hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived', 'null'),
+                                               sse.2),
+                                       'chsts', htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2>))),
+                          ~skS.1, clientkem.1, pke.2, rc.2, rs.2, sse.2
+   )
+   ]
+
+rule (modulo E) letClientKemctssdecclientkemhkdfexphkdfexthkdfexphkdfextemptyemptyderivednullssechstshtranspkerckemencssepkers_1_1211111111111111[color=#ffffff,
+                                                                                                                                                  process="let <'ClientKem', cts.2>=sdec(clientkem.1,
+     hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived',
+                             'null'),
+                     sse.2),
+             'chsts', htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2>)))"]:
+   [
+   Let_12111111111111111( <'ClientKem', cts.2>, ~skS.1, clientkem.1, pke.2,
+                          rc.2, rs.2, sse.2
+   )
+   ]
+  -->
+   [
+   State_12111111111111111( ~skS.1, clientkem.1, cts.2, pke.2, rc.2, rs.2,
+                            sse.2
+   )
+   ]
+
+rule (modulo E) letssskemdecctsskSskey_0_12111111111111111[color=#ffffff,
+                                                           process="let sss.2=kemdec(cts.2, ~skS.1:skey)"]:
+   [
+   State_12111111111111111( ~skS.1, clientkem.1, cts.2, pke.2, rc.2, rs.2,
+                            sse.2
+   )
+   ]
+  -->
+   [
+   Let_121111111111111111( <cts.2, ~skS.1>, ~skS.1, clientkem.1, cts.2,
+                           pke.2, rc.2, rs.2, sse.2
+   )
+   ]
+
+rule (modulo E) letssskemdecctsskSskey_1_12111111111111111[color=#ffffff,
+                                                           process="let sss.2=kemdec(cts.2, ~skS.1:skey)"]:
+   [
+   Let_121111111111111111( <kemenc(sss.2, kempk(sk)), sk>, ~skS.1,
+                           clientkem.1, cts.2, pke.2, rc.2, rs.2, sse.2
+   )
+   ]
+  -->
+   [
+   State_121111111111111111( ~skS.1, clientkem.1, cts.2, pke.2, rc.2, rs.2,
+                             sse.2, sss.2
+   )
+   ]
+
+rule (modulo E) eventServerKeyhkdfexphkdfexthkdfexphkdfextemptyemptyderivednullssssahstrhtranspkerckemencssepkerskempkskSskeycts_0_121111111111111111[color=#408051,
+                                                                                                                                                      process="event ServerKey( hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'),
+                                   'derived', 'null'),
+                           sss.2),
+                   'sahstr',
+                   htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2, 
+                           kempk(~skS.1:skey), cts.2>))
+);"]:
+   [
+   State_121111111111111111( ~skS.1, clientkem.1, cts.2, pke.2, rc.2, rs.2,
+                             sse.2, sss.2
+   ),
+   In( clientfin.1 )
+   ]
+  --[
+  ServerKey( hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived',
+                                     'null'),
+                             sss.2),
+                     'sahstr',
+                     htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2, kempk(~skS.1), cts.2>))
+  )
+  ]->
+   [
+   Let_121111111111111111111( sdec(clientfin.1,
+                                   hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived', 'null'),
+                                                   sss.2),
+                                           'cahstr',
+                                           htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2, kempk(~skS.1), 
+                                                   cts.2>))),
+                              ~skS.1, clientfin.1, clientkem.1, cts.2, pke.2, rc.2, rs.2, sse.2, sss.2
+   )
+   ]
+
+rule (modulo E) letClientFinishedCFsdecclientfinhkdfexphkdfexthkdfexphkdfextemptyemptyderivednullssscahstrhtranspkerckemencssepkerskempkskSskeycts_1_12111111111111111111[color=#ffffff,
+                                                                                                                                                                          process="let <'ClientFinished', CF.2>=sdec(clientfin.1,
+     hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived',
+                             'null'),
+                     sss.2),
+             'cahstr',
+             htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2, 
+                     kempk(~skS.1:skey), cts.2>)))"]:
+   [
+   Let_121111111111111111111( <'ClientFinished', CF.2>, ~skS.1, clientfin.1,
+                              clientkem.1, cts.2, pke.2, rc.2, rs.2, sse.2, sss.2
+   )
+   ]
+  -->
+   [
+   State_121111111111111111111( ~skS.1, clientfin.1, clientkem.1, CF.2,
+                                cts.2, pke.2, rc.2, rs.2, sse.2, sss.2
+   )
+   ]
+
+rule (modulo E) ifCFhmachkdfexphkdfexthkdfexphkdfexthkdfexphkdfextemptyemptyderivednullsssderivedhtranspkerckemencssepkerskempkskSskeyctsemptycfinishednullhtranspkerckemencssepkerskempkskSskeycts_0_121111111111111111111[color=#408051,
+                                                                                                                                                                                                                            process="if CF.2=hmac(hkdfexp(hkdfext(hkdfexp(hkdfext(hkdfexp(hkdfext('empty',
+                                                     'empty'),
+                                             'derived', 'null'),
+                                     sss.2),
+                             'derived',
+                             htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2, 
+                                     kempk(~skS.1:skey), cts.2>)),
+                     'empty'),
+             'cfinished', 'null'),
+     htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2, 
+             kempk(~skS.1:skey), cts.2>))"]:
+   [
+   State_121111111111111111111( ~skS.1, clientfin.1, clientkem.1, CF.2,
+                                cts.2, pke.2, rc.2, rs.2, sse.2, sss.2
+   )
+   ]
+  --[
+  Pred_Eq( CF.2,
+           hmac(hkdfexp(hkdfext(hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'),
+                                                        'derived', 'null'),
+                                                sss.2),
+                                        'derived',
+                                        htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2, kempk(~skS.1), cts.2
+                                               >)),
+                                'empty'),
+                        'cfinished', 'null'),
+                htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2, kempk(~skS.1), cts.2>))
+  )
+  ]->
+   [
+   State_1211111111111111111111( ~skS.1, clientfin.1, clientkem.1, CF.2,
+                                 cts.2, pke.2, rc.2, rs.2, sse.2, sss.2
+   )
+   ]
+
+rule (modulo E) eventAcceptS_0_1211111111111111111111[color=#408051,
+                                                      process="event AcceptS( );"]:
+   [
+   State_1211111111111111111111( ~skS.1, clientfin.1, clientkem.1, CF.2,
+                                 cts.2, pke.2, rc.2, rs.2, sse.2, sss.2
+   )
+   ]
+  --[ AcceptS( ) ]->
+   [
+   Out( senc(<'ServerFinished', 
+              hmac(hkdfexp(hkdfext(hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'),
+                                                           'derived', 'null'),
+                                                   sss.2),
+                                           'derived',
+                                           htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2, kempk(~skS.1), 
+                                                   cts.2>)),
+                                   'empty'),
+                           'sfinished', 'null'),
+                   htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2, kempk(~skS.1), cts.2>))
+             >,
+             hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'), 'derived', 'null'),
+                             sss.2),
+                     'sahstr',
+                     htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2, kempk(~skS.1), cts.2>)))
+   )
+   ]
+
+rule (modulo E) ifCFhmachkdfexphkdfexthkdfexphkdfexthkdfexphkdfextemptyemptyderivednullsssderivedhtranspkerckemencssepkerskempkskSskeyctsemptycfinishednullhtranspkerckemencssepkerskempkskSskeycts_1_121111111111111111111[color=#408051,
+                                                                                                                                                                                                                            process="if CF.2=hmac(hkdfexp(hkdfext(hkdfexp(hkdfext(hkdfexp(hkdfext('empty',
+                                                     'empty'),
+                                             'derived', 'null'),
+                                     sss.2),
+                             'derived',
+                             htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2, 
+                                     kempk(~skS.1:skey), cts.2>)),
+                     'empty'),
+             'cfinished', 'null'),
+     htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2, 
+             kempk(~skS.1:skey), cts.2>))"]:
+   [
+   State_121111111111111111111( ~skS.1, clientfin.1, clientkem.1, CF.2,
+                                cts.2, pke.2, rc.2, rs.2, sse.2, sss.2
+   )
+   ]
+  --[
+  Pred_Not_Eq( CF.2,
+               hmac(hkdfexp(hkdfext(hkdfexp(hkdfext(hkdfexp(hkdfext('empty', 'empty'),
+                                                            'derived', 'null'),
+                                                    sss.2),
+                                            'derived',
+                                            htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2, kempk(~skS.1), 
+                                                    cts.2>)),
+                                    'empty'),
+                            'cfinished', 'null'),
+                    htrans(<pke.2, rc.2, kemenc(sse.2, pke.2), rs.2, kempk(~skS.1), cts.2>))
+  )
+  ]->
+   [ ]
+
+rule (modulo E) p_1_1211[color=#ffffff, process="!"]:
+   [ !Semistate_12111( ~skS.1 ) ]
+  -->
+   [ !Semistate_12111111( ~skS.1 ), State_121112( ~skS.1 ) ]
+
+rule (modulo E) incompromise_0_121112[color=#ffffff,
+                                      process="in('compromise');"]:
+   [ State_121112( ~skS.1 ), In( 'compromise' ) ]
+  --[ Compromise( ) ]->
+   [ Out( ~skS.1 ) ]
+
+restriction predicate_eq:
+  "∀ #i a b. (Pred_Eq( a, b ) @ #i) ⇒ (a = b)"
+  // safety formula
+
+restriction predicate_not_eq:
+  "∀ #i a b. (Pred_Not_Eq( a, b ) @ #i) ⇒ (¬(a = b))"
+  // safety formula
+
+restriction single_session:
+  "∀ #i #j. ((Init( ) @ #i) ∧ (Init( ) @ #j)) ⇒ (#i = #j)"
+  // safety formula
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end
+

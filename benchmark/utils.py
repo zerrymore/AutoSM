@@ -1,11 +1,6 @@
 import os
 import subprocess
 import glob
-# 获取当前目录下的所有文件名
-# current_directory = '.'  # 当前目录
-# files = os.listdir(current_directory)
-# print(len(files))
-
 
 files_to_delete = glob.glob('msr_*.spthy')
 
@@ -17,21 +12,27 @@ def remove_files(files_to_delete):
         except OSError as e:
             print(f"Error: {file} : {e.strerror}")
 
-spthy_files = glob.glob('*.spthy')
-spthy_files = [file for file in spthy_files if os.path.isfile(file)]
-print(len(spthy_files))
-def output_msrs(spthy_files, format="msr"):
-    postfix = {"msr": "spthy", "proverif": "pv"}
+def output_msrs(spthy_files, format="tamarin"):
+    postfix = {"tamarin": "spthy", "proverif": "pv"}
+    file_type = {"tamarin": "msr", "proverif": "pv"}
     for file in spthy_files:
         print(file)
         file_name = file.split(".")[0]
         try:
-            cmd_command = f'tamarin-prover {file} -m={format} > ./output/{format}_{file_name}.{postfix[format]}'  # 示例命令：打印文件名
+            cmd_command = f'tamarin-prover {file} -m={file_type[format]} > ./output/{format}/{format}_{file_name}.{postfix[format]}'  # 示例命令：打印文件名
             subprocess.run(cmd_command, shell=True)  # 执行命令
         except:
             print("error")
+          
+spthy_files = glob.glob('*.spthy')            
+# The sapic+ files which can be compiled into Tamarin and ProVerif
+source_files = [file for file in spthy_files if os.path.isfile(file)]
 
-output_msrs(spthy_files, "proverif")
+
+print(len(source_files))
+
+output_msrs(source_files, "proverif")
+output_msrs(source_files, "tamarin")
 if __name__ == "__main__":
     file_str = """\
 example 

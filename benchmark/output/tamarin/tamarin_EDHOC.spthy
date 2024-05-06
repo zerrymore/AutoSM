@@ -1,0 +1,847 @@
+theory edhoc begin
+
+// Function signature and definition of the equational theory E
+
+builtins: diffie-hellman
+functions: fst/1, hash/1, hkdfexpand/2, hkdfextract/2, pair/2, pk/1,
+           sdec/2, senc/2, sign/2, snd/1, true/0, verify/3
+equations:
+    fst(<x.1, x.2>) = x.1,
+    sdec(senc(x.1, x.2), x.2) = x.1,
+    snd(<x.1, x.2>) = x.2,
+    verify(sign(x.1, x.2), x.1, pk(x.2)) = true
+
+
+
+heuristic: p
+
+
+
+
+
+
+
+
+
+
+
+
+
+lemma secretR [reuse]:
+  all-traces
+  "¬(∃ pkI pkR k4 #i #j #l.
+      ((AcceptR( pkI, pkR, k4 ) @ #i) ∧ (!KU( k4 ) @ #j)) ∧
+      (Honnest( pkI, 'Init' ) @ #l))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ pkI pkR k4 #i #j #l.
+  (AcceptR( pkI, pkR, k4 ) @ #i) ∧
+  (!KU( k4 ) @ #j) ∧
+  (Honnest( pkI, 'Init' ) @ #l)"
+*/
+by sorry
+
+lemma secretI [reuse]:
+  all-traces
+  "¬(∃ pkI pkR k3 k4 #i #j #l.
+      ((AcceptI( pkI, pkR, k3, k4 ) @ #i) ∧ (!KU( k4 ) @ #j)) ∧
+      (Honnest( pkR, 'Resp' ) @ #l))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ pkI pkR k3 k4 #i #j #l.
+  (AcceptI( pkI, pkR, k3, k4 ) @ #i) ∧
+  (!KU( k4 ) @ #j) ∧
+  (Honnest( pkR, 'Resp' ) @ #l)"
+*/
+by sorry
+
+lemma executableR:
+  exists-trace "∃ pkI pkR k3 #i. AcceptR( pkI, pkR, k3 ) @ #i"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ pkI pkR k3 #i. (AcceptR( pkI, pkR, k3 ) @ #i)"
+*/
+by sorry
+
+lemma executableI:
+  exists-trace "∃ pkI pkR k3 k4 #i. AcceptI( pkI, pkR, k3, k4 ) @ #i"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ pkI pkR k3 k4 #i. (AcceptI( pkI, pkR, k3, k4 ) @ #i)"
+*/
+by sorry
+
+lemma executableIhonnest:
+  exists-trace
+  "∃ pkI pkR k3 k4 #i #l.
+    (AcceptI( pkI, pkR, k3, k4 ) @ #i) ∧ (Honnest( pkR, 'Resp' ) @ #l)"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ pkI pkR k3 k4 #i #l.
+  (AcceptI( pkI, pkR, k3, k4 ) @ #i) ∧ (Honnest( pkR, 'Resp' ) @ #l)"
+*/
+by sorry
+
+lemma executableRhonnest:
+  exists-trace
+  "∃ pkI pkR k4 #i #l.
+    (AcceptR( pkI, pkR, k4 ) @ #i) ∧ (Honnest( pkI, 'Init' ) @ #l)"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ pkI pkR k4 #i #l.
+  (AcceptR( pkI, pkR, k4 ) @ #i) ∧ (Honnest( pkI, 'Init' ) @ #l)"
+*/
+by sorry
+
+lemma false_dishonnestnoauthRI:
+  all-traces
+  "∀ pkI pkR k4 #i.
+    (AcceptR( pkI, pkR, k4 ) @ #i) ⇒
+    (∃ #j k3. (#j < #i) ∧ (AcceptI( pkI, pkR, k3, k4 ) @ #j))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ pkI pkR k4 #i.
+  (AcceptR( pkI, pkR, k4 ) @ #i)
+ ∧
+  ∀ #j k3. (AcceptI( pkI, pkR, k3, k4 ) @ #j) ⇒ ¬(#j < #i)"
+*/
+by sorry
+
+lemma false_dishonnestnoauthIR:
+  all-traces
+  "∀ pkI pkR k3 k4 #i.
+    (AcceptI( pkI, pkR, k3, k4 ) @ #i) ⇒
+    (∃ #j. (#j < #i) ∧ (DerivedR( pkR, k3 ) @ #j))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ pkI pkR k3 k4 #i.
+  (AcceptI( pkI, pkR, k3, k4 ) @ #i)
+ ∧
+  ∀ #j. (DerivedR( pkR, k3 ) @ #j) ⇒ ¬(#j < #i)"
+*/
+by sorry
+
+lemma honnestauthRI:
+  all-traces
+  "∀ pkI pkR k4 #i #l.
+    ((AcceptR( pkI, pkR, k4 ) @ #i) ∧ (Honnest( pkI, 'Init' ) @ #l)) ⇒
+    (∃ #j k3. (#j < #i) ∧ (AcceptI( pkI, pkR, k3, k4 ) @ #j))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ pkI pkR k4 #i #l.
+  (AcceptR( pkI, pkR, k4 ) @ #i) ∧ (Honnest( pkI, 'Init' ) @ #l)
+ ∧
+  ∀ #j k3. (AcceptI( pkI, pkR, k3, k4 ) @ #j) ⇒ ¬(#j < #i)"
+*/
+by sorry
+
+lemma honnestauthIR:
+  all-traces
+  "∀ pkI pkR k3 k4 #i #l.
+    ((AcceptI( pkI, pkR, k3, k4 ) @ #i) ∧ (Honnest( pkR, 'Resp' ) @ #l)) ⇒
+    (∃ #j. (#j < #i) ∧ (DerivedR( pkR, k3 ) @ #j))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ pkI pkR k3 k4 #i #l.
+  (AcceptI( pkI, pkR, k3, k4 ) @ #i) ∧ (Honnest( pkR, 'Resp' ) @ #l)
+ ∧
+  ∀ #j. (DerivedR( pkR, k3 ) @ #j) ⇒ ¬(#j < #i)"
+*/
+by sorry
+
+rule (modulo E) Init[color=#ffffff, process="!"]:
+   [ ] --[ Init( ) ]-> [ !Semistate_1( ) ]
+
+rule (modulo E) p_1_[color=#ffffff, process="!"]:
+   [ !Semistate_1( ), Fr( ~skR.1 ), Fr( ~skI.1 ) ]
+  -->
+   [ State_1111( ~skI.1, ~skR.1 ), Out( <pk(~skR.1), pk(~skI.1)> ) ]
+
+rule (modulo E) eventHonnestpkskRskeyResp_0_1111[color=#ffffff,
+                                                 process="event Honnest( pk(~skR.1:skey), 'Resp' );"]:
+   [ State_1111( ~skI.1, ~skR.1 ) ]
+  --[ Honnest( pk(~skR.1), 'Resp' ) ]->
+   [ State_11111( ~skI.1, ~skR.1 ) ]
+
+rule (modulo E) eventHonnestpkskIskeyInit_0_11111[color=#ffffff,
+                                                  process="event Honnest( pk(~skI.1:skey), 'Init' );"]:
+   [ State_11111( ~skI.1, ~skR.1 ) ]
+  --[ Honnest( pk(~skI.1), 'Init' ) ]->
+   [ !Semistate_1111111( ~skI.1, ~skR.1 ) ]
+
+rule (modulo E) newa_0_111111111[color=#408077, process="new ~a.1;"]:
+   [ State_111111111( ~skI.1, ~skR.1 ), Fr( ~a.1 ) ]
+  -->
+   [
+   State_11111111111( ~a.1, ~skI.1, ~skR.1 ),
+   Out( <'m2', 'g'^~a.1, 'C_I', 'AD'> )
+   ]
+
+rule (modulo E) inCIgBrCRcypher_0_11111111111[color=#408077,
+                                              process="in(<'C_I', gB.1, rC_R.1, cypher_2.1>);"]:
+   [
+   State_11111111111( ~a.1, ~skI.1, ~skR.1 ),
+   In( <'C_I', gB.1, rC_R.1, cypher_2.1> )
+   ]
+  -->
+   [
+   Let_1111111111111( sdec(cypher_2.1,
+                           hkdfexpand(hkdfextract('null', gB.1^~a.1),
+                                      <hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 'TagK_2e'>)),
+                      ~a.1, ~skI.1, ~skR.1, cypher_2.1, gB.1, rC_R.1
+   )
+   ]
+
+rule (modulo E) letpkRsignedrADsdeccypherhkdfexpandhkdfextractnullgBahashmgaCIADCIgBrCRTagKe_1_111111111111[color=#ffffff,
+                                                                                                            process="let <pkR.1, signed.1, rAD_2.1>=sdec(cypher_2.1,
+     hkdfexpand(hkdfextract('null', gB.1^~a.1),
+                <hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 
+                 'TagK_2e'>))"]:
+   [
+   Let_1111111111111( <pkR.1, signed.1, rAD_2.1>, ~a.1, ~skI.1, ~skR.1,
+                      cypher_2.1, gB.1, rC_R.1
+   )
+   ]
+  -->
+   [
+   State_1111111111111( ~a.1, ~skI.1, ~skR.1, cypher_2.1, gB.1, pkR.1,
+                        rAD_2.1, rC_R.1, signed.1
+   )
+   ]
+
+rule (modulo E) ifverifysignedpkRhashmgaCIADCIgBrCRrADsenchashmgaCIADCIgBrCRpkRrADhkdfexpandhkdfextractnullgBahashmgaCIADCIgBrCRTagKmpkRtrue_0_1111111111111[color=#408077,
+                                                                                                                                                             process="if verify(signed.1,
+       <pkR.1, hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 
+        rAD_2.1, 
+        senc(<hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 
+              pkR.1, rAD_2.1>,
+             hkdfexpand(hkdfextract('null', gB.1^~a.1),
+                        <hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 
+                         'TagK_2m'>))
+       >,
+       pkR.1)=true"]:
+   [
+   State_1111111111111( ~a.1, ~skI.1, ~skR.1, cypher_2.1, gB.1, pkR.1,
+                        rAD_2.1, rC_R.1, signed.1
+   )
+   ]
+  --[
+  Pred_Eq( verify(signed.1,
+                  <pkR.1, hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 
+                   rAD_2.1, 
+                   senc(<hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), pkR.1, 
+                         rAD_2.1>,
+                        hkdfexpand(hkdfextract('null', gB.1^~a.1),
+                                   <hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 'TagK_2m'>))
+                  >,
+                  pkR.1),
+           true
+  )
+  ]->
+   [
+   State_11111111111111( ~a.1, ~skI.1, ~skR.1, cypher_2.1, gB.1, pkR.1,
+                         rAD_2.1, rC_R.1, signed.1
+   )
+   ]
+
+rule (modulo E) eventAcceptIpkskIskeypkRhkdfextractnullgBahkdfextractnullgBa_0_11111111111111[color=#408077,
+                                                                                              process="event AcceptI( pk(~skI.1:skey), pkR.1, hkdfextract('null', gB.1^~a.1),
+         hkdfextract('null', gB.1^~a.1)
+);"]:
+   [
+   State_11111111111111( ~a.1, ~skI.1, ~skR.1, cypher_2.1, gB.1, pkR.1,
+                         rAD_2.1, rC_R.1, signed.1
+   )
+   ]
+  --[
+  AcceptI( pk(~skI.1), pkR.1, hkdfextract('null', gB.1^~a.1),
+           hkdfextract('null', gB.1^~a.1)
+  )
+  ]->
+   [
+   Out( <rC_R.1, 
+         senc(<pk(~skI.1), 
+               sign(<pk(~skI.1), 
+                     hash(<hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 
+                           cypher_2.1, rC_R.1>), 
+                     'AD_3', 
+                     senc(<
+                           hash(<hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 
+                                 cypher_2.1, rC_R.1>), 
+                           pk(~skI.1), 'AD_3'>,
+                          hkdfexpand(hkdfextract('null', gB.1^~a.1),
+                                     <
+                                      hash(<hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 
+                                            cypher_2.1, rC_R.1>), 
+                                      'TagK_3m'>))
+                    >,
+                    ~skI.1), 
+               'AD_3'>,
+              hkdfexpand(hkdfextract('null', gB.1^~a.1),
+                         <
+                          hash(<hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 
+                                cypher_2.1, rC_R.1>), 
+                          'TagK_3ae'>)), 
+         'AD_3'>
+   )
+   ]
+
+rule (modulo E) ifverifysignedpkRhashmgaCIADCIgBrCRrADsenchashmgaCIADCIgBrCRpkRrADhkdfexpandhkdfextractnullgBahashmgaCIADCIgBrCRTagKmpkRtrue_1_1111111111111[color=#408077,
+                                                                                                                                                             process="if verify(signed.1,
+       <pkR.1, hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 
+        rAD_2.1, 
+        senc(<hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 
+              pkR.1, rAD_2.1>,
+             hkdfexpand(hkdfextract('null', gB.1^~a.1),
+                        <hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 
+                         'TagK_2m'>))
+       >,
+       pkR.1)=true"]:
+   [
+   State_1111111111111( ~a.1, ~skI.1, ~skR.1, cypher_2.1, gB.1, pkR.1,
+                        rAD_2.1, rC_R.1, signed.1
+   )
+   ]
+  --[
+  Pred_Not_Eq( verify(signed.1,
+                      <pkR.1, hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 
+                       rAD_2.1, 
+                       senc(<hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), pkR.1, 
+                             rAD_2.1>,
+                            hkdfexpand(hkdfextract('null', gB.1^~a.1),
+                                       <hash(<'m2', 'g'^~a.1, 'C_I', 'AD', 'C_I', gB.1, rC_R.1>), 'TagK_2m'>))
+                      >,
+                      pkR.1),
+               true
+  )
+  ]->
+   [ ]
+
+rule (modulo E) p_1_111111[color=#ffffff, process="!"]:
+   [ !Semistate_1111111( ~skI.1, ~skR.1 ) ]
+  -->
+   [ State_111111121( ~skI.1, ~skR.1 ), State_111111111( ~skI.1, ~skR.1 ) ]
+
+rule (modulo E) inmcorrgArCIrAD_0_111111121[color=#408065,
+                                            process="in(<mcorr.1, gA.2, rC_I.1, rAD.1>);"]:
+   [
+   State_111111121( ~skI.1, ~skR.1 ), In( <mcorr.1, gA.2, rC_I.1, rAD.1> ),
+   Fr( ~b.1 )
+   ]
+  -->
+   [ State_11111112111( ~b.1, ~skI.1, ~skR.1, mcorr.1, rAD.1, rC_I.1, gA.2 )
+   ]
+
+rule (modulo E) ifmcorrm_0_11111112111[color=#408065,
+                                       process="if mcorr.1='m1'"]:
+   [ State_11111112111( ~b.1, ~skI.1, ~skR.1, mcorr.1, rAD.1, rC_I.1, gA.2 )
+   ]
+  --[ Pred_Eq( mcorr.1, 'm1' ) ]->
+   [ Out( 'notimplementedyet' ) ]
+
+rule (modulo E) ifmcorrm_1_11111112111[color=#408065,
+                                       process="if mcorr.1='m1'"]:
+   [ State_11111112111( ~b.1, ~skI.1, ~skR.1, mcorr.1, rAD.1, rC_I.1, gA.2 )
+   ]
+  --[ Pred_Not_Eq( mcorr.1, 'm1' ) ]->
+   [
+   State_111111121112( ~b.1, ~skI.1, ~skR.1, mcorr.1, rAD.1, rC_I.1, gA.2 )
+   ]
+
+rule (modulo E) eventDerivedRpkskRskeyhkdfextractnullgAb_0_111111121112[color=#408065,
+                                                                        process="event DerivedR( pk(~skR.1:skey), hkdfextract('null', gA.2^~b.1) );"]:
+   [
+   State_111111121112( ~b.1, ~skI.1, ~skR.1, mcorr.1, rAD.1, rC_I.1, gA.2 )
+   ]
+  --[ DerivedR( pk(~skR.1), hkdfextract('null', gA.2^~b.1) ) ]->
+   [
+   State_11111112111211( ~b.1, ~skI.1, ~skR.1, mcorr.1, rAD.1, rC_I.1, gA.2
+   ),
+   Out( <rC_I.1, 'g'^~b.1, 'C_R', 
+         senc(<pk(~skR.1), 
+               sign(<pk(~skR.1), 
+                     hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 'AD_2', 
+                     senc(<hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                           pk(~skR.1), 'AD_2'>,
+                          hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                     <hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 'TagK_2m'
+                                     >))
+                    >,
+                    ~skR.1), 
+               'AD_2'>,
+              hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                         <hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 'TagK_2e'
+                         >))
+        >
+   )
+   ]
+
+rule (modulo E) inCRcypherrAD_0_11111112111211[color=#408065,
+                                               process="in(<'C_R', cypher_3.1, rAD_3.1>);"]:
+   [
+   State_11111112111211( ~b.1, ~skI.1, ~skR.1, mcorr.1, rAD.1, rC_I.1, gA.2
+   ),
+   In( <'C_R', cypher_3.1, rAD_3.1> )
+   ]
+  -->
+   [
+   Let_1111111211121111( sdec(cypher_3.1,
+                              hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                         <
+                                          hash(<
+                                                hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'
+                                                     >), 
+                                                senc(<pk(~skR.1), 
+                                                      sign(<pk(~skR.1), 
+                                                            hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                                  'g'^~b.1, 'C_R'>), 
+                                                            'AD_2', 
+                                                            senc(<
+                                                                  hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                                        'g'^~b.1, 'C_R'>), 
+                                                                  pk(~skR.1), 'AD_2'>,
+                                                                 hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                                            <
+                                                                             hash(<mcorr.1, gA.2, rC_I.1, 
+                                                                                   rAD.1, rC_I.1, 'g'^~b.1, 
+                                                                                   'C_R'>), 
+                                                                             'TagK_2m'>))
+                                                           >,
+                                                           ~skR.1), 
+                                                      'AD_2'>,
+                                                     hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                                <
+                                                                 hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                                       'g'^~b.1, 'C_R'>), 
+                                                                 'TagK_2e'>)), 
+                                                'C_R'>), 
+                                          'TagK_3ae'>)),
+                         ~b.1, ~skI.1, ~skR.1, cypher_3.1, mcorr.1, rAD.1, rAD_3.1, rC_I.1, gA.2
+   )
+   ]
+
+rule (modulo E) letpkISignedrADsdeccypherhkdfexpandhkdfextractnullgAbhashhashmcorrgArCIrADrCIgbCRsencpkskRskeysignpkskRskeyhashmcorrgArCIrADrCIgbCRADsenchashmcorrgArCIrADrCIgbCRpkskRskeyADhkdfexpandhkdfextractnullgAbhashmcorrgArCIrADrCIgbCRTagKmskRskeyADhkdfexpandhkdfextractnullgAbhashmcorrgArCIrADrCIgbCRTagKeCRTagKae_1_111111121112111[color=#ffffff,
+                                                                                                                                                                                                                                                                                                                                                  process="let <pkI.1, Signed3.2, =rAD_3.1>=sdec(cypher_3.1,
+     hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                <
+                 hash(<
+                       hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                       senc(<pk(~skR.1:skey), 
+                             sign(<pk(~skR.1:skey), 
+                                   hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                   'AD_2', 
+                                   senc(<
+                                         hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'
+                                              >), 
+                                         pk(~skR.1:skey), 'AD_2'>,
+                                        hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                   <
+                                                    hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                          'g'^~b.1, 'C_R'>), 
+                                                    'TagK_2m'>))
+                                  >,
+                                  ~skR.1:skey), 
+                             'AD_2'>,
+                            hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                       <
+                                        hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'
+                                             >), 
+                                        'TagK_2e'>)), 
+                       'C_R'>), 
+                 'TagK_3ae'>))"]:
+   [
+   Let_1111111211121111( <pkI.1, Signed3.2, rAD_3.1>, ~b.1, ~skI.1, ~skR.1,
+                         cypher_3.1, mcorr.1, rAD.1, rAD_3.1, rC_I.1, gA.2
+   )
+   ]
+  -->
+   [
+   State_1111111211121111( ~b.1, ~skI.1, ~skR.1, cypher_3.1, mcorr.1, pkI.1,
+                           rAD.1, rAD_3.1, rC_I.1, Signed3.2, gA.2
+   )
+   ]
+
+rule (modulo E) ifverifySignedpkIhashhashmcorrgArCIrADrCIgbCRsencpkskRskeysignpkskRskeyhashmcorrgArCIrADrCIgbCRADsenchashmcorrgArCIrADrCIgbCRpkskRskeyADhkdfexpandhkdfextractnullgAbhashmcorrgArCIrADrCIgbCRTagKmskRskeyADhkdfexpandhkdfextractnullgAbhashmcorrgArCIrADrCIgbCRTagKeCRrADsenchashhashmcorrgArCIrADrCIgbCRsencpkskRskeysignpkskRskeyhashmcorrgArCIrADrCIgbCRADsenchashmcorrgArCIrADrCIgbCRpkskRskeyADhkdfexpandhkdfextractnullgAbhashmcorrgArCIrADrCIgbCRTagKmskRskeyADhkdfexpandhkdfextractnullgAbhashmcorrgArCIrADrCIgbCRTagKeCRpkIrADhkdfexpandhkdfextractnullgAbhashhashmcorrgArCIrADrCIgbCRsencpkskRskeysignpkskRskeyhashmcorrgArCIrADrCIgbCRADsenchashmcorrgArCIrADrCIgbCRpkskRskeyADhkdfexpandhkdfextractnullgAbhashmcorrgArCIrADrCIgbCRTagKmskRskeyADhkdfexpandhkdfextractnullgAbhashmcorrgArCIrADrCIgbCRTagKeCRTagKmpkItrue_0_1111111211121111[color=#408065,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      process="if verify(Signed3.2,
+       <pkI.1, 
+        hash(<
+              hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+              senc(<pk(~skR.1:skey), 
+                    sign(<pk(~skR.1:skey), 
+                          hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                          'AD_2', 
+                          senc(<
+                                hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                pk(~skR.1:skey), 'AD_2'>,
+                               hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                          <
+                                           hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 
+                                                 'C_R'>), 
+                                           'TagK_2m'>))
+                         >,
+                         ~skR.1:skey), 
+                    'AD_2'>,
+                   hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                              <hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                               'TagK_2e'>)), 
+              'C_R'>), 
+        rAD_3.1, 
+        senc(<
+              hash(<
+                    hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                    senc(<pk(~skR.1:skey), 
+                          sign(<pk(~skR.1:skey), 
+                                hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                'AD_2', 
+                                senc(<
+                                      hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'
+                                           >), 
+                                      pk(~skR.1:skey), 'AD_2'>,
+                                     hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                <
+                                                 hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                       'g'^~b.1, 'C_R'>), 
+                                                 'TagK_2m'>))
+                               >,
+                               ~skR.1:skey), 
+                          'AD_2'>,
+                         hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                    <hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                     'TagK_2e'>)), 
+                    'C_R'>), 
+              pkI.1, rAD_3.1>,
+             hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                        <
+                         hash(<
+                               hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                               senc(<pk(~skR.1:skey), 
+                                     sign(<pk(~skR.1:skey), 
+                                           hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 
+                                                 'C_R'>), 
+                                           'AD_2', 
+                                           senc(<
+                                                 hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                       'g'^~b.1, 'C_R'>), 
+                                                 pk(~skR.1:skey), 'AD_2'>,
+                                                hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                           <
+                                                            hash(<mcorr.1, gA.2, rC_I.1, rAD.1, 
+                                                                  rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                                            'TagK_2m'>))
+                                          >,
+                                          ~skR.1:skey), 
+                                     'AD_2'>,
+                                    hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                               <
+                                                hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                      'g'^~b.1, 'C_R'>), 
+                                                'TagK_2e'>)), 
+                               'C_R'>), 
+                         'TagK_3m'>))
+       >,
+       pkI.1)=true"]:
+   [
+   State_1111111211121111( ~b.1, ~skI.1, ~skR.1, cypher_3.1, mcorr.1, pkI.1,
+                           rAD.1, rAD_3.1, rC_I.1, Signed3.2, gA.2
+   )
+   ]
+  --[
+  Pred_Eq( verify(Signed3.2,
+                  <pkI.1, 
+                   hash(<hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                         senc(<pk(~skR.1), 
+                               sign(<pk(~skR.1), 
+                                     hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 'AD_2', 
+                                     senc(<hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                           pk(~skR.1), 'AD_2'>,
+                                          hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                     <
+                                                      hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 
+                                                            'C_R'>), 
+                                                      'TagK_2m'>))
+                                    >,
+                                    ~skR.1), 
+                               'AD_2'>,
+                              hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                         <hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                          'TagK_2e'>)), 
+                         'C_R'>), 
+                   rAD_3.1, 
+                   senc(<
+                         hash(<hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                               senc(<pk(~skR.1), 
+                                     sign(<pk(~skR.1), 
+                                           hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                           'AD_2', 
+                                           senc(<
+                                                 hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'
+                                                      >), 
+                                                 pk(~skR.1), 'AD_2'>,
+                                                hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                           <
+                                                            hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                                  'g'^~b.1, 'C_R'>), 
+                                                            'TagK_2m'>))
+                                          >,
+                                          ~skR.1), 
+                                     'AD_2'>,
+                                    hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                               <
+                                                hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'
+                                                     >), 
+                                                'TagK_2e'>)), 
+                               'C_R'>), 
+                         pkI.1, rAD_3.1>,
+                        hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                   <
+                                    hash(<hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                          senc(<pk(~skR.1), 
+                                                sign(<pk(~skR.1), 
+                                                      hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 
+                                                            'C_R'>), 
+                                                      'AD_2', 
+                                                      senc(<
+                                                            hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                                  'g'^~b.1, 'C_R'>), 
+                                                            pk(~skR.1), 'AD_2'>,
+                                                           hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                                      <
+                                                                       hash(<mcorr.1, gA.2, rC_I.1, rAD.1, 
+                                                                             rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                                                       'TagK_2m'>))
+                                                     >,
+                                                     ~skR.1), 
+                                                'AD_2'>,
+                                               hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                          <
+                                                           hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                                 'g'^~b.1, 'C_R'>), 
+                                                           'TagK_2e'>)), 
+                                          'C_R'>), 
+                                    'TagK_3m'>))
+                  >,
+                  pkI.1),
+           true
+  )
+  ]->
+   [
+   State_11111112111211111( ~b.1, ~skI.1, ~skR.1, cypher_3.1, mcorr.1,
+                            pkI.1, rAD.1, rAD_3.1, rC_I.1, Signed3.2, gA.2
+   )
+   ]
+
+rule (modulo E) eventAcceptRpkIpkskRskeyhkdfextractnullgAb_0_11111112111211111[color=#408065,
+                                                                               process="event AcceptR( pkI.1, pk(~skR.1:skey), hkdfextract('null', gA.2^~b.1) );"]:
+   [
+   State_11111112111211111( ~b.1, ~skI.1, ~skR.1, cypher_3.1, mcorr.1,
+                            pkI.1, rAD.1, rAD_3.1, rC_I.1, Signed3.2, gA.2
+   )
+   ]
+  --[ AcceptR( pkI.1, pk(~skR.1), hkdfextract('null', gA.2^~b.1) ) ]->
+   [ ]
+
+rule (modulo E) ifverifySignedpkIhashhashmcorrgArCIrADrCIgbCRsencpkskRskeysignpkskRskeyhashmcorrgArCIrADrCIgbCRADsenchashmcorrgArCIrADrCIgbCRpkskRskeyADhkdfexpandhkdfextractnullgAbhashmcorrgArCIrADrCIgbCRTagKmskRskeyADhkdfexpandhkdfextractnullgAbhashmcorrgArCIrADrCIgbCRTagKeCRrADsenchashhashmcorrgArCIrADrCIgbCRsencpkskRskeysignpkskRskeyhashmcorrgArCIrADrCIgbCRADsenchashmcorrgArCIrADrCIgbCRpkskRskeyADhkdfexpandhkdfextractnullgAbhashmcorrgArCIrADrCIgbCRTagKmskRskeyADhkdfexpandhkdfextractnullgAbhashmcorrgArCIrADrCIgbCRTagKeCRpkIrADhkdfexpandhkdfextractnullgAbhashhashmcorrgArCIrADrCIgbCRsencpkskRskeysignpkskRskeyhashmcorrgArCIrADrCIgbCRADsenchashmcorrgArCIrADrCIgbCRpkskRskeyADhkdfexpandhkdfextractnullgAbhashmcorrgArCIrADrCIgbCRTagKmskRskeyADhkdfexpandhkdfextractnullgAbhashmcorrgArCIrADrCIgbCRTagKeCRTagKmpkItrue_1_1111111211121111[color=#408065,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      process="if verify(Signed3.2,
+       <pkI.1, 
+        hash(<
+              hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+              senc(<pk(~skR.1:skey), 
+                    sign(<pk(~skR.1:skey), 
+                          hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                          'AD_2', 
+                          senc(<
+                                hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                pk(~skR.1:skey), 'AD_2'>,
+                               hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                          <
+                                           hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 
+                                                 'C_R'>), 
+                                           'TagK_2m'>))
+                         >,
+                         ~skR.1:skey), 
+                    'AD_2'>,
+                   hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                              <hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                               'TagK_2e'>)), 
+              'C_R'>), 
+        rAD_3.1, 
+        senc(<
+              hash(<
+                    hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                    senc(<pk(~skR.1:skey), 
+                          sign(<pk(~skR.1:skey), 
+                                hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                'AD_2', 
+                                senc(<
+                                      hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'
+                                           >), 
+                                      pk(~skR.1:skey), 'AD_2'>,
+                                     hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                <
+                                                 hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                       'g'^~b.1, 'C_R'>), 
+                                                 'TagK_2m'>))
+                               >,
+                               ~skR.1:skey), 
+                          'AD_2'>,
+                         hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                    <hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                     'TagK_2e'>)), 
+                    'C_R'>), 
+              pkI.1, rAD_3.1>,
+             hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                        <
+                         hash(<
+                               hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                               senc(<pk(~skR.1:skey), 
+                                     sign(<pk(~skR.1:skey), 
+                                           hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 
+                                                 'C_R'>), 
+                                           'AD_2', 
+                                           senc(<
+                                                 hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                       'g'^~b.1, 'C_R'>), 
+                                                 pk(~skR.1:skey), 'AD_2'>,
+                                                hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                           <
+                                                            hash(<mcorr.1, gA.2, rC_I.1, rAD.1, 
+                                                                  rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                                            'TagK_2m'>))
+                                          >,
+                                          ~skR.1:skey), 
+                                     'AD_2'>,
+                                    hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                               <
+                                                hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                      'g'^~b.1, 'C_R'>), 
+                                                'TagK_2e'>)), 
+                               'C_R'>), 
+                         'TagK_3m'>))
+       >,
+       pkI.1)=true"]:
+   [
+   State_1111111211121111( ~b.1, ~skI.1, ~skR.1, cypher_3.1, mcorr.1, pkI.1,
+                           rAD.1, rAD_3.1, rC_I.1, Signed3.2, gA.2
+   )
+   ]
+  --[
+  Pred_Not_Eq( verify(Signed3.2,
+                      <pkI.1, 
+                       hash(<hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                             senc(<pk(~skR.1), 
+                                   sign(<pk(~skR.1), 
+                                         hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                         'AD_2', 
+                                         senc(<hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                               pk(~skR.1), 'AD_2'>,
+                                              hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                         <
+                                                          hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                                'g'^~b.1, 'C_R'>), 
+                                                          'TagK_2m'>))
+                                        >,
+                                        ~skR.1), 
+                                   'AD_2'>,
+                                  hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                             <hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                              'TagK_2e'>)), 
+                             'C_R'>), 
+                       rAD_3.1, 
+                       senc(<
+                             hash(<hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                   senc(<pk(~skR.1), 
+                                         sign(<pk(~skR.1), 
+                                               hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                               'AD_2', 
+                                               senc(<
+                                                     hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 
+                                                           'C_R'>), 
+                                                     pk(~skR.1), 'AD_2'>,
+                                                    hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                               <
+                                                                hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                                      'g'^~b.1, 'C_R'>), 
+                                                                'TagK_2m'>))
+                                              >,
+                                              ~skR.1), 
+                                         'AD_2'>,
+                                        hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                   <
+                                                    hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 
+                                                          'C_R'>), 
+                                                    'TagK_2e'>)), 
+                                   'C_R'>), 
+                             pkI.1, rAD_3.1>,
+                            hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                       <
+                                        hash(<hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 'g'^~b.1, 'C_R'>), 
+                                              senc(<pk(~skR.1), 
+                                                    sign(<pk(~skR.1), 
+                                                          hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                                'g'^~b.1, 'C_R'>), 
+                                                          'AD_2', 
+                                                          senc(<
+                                                                hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                                      'g'^~b.1, 'C_R'>), 
+                                                                pk(~skR.1), 'AD_2'>,
+                                                               hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                                          <
+                                                                           hash(<mcorr.1, gA.2, rC_I.1, 
+                                                                                 rAD.1, rC_I.1, 'g'^~b.1, 
+                                                                                 'C_R'>), 
+                                                                           'TagK_2m'>))
+                                                         >,
+                                                         ~skR.1), 
+                                                    'AD_2'>,
+                                                   hkdfexpand(hkdfextract('null', gA.2^~b.1),
+                                                              <
+                                                               hash(<mcorr.1, gA.2, rC_I.1, rAD.1, rC_I.1, 
+                                                                     'g'^~b.1, 'C_R'>), 
+                                                               'TagK_2e'>)), 
+                                              'C_R'>), 
+                                        'TagK_3m'>))
+                      >,
+                      pkI.1),
+               true
+  )
+  ]->
+   [ ]
+
+restriction predicate_eq:
+  "∀ #i a b. (Pred_Eq( a, b ) @ #i) ⇒ (a = b)"
+  // safety formula
+
+restriction predicate_not_eq:
+  "∀ #i a b. (Pred_Not_Eq( a, b ) @ #i) ⇒ (¬(a = b))"
+  // safety formula
+
+restriction single_session:
+  "∀ #i #j. ((Init( ) @ #i) ∧ (Init( ) @ #j)) ⇒ (#i = #j)"
+  // safety formula
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end
+

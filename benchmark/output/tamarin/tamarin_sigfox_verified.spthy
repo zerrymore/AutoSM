@@ -1,0 +1,166 @@
+theory sigfox_PKC begin
+
+// Function signature and definition of the equational theory E
+
+functions: adec/2, aenc/2, fst/1, pair/2, pk/1, sign/2, snd/1, true/0,
+           verify/3
+equations:
+    adec(aenc(x.1, pk(x.2)), x.2) = x.1,
+    fst(<x.1, x.2>) = x.1,
+    snd(<x.1, x.2>) = x.2,
+    verify(sign(x.1, x.2), x.1, pk(x.2)) = true
+
+
+
+heuristic: p
+
+
+
+
+
+
+
+
+
+
+
+lemma executable:
+  exists-trace "∃ A B m #i #j. (Send( A, m ) @ #i) ∧ (Recv( B, m ) @ #j)"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ A B m #i #j. (Send( A, m ) @ #i) ∧ (Recv( B, m ) @ #j)"
+*/
+by sorry
+
+lemma secret_A:
+  all-traces "∀ n #i. (SecretA( n ) @ #i) ⇒ (¬(∃ #j. K( n ) @ #j))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ n #i. (SecretA( n ) @ #i) ∧ ∃ #j. (K( n ) @ #j)"
+*/
+by sorry
+
+lemma secret_B:
+  all-traces
+  "∀ n #i.
+    ((Secret( n ) @ #i) ∧ (Role( 'B' ) @ #i)) ⇒ (¬(∃ #j. K( n ) @ #j))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ n #i. (Secret( n ) @ #i) ∧ (Role( 'B' ) @ #i) ∧ ∃ #j. (K( n ) @ #j)"
+*/
+by sorry
+
+rule (modulo E) Init[color=#ffffff, process="!"]:
+   [ ] --[ Init( ) ]-> [ !Semistate_1( ) ]
+
+rule (modulo E) p_1_[color=#ffffff, process="!"]:
+   [ !Semistate_1( ), Fr( skS.1 ) ]
+  -->
+   [ State_111( skS.1 ), Out( pk(skS.1) ) ]
+
+rule (modulo E) eventHonestApkskS_0_111[color=#ffffff,
+                                        process="event HonestA( pk(skS.1) );"]:
+   [ State_111( skS.1 ) ]
+  --[ HonestA( pk(skS.1) ) ]->
+   [ !Semistate_11111( skS.1 ) ]
+
+rule (modulo E) p_1_1111[color=#ffffff, process="!"]:
+   [ !Semistate_11111( skS.1 ), Fr( skD.1 ) ]
+  -->
+   [ State_1111111( skD.1, skS.1 ), Out( pk(skD.1) ) ]
+
+rule (modulo E) eventHonestBpkskD_0_1111111[color=#ffffff,
+                                            process="event HonestB( pk(skD.1) );"]:
+   [ State_1111111( skD.1, skS.1 ) ]
+  --[ HonestB( pk(skD.1) ) ]->
+   [ !Semistate_111111111( skD.1, skS.1 ) ]
+
+rule (modulo E) newNa_0_11111111111[color=#408051, process="new Na.1;"]:
+   [ State_11111111111( skD.1, skS.1 ), Fr( Na.1 ) ]
+  --[ Send( pk(skS.1), aenc(<pk(skS.1), Na.1>, pk(skD.1)) ) ]->
+   [ State_1111111111111( Na.1, skD.1, skS.1 ) ]
+
+rule (modulo E) eventSecretANa_0_1111111111111[color=#408051,
+                                               process="event SecretA( Na.1 );"]:
+   [ State_1111111111111( Na.1, skD.1, skS.1 ) ]
+  --[ SecretA( Na.1 ) ]->
+   [
+   Out( <aenc(<pk(skS.1), Na.1>, pk(skD.1)), 
+         sign(aenc(<pk(skS.1), Na.1>, pk(skD.1)), skS.1)>
+   )
+   ]
+
+rule (modulo E) p_1_11111111[color=#ffffff, process="!"]:
+   [ !Semistate_111111111( skD.1, skS.1 ) ]
+  -->
+   [
+   !Semistate_11111111121( skD.1, skS.1 ), State_11111111111( skD.1, skS.1 )
+   ]
+
+rule (modulo E) p_1_1111111112[color=#ffffff, process="!"]:
+   [ !Semistate_11111111121( skD.1, skS.1 ), In( <msg.2, sig.2> ) ]
+  -->
+   [ Let_11111111121111( adec(msg.2, skD.1), skD.1, skS.1, msg.2, sig.2 ) ]
+
+rule (modulo E) letpkskSNaadecmsgskD_1_1111111112111[color=#ffffff,
+                                                     process="let <pk(=skS.1), Na.2>=adec(msg.2, skD.1)"]:
+   [ Let_11111111121111( <pk(skS.1), Na.2>, skD.1, skS.1, msg.2, sig.2 ) ]
+  -->
+   [ State_11111111121111( skD.1, skS.1, Na.2, msg.2, sig.2 ) ]
+
+rule (modulo E) ifverifysigmsgpkskStrue_0_11111111121111[color=#408041,
+                                                         process="if verify(sig.2, msg.2, pk(skS.1))=true"]:
+   [ State_11111111121111( skD.1, skS.1, Na.2, msg.2, sig.2 ) ]
+  --[ Pred_Eq( verify(sig.2, msg.2, pk(skS.1)), true ) ]->
+   [ State_111111111211111( skD.1, skS.1, Na.2, msg.2, sig.2 ) ]
+
+rule (modulo E) eventRecvpkskDmsg_0_111111111211111[color=#408041,
+                                                    process="event Recv( pk(skD.1), msg.2 );"]:
+   [ State_111111111211111( skD.1, skS.1, Na.2, msg.2, sig.2 ) ]
+  --[ Recv( pk(skD.1), msg.2 ) ]->
+   [ State_1111111112111111( skD.1, skS.1, Na.2, msg.2, sig.2 ) ]
+
+rule (modulo E) eventSecretBNa_0_1111111112111111[color=#408041,
+                                                  process="event SecretB( Na.2 );"]:
+   [ State_1111111112111111( skD.1, skS.1, Na.2, msg.2, sig.2 ) ]
+  --[ SecretB( Na.2 ) ]->
+   [ ]
+
+rule (modulo E) ifverifysigmsgpkskStrue_1_11111111121111[color=#408041,
+                                                         process="if verify(sig.2, msg.2, pk(skS.1))=true"]:
+   [ State_11111111121111( skD.1, skS.1, Na.2, msg.2, sig.2 ) ]
+  --[ Pred_Not_Eq( verify(sig.2, msg.2, pk(skS.1)), true ) ]->
+   [ ]
+
+restriction predicate_eq:
+  "∀ #i a b. (Pred_Eq( a, b ) @ #i) ⇒ (a = b)"
+  // safety formula
+
+restriction predicate_not_eq:
+  "∀ #i a b. (Pred_Not_Eq( a, b ) @ #i) ⇒ (¬(a = b))"
+  // safety formula
+
+restriction single_session:
+  "∀ #i #j. ((Init( ) @ #i) ∧ (Init( ) @ #j)) ⇒ (#i = #j)"
+  // safety formula
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end
+

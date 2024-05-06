@@ -1,0 +1,74 @@
+theory exercise begin
+
+// Function signature and definition of the equational theory E
+
+functions: fst/1, kdf/2, pair/2, snd/1
+equations: fst(<x.1, x.2>) = x.1, snd(<x.1, x.2>) = x.2
+
+
+
+heuristic: p
+
+
+
+
+
+
+
+lemma executability:
+  exists-trace
+  "∃ #i #j SK a b.
+    ((Install( a, SK ) @ #i) ∧ (Install( b, SK ) @ #j)) ∧ (#i < #j)"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ #i #j SK a b.
+  (Install( a, SK ) @ #i) ∧ (Install( b, SK ) @ #j) ∧ #i < #j"
+*/
+by sorry
+
+rule (modulo E) Init[color=#ffffff, process="!"]:
+   [ ] --[ Init( ) ]-> [ !Semistate_1( ) ]
+
+rule (modulo E) newANonce_0_111[color=#40804a, process="new ANonce.1;"]:
+   [ State_111( ), Fr( ANonce.1 ) ]
+  -->
+   [ State_11111( ANonce.1 ), Out( ANonce.1 ) ]
+
+rule (modulo E) inBNonce_0_11111[color=#40804a, process="in(BNonce.1);"]:
+   [ State_11111( ANonce.1 ), In( BNonce.1 ) ]
+  --[ Install( ANonce.1, kdf(ANonce.1, BNonce.1) ) ]->
+   [ Out( 'ACK' ) ]
+
+rule (modulo E) p_1_[color=#ffffff, process="!"]:
+   [ !Semistate_1( ) ] --> [ State_121( ), State_111( ) ]
+
+rule (modulo E) inANonce_0_121[color=#40804a, process="in(ANonce.2);"]:
+   [ State_121( ), In( ANonce.2 ), Fr( BNonce.2 ) ]
+  -->
+   [ State_121111( ANonce.2, BNonce.2 ), Out( BNonce.2 ) ]
+
+rule (modulo E) inACK_0_121111[color=#40804a, process="in('ACK');"]:
+   [ State_121111( ANonce.2, BNonce.2 ), In( 'ACK' ) ]
+  --[ Install( BNonce.2, kdf(ANonce.2, BNonce.2) ) ]->
+   [ State_12111111( ANonce.2, BNonce.2 ) ]
+
+rule (modulo E) eventSwitchStateDONE_0_12111111[color=#40804a,
+                                                process="event SwitchState( 'DONE' );"]:
+   [ State_12111111( ANonce.2, BNonce.2 ) ]
+  --[ SwitchState( 'DONE' ) ]->
+   [ ]
+
+restriction single_session:
+  "∀ #i #j. ((Init( ) @ #i) ∧ (Init( ) @ #j)) ⇒ (#i = #j)"
+  // safety formula
+
+
+
+
+
+
+
+
+
+end
+
