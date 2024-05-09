@@ -6,3 +6,6 @@ pandas
 tabulate
 termcolor
 google-cloud-aiplatform>= 1.25.0
+tiktoken
+colorama
+pygments
