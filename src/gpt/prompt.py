@@ -73,7 +73,7 @@ def get_incontext_learning_contents(content_type, shot_num=2):
             # {'role': 'user', 'content': third_shot_repair_question},
             # {'role': 'assistant', 'content': third_shot_repair_answer},
             ]
-    if content_type == "SeqReader":  # Reading process as few-shots
+    if content_type == "SeqReader":# Reading process as few-shots
         ret_list = [
             {'role': 'system', 'content': sys_SeqReader_prompt},
             {'role': 'user', 'content': first_SeqReader_question},

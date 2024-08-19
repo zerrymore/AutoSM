@@ -18,9 +18,10 @@ There are some Lambda Calculus Expression template you may use:
 2. `Recv(B:agent, A:agent, n:msg)`: Agent B receives message n from agent A.
 3. `Gen(A:agent, n:nonce)`: Agent A generates a fresh nonce n.
 4. `Knows(A:agent, n1:nonce, n2:nonce, ...)`: Agent A initially knows items n1, n2, etc., which are infrastructure components like keys.
-5. `Op(A:agent, func(msg))`: Agent A performs operations like aenc/adec/concat on messages to produce a new message m. \
+5. `Op(A:agent, func(msg))`: Agent A performs operations like aenc/senc/concat on messages to produce a new message m. \
 The `func` in `Op` must match the corresponding predicate described in natural language. \
-Note: Expressions listed above cannot serve as arguments to `Op`; for example, `Op(R, Gen/Send/, ...)` is prohibited.
+Note: Expressions listed above cannot serve as arguments to `Op`; for example, `Op(R, Gen/Send/, ...)` is prohibited. 
+Do not parse any decryption operation, like Op(A, assign(msg, dec(...)))
 
 For each `Send`, there should be a corresponding `Recv`.
 A message should be binded to a variable before sending it.
@@ -29,26 +30,6 @@ our task is to complete each expression by directly filling in the placeholders 
 Do not include any explanations, comments, or additional text outside of the required expressions.
 """
 
-# The message in `Recv` should be as concrete as possible, i.e., if a variable refers to another term, replace the variable with the term.
-
-# sys_SeqReader_prompt = """\
-# As an expert in Lambda Calculus expressions within the field of cryptographic protocols, \
-# your task is to parse given texts into Lambda Calculus. Utilize the following templates for Lambda Calculus Expressions:
-
-# 1. `Send(A:agent, B:agent, m:msg)`: Agent A sends message m to agent B. The `Send` function is limited to 3 arguments.
-# 2. `Recv(B:agent, A:agent, n:msg)`: Agent B receives message n from agent A.
-# 3. `Gen(A:agent, n:nonce)`: Agent A generates a fresh nonce n.
-# 4. `Knows(A:agent, n1:nonce, n2:nonce, ...)`: Agent A initially knows items n1, n2, etc., which are infrastructure components like keys.
-# 5. `Op(A:agent, func(msg))`: Agent A performs operations like aenc/adec/concat on messages to produce a new message m. \
-# The `func` in `Op` must match the corresponding predicate described in natural language. \
-# Note: Expressions listed above cannot serve as arguments to `Op`; for example, `Op(R, Gen/Send/, ...)` is prohibited.
-
-# - Ensure that each `Send` has a corresponding `Recv`. \
-# - The message in `Recv` should be as specific as possible; if a variable refers to another term, replace it with that term.
-
-# Infill in the blanks denoted by /* >>The lambda calculus << */ with lambda expressions, \
-# If there is nothing lambda expressions, output /* */
-# """
 
 
 sys_sapic_prompt = """\
@@ -132,7 +113,6 @@ fourth_SeqReader_answer = """\
 /* 
 Knows(role(Bob), pkA, pkB)
 Recv(Bob, Alice, message1)
-Op(Bob, adec(message1, skB))
 */
 """
 
@@ -142,7 +122,6 @@ Next Bob receives the message {A, Na}pub(B) sent by Alice.
 /* 
 Knows(role(Bob), pkA, pkB)
 Recv(Bob, Alice, message1)
-Op(Bob, adec(message1, skB))
 */
 Using his private key, Bob decrypts the message. He sends the received nonce Na together with a freshly generated nonce Nb \
 encrypted with A's public key (pub(A)) to Alice. Finally Alice receives the message {Na, Nb}pub(A).
@@ -151,7 +130,6 @@ encrypted with A's public key (pub(A)) to Alice. Finally Alice receives the mess
 
 fifth_SeqReader_answer = """\
 /* 
-Op(Bob, adec(message1, skB))
 Gen(Bob, Nb)
 Op(Alice, assign(message2, aenc(concat(idA, Na), pkB)))
 Send(Bob, Alice, message2)
@@ -163,7 +141,6 @@ sixth_SeqReader_question = """\
 Using his private key, Bob decrypts the message. He sends the received nonce Na together with a freshly generated nonce Nb \
 encrypted with A's public key (pub(A)) to Alice. Finally Alice receives the message {Na, Nb}pub(A).
 /* 
-Op(Bob, adec(message1, skB))
 Gen(Bob, Nb)
 Op(Alice, assign(message2, aenc(concat(idA, Na), pkB)))
 Send(Bob, Alice, message2)
