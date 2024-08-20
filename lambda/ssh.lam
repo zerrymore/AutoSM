@@ -1,0 +1,73 @@
+Knows(P, pkS, skP, pkP)
+Gen(P, a)
+Op(P, assign(gA, exp('g', a)))
+Send(P, S, gA)
+Recv(P, S, concat(sig, opks, B))
+Cond(P, equal(pkS, opks))
+Op(P, assign(h, hash(concat(pkS, gA, B))))
+Op(P, assign(k, exp(B, a)))
+Cond(P, equal(verify(sig, concat('server_sign', h), pkS), true))
+Op(P, assign(kPS, kdfPtoS(concat(k, h))))
+Op(P, assign(kSP, kdfStoP(concat(k, h))))
+Send(P, S, senc(concat('user_auth', pkP), kPS))
+Recv(P, S, userauth_answer)
+Cond(P, equal(sdec(userauth_answer, kSP), 'userauth_pk_ok'))
+Send(P, S, senc(concat('user_answer', h, sign(h, skP)), kPS))
+Knows(S, skS, pkS, pkP)
+Recv(S, P, gA)
+Gen(S, b)
+Op(S, assign(gB, exp('g', b)))
+Op(S, assign(h, hash(concat(pkS, gA, gB))))
+Op(S, assign(k, exp(gA, b)))
+Op(S, assign(sig, sign(concat('server_sign', h), skS)))
+Send(S, P, concat(sig, pkS, gB))
+Op(S, assign(kPS, kdfPtoS(concat(k, h))))
+Op(S, assign(kSP, kdfStoP(concat(k, h))))
+Recv(S, P, userauth)
+Op(S, assign(mess, sdec(userauth, kPS)))
+Op(S, assign(concat('user_auth', pkP), mess))
+Send(S, P, senc('userauth_pk_ok', kSP))
+Recv(S, P, signans)
+Op(S, assign(mess2, sdec(signans, kPS)))
+Op(S, assign(concat('user_answer', h, sig2), mess2))
+Cond(S, equal(verify(sig2, h, pkP), true))
+
+
+
+
+
+
+/*=== SSH ===*/
+Gen(C, x)
+Op(C, assign(e, mod(pow(g, x), p)))
+Send(C, S, e)
+Recv(S, C, e)
+
+Gen(S, y)
+Op(S, assign(f, mod(pow(g, y), p)))
+Op(S, assign(K, mod(pow(e, y), p)))
+Op(S, assign(H, hash(concat(V_C, V_S, I_C, I_S, K_S, e, f, K))))  //unb
+Op(S, assign(s, sign(H, skS)))                                    
+Send(S, C, concat(K_S, f, s))
+
+Op(C, verify(K_S, pkS))                 // 2, unb
+Op(C, assign(K, mod(pow(f, x), p)))     //  unb
+Op(C, assign(H, hash(concat(V_C, V_S, I_C, I_S, K_S, e, f, K)))) 
+Op(C, verify(s, H, pkS))               // 2
+Op(C, assign(session_id, H))           // 1
+
+Op(C, assign(iv_client_to_server, hash(concat(K, H, "A", session_id))))             // 1
+Op(C, assign(enc_key_client_to_server, hash(concat(K, H, "C", session_id))))        // 2
+Op(C, assign(integrity_key_client_to_server, hash(concat(K, H, "E", session_id))))   //2
+
+Op(S, assign(session_id, H))  // 1
+Op(S, assign(iv_server_to_client, hash(concat(K, H, "B", session_id))))          // 1
+Op(S, assign(enc_key_server_to_client, hash(concat(K, H, "D", session_id))))    // 2
+Op(S, assign(integrity_key_server_to_client, hash(concat(K, H, "F", session_id)))) // 2
+
+//  Total: 22
+//     EC: 12/22=54.55
+//    BER: 19/22=86.36
+//     #1: 4/22=18.18
+//     #2: 6/22=2727
+/*=== SSH ===*/

@@ -1,0 +1,106 @@
+Knows(I, ~skI, pkI, pkR)
+Gen(I, nI)
+Gen(I, spiI)
+Gen(I, eI)
+Op(I, assign(epI, exp('g', eI)))
+Op(I, assign(msg1, concat(spiI, 'IKE_SA_INIT', '1', 'i', epI, nI)))
+Send(I, R, msg1)
+Recv(I, R, msg2)
+Op(I, assign(concat(spiI, spiR, 'IKE_SA_INIT', '1', 'r', epR, nR), msg2))
+Gen(I, idI)
+Op(I, assign(k, exp(epR, eI)))
+Op(I, assign(keymat, h(concat(nI, nR), k)))
+Op(I, assign(signed_octets, concat(msg1, nR, h(idI, keymat))))
+Op(I, assign(auth_pl, sign(signed_octets, skI)))
+Op(I, assign(encr_pl, senc(concat(idI, auth_pl, pkI), keymat)))
+Op(I, assign(integ_I, hmac(concat(spiI, spiR, 'IKE_AUTH', '2', 'i', encr_pl), keymat)))
+Op(I, assign(msg3, concat(spiI, spiR, 'IKE_AUTH', '2', 'i', encr_pl, integ_I)))
+Op(I, Agreed(concat(spiI, spiR), pkI, 'initiator', concat(nI, nR), keymat))
+Send(I, R, msg3)
+Recv(I, R, msg4)
+Op(I, assign(concat(spiI, spiR, 'IKE_AUTH', '2', 'r', encr_pl_I, integ_I), msg4))
+Op(I, assign(concat(idR, spiC, auth_pl_R, pkR), sdec(encr_pl_I, keymat)))
+Op(I, assign(signed_octets_R, concat(msg2, nI, h(idR, keymat))))
+Cond(I, equal(verify(auth_pl_R, signed_octets_R, pkR), true))
+Op(I, assign(ck, hmac(keymat, concat(nI, nR))))
+Op(I, assign(mTest, concat('0', senc('test', ck), hmac(concat('0', senc('test', ck)), ck))))
+Op(I, IKeys(pkI, pkR, spiC, ck))
+Op(I, Completed(concat(spiI, spiR), pkI, 'initiator', pkR, keymat))
+Op(I, IdentityLearnt(idI))
+Send(I, R, mTest)
+Knows(R, ~skR, pkR, pkI)
+Recv(R, I, msg1)
+Op(R, assign(concat(spiI, 'IKE_SA_INIT', '1', 'i', epI, nI), msg1))
+Gen(R, nR)
+Gen(R, spiR)
+Gen(R, eR)
+Op(R, assign(epR, exp('g', eR)))
+Op(R, assign(k, exp(epI, eR)))
+Op(R, assign(keymat, h(concat(nI, nR), k)))
+Op(R, assign(msg2, concat(spiI, spiR, 'IKE_SA_INIT', '1', 'r', epR, nR)))
+Op(R, Agreed(concat(spiI, spiR), pkR, 'responder', concat(nI, nR), keymat))
+Send(R, I, msg2)
+Recv(R, I, msg3)
+Op(R, assign(concat(spiI, spiR, 'IKE_AUTH', '2', 'i', encr_pl_I, integ_I), msg3))
+Op(R, assign(concat(idI, auth_pl_I, pkI), sdec(encr_pl_I, keymat)))
+Op(R, assign(hmac(concat(spiI, spiR, 'IKE_AUTH', '2', 'i', encr_pl_I), keymat), integ_I))
+Op(R, assign(signed_octets_I, concat(msg1, nR, h(idI, keymat))))
+Gen(R, idR)
+Gen(R, spiC)
+Op(R, assign(signed_octets_R, concat(msg2, nI, h(idR, keymat))))
+Op(R, assign(auth_pl_R, sign(signed_octets_R, skR)))
+Op(R, assign(encr_pl_R, senc(concat(idR, spiC, auth_pl_R, pkR), keymat)))
+Op(R, assign(integ_R, hmac(concat(spiI, spiR, 'IKE_AUTH', '2', 'r', encr_pl_R), keymat)))
+Cond(R, equal(verify(auth_pl_I, signed_octets_I, pkI), true))
+Op(R, assign(msg4, concat(spiI, spiR, 'IKE_AUTH', '2', 'r', encr_pl_R, integ_R)))
+Op(R, assign(ck, hmac(keymat, concat(nI, nR))))
+Op(R, Completed(concat(spiI, spiR), pkR, 'responder', pkI, keymat))
+Op(R, IdentityLearnt(idR))
+Send(R, I, msg4)
+Recv(R, I, msg_5)
+Op(R, assign(concat('0', senc('test', ck), hmac(concat('0', senc('test', ck)), ck)), msg_5))
+Op(R, RConfirm(pkI, pkR, spiC, ck))
+
+
+
+
+
+
+
+/*=== IKEv2 ===*/
+Gen(Initiator, eI)              //  ✅
+Op(Initiator, assign(epI, dh_pub(eI)))          // 2
+Gen(Initiator, Nonce_i)          // ✅
+Op(Initiator, assign(message1, concat(epI, Nonce_i, key_exchange_proposal)))            // unb, 2
+Send(Initiator, Responder, message1)     // 2,
+Recv(Responder, Initiator, message1)    // ✅
+
+Gen(Responder, eR)             // ✅
+Op(Responder, assign(shared_DHkey, dh_shared(eR, epI)))                                 //unb, 2
+Gen(Responder, Nonce_r)   // ✅
+Op(Responder, assign(keymat, hash(concat(shared_DHkey, Nonce_r, Nonce_i))))            // 2
+Op(Responder, assign(message2, concat(epR, Nonce_r, selected_key_exchange_methods)))    //unb, 2
+Send(Responder, Initiator, message2)     
+Recv(Initiator, Responder, message2)       // ✅
+
+Op(Initiator, assign(shared_DHkey, dh_shared(eI, epR)))                               //2
+Op(Initiator, assign(keymat, hash(concat(shared_DHkey, Nonce_i, Nonce_r))))           // 2
+Op(Initiator, sign(IKE_SA_INIT_signed, skI, hash(message1)))                            // unb, 1
+Op(Initiator, sign(IKE_AUTH_signed, skI, hash(IKE_SA_INIT_signed)))                     // unb, 1
+Send(Initiator, Responder, IKE_AUTH_signed)                                         // 2
+Recv(Responder, Initiator, IKE_AUTH_signed)   // ✅
+ 
+Op(Responder, sign(IKE_SA_INIT_signed, skR, hash(message2)))                           // unb, 1
+Op(Responder, sign(IKE_AUTH_response_signed, skR, hash(IKE_SA_INIT_signed)))           // unb, 1
+Send(Responder, Initiator, IKE_AUTH_response_signed)                             // 2
+Recv(Initiator, Responder, IKE_AUTH_response_signed)                   // ✅
+
+Op(Initiator, verify(IKE_AUTH_response_signed, pkR)) // 1
+
+
+//  Total: 24
+//     EC: 7/24=29.17%
+//    BER: 19/24=79.17%
+//     #1: 6/24=25.00
+//     #2: 11/24=45.83
+/*=== SSH ===*/

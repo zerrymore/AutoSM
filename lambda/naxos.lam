@@ -1,0 +1,51 @@
+Knows(I, ~lkI, pkI, pkR)
+Gen(I, eskI)
+Gen(I, tid)
+Op(I, assign(exI, h1(concat(eskI, lkI))))
+Op(I, assign(hkI, exp('g', exI)))
+Send(I, R, hkI)
+Recv(I, R, Y)
+Op(I, assign(exI, h1(concat(eskI, lkI))))
+Op(I, assign(kI, h2(concat(exp(Y, lkI), exp(pkR, exI), exp(Y, exI), pkI, pkR))))
+Op(I, SessionKeyI(tid, pkI, pkR, kI))
+Op(I, CompleteInit(tid, pkR))
+Knows(R, ~lkR, pkR, pkI)
+Recv(R, I, X)
+Gen(R, tid)
+Gen(R, eskR)
+Op(R, assign(exR, h1(concat(eskR, lkR))))
+Op(R, assign(hkr, exp('g', exR)))
+Op(R, assign(kR, h2(concat(exp(pkI, exR), exp(X, lkR), exp(X, exR), pkI, pkR))))
+Op(R, SessionKeyR(tid, pkR, pkI, kR))
+Op(R, CompleteResp(tid, pkR))
+Send(R, I, hkr)
+
+
+
+
+
+
+
+
+/*=== ===*/
+Gen(I, eskI)
+Op(I, assign(h1_result, h1(concat(eskI, lkI))))
+Op(I, assign(X, exp(g, h1_result)))
+Send(I, R, X)
+Recv(R, I, X)
+Gen(R, eskR)
+Op(R, assign(h1_resultR, h1(concat(eskR, lkR))))
+Op(R, assign(Y, exp(g, h1_resultR)))
+Send(R, I, Y)
+Recv(I, R, Y)
+Op(I, assign(kI, f(lkI, Y)))
+Op(R, assign(kR, f(lkR, X)))
+
+//  Total: 12
+//     EC: 10/12=83.33
+//    BER: 100%
+//     #1: 0=0
+//     #2: 2/12=16.67
+//*=== *===/
+
+/*=== ===*/

@@ -1,0 +1,94 @@
+Knows(A, Kas, idA, idB)
+Gen(A, Na)
+Send(A, concat(idA, idB, Na))
+Recv(A, cypher)
+Op(A, assign(concat(Na, idB, Kab, message2), sdec(cypher, Kas)))
+Send(A, message2)
+Recv(A, cypher2)
+Op(A, assign(Nb, sdec(cypher2, Kab)))
+Send(A, senc(dec(Nb), Kab))
+Knows(B, Kbs, idA)
+Recv(B, cypher3)
+Op(B, assign(concat(Kab, idA), sdec(cypher3, Kbs)))
+Gen(B, Nb)
+Send(B, senc(Nb, Kab))
+Recv(B, cypher4)
+Op(B, assign(Nb_dec, sdec(cypher4, Kab)))
+Op(B, assign(dec(Nb), Nb_dec))
+Knows(S, Kas, Kbs, idA, idB)
+Gen(S, Kab)
+Recv(S, concat(idA, idB, Na))
+Op(S, assign(message1, concat(Na, idB, Kab, senc(concat(Kab, idA), Kbs))))
+Op(S, assign(cypher, senc(message1, Kas)))
+Send(S, cypher)
+
+
+
+
+
+/*=== GPT-4 ===*/
+
+Knows(role(Alice), idA)
+Knows(role(Bob), idB)
+Knows(role(S), idA, idB)
+Gen(Alice, Na)
+Op(Alice, assign(message1, concat(idA, idB, Na)))           unb
+Send(Alice, S, message1)
+Recv(S, Alice, message1)
+Gen(S, Kab)
+Op(S, assign(message2, senc(concat(Kab, idB, Na), Kas)))     unb
+Op(S, assign(message3, senc(Kab, Kbs)))                     
+Send(S, Alice, message2)   
+Recv(Alice, S, message2)
+Send(S, Alice, message3)
+Recv(Alice, S, message3)
+Send(Alice, Bob, message3)                              
+Recv(Bob, Alice, message3)
+Gen(Bob, Nb)
+Op(Bob, assign(message4, senc(Nb, Kab)))             unb
+Send(Bob, Alice, message4)                           
+Recv(Alice, Bob, message4)
+Op(Alice, assign(Nb_dec, sdec(message4, Kab)))        unb
+Op(Alice, assign(message5, senc(Nb_dec, Kab)))        unb
+Send(Alice, Bob, message5)
+Recv(Bob, Alice, message5)
+/*=== GPT-4 ===*/
+
+
+
+
+/*=== GPT-4 ===*/
+
+Knows(role(Alice), idA)
+Knows(role(Bob), idB)
+Knows(role(S), idA, idB)
+Gen(Alice, Na)
+Op(Alice, assign(message1, concat(idA, idB, Na)))
+Send(Alice, S, message1)
+Recv(S, Alice, message1)
+Gen(S, Kab)
+Gen(Bob, Nb)
+Op(Bob, assign(message4, senc(Nb, Kab)))\
+Send(Bob, Alice, message4)
+Recv(Alice, Bob, message4)
+Op(Alice, assign(Nb_dec, sdec(message4, Kab)))
+Send(S, Alice, message3)  
+Recv(Alice, S, message3)   
+Send(Alice, Bob, message5)
+Recv(Bob, Alice, message5)
+Recv(Bob, Alice, message3)
+
+Op(S, assign(message2, senc(concat(Kab, idB, Na), Kas)))     // 1
+Op(S, assign(message3, senc(Kab, Kbs)))                      // 1
+Send(S, Alice, message2)                                     // 2
+Recv(Alice, S, message2)                                     // 2
+Send(Alice, Bob, message3)                                   // 1
+Op(Alice, assign(message5, senc(Nb_dec, Kab)))               // 1
+
+
+//  Total: 23
+//     EC: 17/23=73.91
+//    BER: 18/23=78.26
+//     #1: 4/23=17.39
+//     #2: 2/23=8.70
+/*=== GPT-4 ===*/

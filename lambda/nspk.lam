@@ -1,0 +1,47 @@
+Knows(P, skA, pkB)
+Gen(P, Na)
+Send(P, Q, aenc(concat(Na, pk(skA)), pkB))
+Recv(P, Q, cypher)
+Op(P, assign(mess, adec(cypher, skA)))
+Op(P, assign(concat(Na, Nb), mess))
+Send(P, Q, aenc(Nb, pkB))
+Knows(Q, skB, pkA)
+Op(Q, Role_B())
+Recv(Q, P, cypher1)
+Op(Q, assign(mess1, adec(cypher1, skB)))
+Op(Q, assign(concat(Na, pkA), mess1))
+Gen(Q, Nb)
+Send(Q, P, aenc(concat(Na, Nb), pkA))
+Recv(Q, P, cypher2)
+Op(Q, assign(mess2, adec(cypher2, skB)))
+Op(Q, assign(Nb, mess2))
+
+
+/*=== NSPK ===*/
+Knows(role(Alice), pkB)
+Knows(role(Bob), pkA)
+Gen(Alice, Na)
+Op(Alice, assign(message1, aenc(concat(idA, Na), pkB)))
+Send(Alice, Bob, message1)
+Recv(Bob, Alice, message1)
+Op(Bob, adec(message1, skB))  //2
+Gen(Bob, Nb)
+Op(Bob, assign(message2, aenc(concat(Na, Nb), pkA)))
+Send(Bob, Alice, message2)
+Recv(Alice, Bob, message2)
+Op(Alice, adec(message2, skA))
+Op(Alice, check(Na, received_Na)) // 1
+Op(Alice, assign(cypher2, aenc(Nb, pkB))) 
+Send(Alice, Bob, cypher2)
+Recv(Bob, Alice, cypher2)
+Op(Bob, adec(cypher2, skB))    // 2
+Op(Bob, check(Nb, received_Nb))  //1
+
+
+
+//  Total: 18
+//     EC: 10/18=
+//    BER: 10/18=90.91
+//     #1: 0=0
+//     #2: 1/11=9.09
+//*=== *===/

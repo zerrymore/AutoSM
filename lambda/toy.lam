@@ -1,0 +1,38 @@
+Gen(A, ANonce)
+Send(A, B, ANonce)
+Recv(A, B, BNonce)
+Op(A, assign(SK, kdf(ANonce, BNonce)))
+Op(A, Install(ANonce, SK))
+Send(A, B, 'ACK')
+Recv(B, A, ANonce)
+Gen(B, BNonce)
+Send(B, A, BNonce)
+Recv(B, A, 'ACK')
+Op(B, assign(SK, kdf(ANonce, BNonce)))
+Op(B, Install(BNonce, SK))
+Op(B, SwitchState('DONE'))
+PAR(GLOBAL, A(), B())
+
+
+
+
+
+//*=== *===/
+Gen(Alex, ANonce)
+Send(Alex, Blake, ANonce)
+Recv(Blake, Alex, ANonce)
+Gen(Blake, BNonce)
+Send(Blake, Alex, BNonce)
+Recv(Alex, Blake, BNonce)
+Op(Alex, assign(SK, kdf(ANonce, BNonce)))
+Op(Alex, assign(message, "ACK"))     // 1
+Send(Alex, Blake, message)          
+Recv(Blake, Alex, message)
+Op(Blake, assign(SK, kdf(ANonce, BNonce)))   
+
+//  Total: 11
+//     EC: 10/11=90.91
+//    BER: 10/11=90.91
+//     #1: 0=0
+//     #2: 1/11=9.09
+//*=== *===/

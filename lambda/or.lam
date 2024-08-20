@@ -1,0 +1,66 @@
+Knows(A, Kas, A, B)
+Gen(A, m)
+Gen(A, Na)
+Op(A, assign(msg1, concat(m, A, B, senc(concat(Na, m, A, B), Kas))))
+Send(A, B, msg1)
+Recv(A, B, msg2)
+Op(A, assign(concat(m, senc(concat(Na, Kab), Kas)), msg2))
+Knows(B, Kbs, A, B)
+Recv(B, A, msg)
+Op(B, assign(concat(m, A, B, c), msg))
+Gen(B, Nb)
+Op(B, assign(msg2, concat(m, A, B, c, senc(concat(Nb, m, A, B), Kbs))))
+Op(B, Running_B(A, B, concat(m, Nb)))
+Send(B, A, msg2)
+Recv(B, A, msg3)
+Op(B, assign(concat(m, package1, senc(concat(Nb, Kab), Kbs)), msg3))
+Op(B, assign(msg4, concat(m, package1)))
+Send(B, A, msg4)
+Knows(S, Kas, Kbs, A, B)
+Recv(S, A, msg)
+Op(S, assign(concat(m, A, B, senc(concat(Na, m, A, B), Kas), senc(concat(Nb, m, A, B), Kbs)), msg))
+Gen(S, Kab)
+Op(S, assign(msg2, concat(m, senc(concat(Na, Kab), Kas), senc(concat(Nb, Kab), Kbs))))
+Send(S, A, msg2)
+
+
+
+
+
+/*=== *===/
+Knows(role(A), Kas, idA, idB)
+Knows(role(B), Kbs, idA, idB)
+Knows(role(S), Kas, Kbs, idA, idB)
+Gen(A, I)
+Gen(A, Na)    
+Op(A, assign(message1, concat(I, idA, idB, senc(concat(Na, I, idA, idB), Kas))))
+Send(A, B, message1)
+Recv(B, A, message1)
+
+Op(B, assign(Nb, nonce()))   // 2
+Op(B, assign(message2, senc(concat(Nb, I, idA, idB), Kbs)))   //unb   //1
+Op(B, assign(message3, concat(message1, message2)))   // 2
+Send(B, S, message3)  
+Recv(S, B, message3)
+
+Op(S, sdec(message1, Kas)) //1
+Op(S, sdec(message2, Kbs)) //1
+Gen(S, kab) 
+Op(S, assign(message4, concat(I, senc(concat(Na, kab), Kas), senc(concat(Nb, kab), Kbs))))  // unb
+Send(S, B, message4)
+Recv(B, S, message4)
+
+Op(B, sdec(message4, Kbs)) //1
+Op(B, assign(message5, concat(I, senc(concat(Na, kab), Kas)))) //2    unb
+Send(B, A, message5)
+Recv(A, B, message5)
+Op(A, sdec(message5, Kas)) // 1
+
+
+
+//  Total: 24
+//     EC: 10/24=70.83
+//    BER: 3/24=12.50
+//     #1: 5/24=20.83
+//     #2: 2/24=8.33
+/*=== ===*/
