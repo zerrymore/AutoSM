@@ -1,0 +1,176 @@
+theory nspk
+
+
+begin
+
+functions: pk/1, aenc/2, adec/2[destructor]
+
+equations: adec(aenc(m,pk(sk)),sk)=m
+
+let P(skA, pkB)=      
+    event Role_A();
+    new Na;
+    event OUT_I_1(aenc(<Na, pk(skA)>,pkB));
+    out(aenc( <Na,pk(skA)> ,pkB));
+    in(cypher);
+    let mess = adec(cypher,skA) in
+    let <=Na,Nb> = mess in
+    event IN_I_2_nr(Nb,aenc(<Na,Nb>,pk(skA)));
+    event OUT_I_2(aenc(Nb,pkB));
+    out(aenc(Nb, pkB));
+    event SessionBuiltA(pk(skA), Na, Nb);
+    event SessionA(pk(skA), pkB, Na)
+
+
+let Q(skB, pkA) =  
+    event Role_B();
+    in(cypher1);
+    let mess1 = adec(cypher1,skB) in
+    let <Na, =pkA> = mess1 in
+    event IN_R_1_ni(Na,aenc(<Na,pkA>,pk(skB)));
+    new Nb;
+    event OUT_R_1(aenc(<Na,Nb>,pkA));
+    out(aenc(<Na,Nb>,pkA));
+    in(cypher2);
+    let mess2 = adec(cypher2,skB) in
+    let =Nb = mess2 in
+    event IN_R_2(Nb, aenc(Nb, pk(skB)));
+    event SessionBuiltB(pk(skB),Na,Nb);
+    event SessionB(pkA,pk(skB),Na) 
+
+process:
+!(
+  new skA; out(pk(skA)); event HonestA(pk(skA));
+  !(
+    new skB; out(pk(skB)); event HonestB(pk(skB));
+    (!P(skA, pk(skB))  | !Q(skB, pk(skA)))
+  )
+)   
+
+
+
+lemma source [sources, reuse, output=[msr]]:
+  " (All ni m1 #i.
+       IN_R_1_ni( ni, m1) @ i
+       ==>
+       ( (Ex #j. KU(ni) @ j & j < i)
+       | (Ex #j. OUT_I_1( m1 ) @ j)
+       )
+    )
+  & (All nr m2 #i.
+       IN_I_2_nr( nr, m2) @ i
+       ==>
+       ( (Ex #j. KU(nr) @ j & j < i)
+       | (Ex #j. OUT_R_1( m2 ) @ j)
+       )
+    )
+    & (All nr m3 #i.
+      IN_R_2(nr, m3) @ i
+      ==>
+      ( (Ex #j. KU(nr) @ j & j < i)
+      | (Ex #j. OUT_I_2( m3 ) @ j)
+      )
+   )
+"
+
+
+
+lemma Confident_aux[reuse]:
+  " not ( Ex pka Na Nb #t1 #t2.
+            SessionBuiltA(pka,Na,Nb)@t1 & KU(Na)@t2 )"
+
+
+lemma SessionBuilt:
+exists-trace
+"Ex pka pkb Na Nb #t1 #t2.
+  SessionBuiltA(pka,Na,Nb)@t1 & SessionBuiltB(pkb,Na,Nb)@t2"
+
+
+lemma HonestImpl:
+  "All pka Na Nb #i. SessionBuiltA(pka,Na,Nb)@i ==> (Ex #j.HonestA(pka)@j)"
+
+// falsified
+lemma Confidentiality:
+"not(
+    Ex pka pkb Na Nb #t1 #t2 #t3 #i1 #i2.
+    /* If some roles claim have setup a shared secret of Na and Nb */
+    SessionBuiltA(pka,Na,Nb)@t1
+    & SessionBuiltB(pkb,Na,Nb)@t3
+    /* but the adversary knows Na, */
+    & KU(Na)@t2
+    /* and both roles are honest without having performed key leak.*/
+    & HonestA(pka) @ i1
+    & HonestB(pkb) @ i2
+ )"
+
+
+// satisfied: 
+//      If honest A communicates with an honest B (both roles
+//      do not leak their private keys), then adversary can not
+//      knows na.
+ lemma sec_of_A[reuse]:
+ "not(
+     Ex pka pkb Na #t1 #t2 #i1 #i2.
+     SessionA(pka,pkb,Na)@t1
+     & KU(Na)@t2
+     /* without having performed a long-term key reveal. */
+     & HonestA(pka) @ i1
+     & HonestB(pkb) @ i2
+  )"
+
+
+// falsified (Lowe man-in-th-middle attack): 
+//      If honest  cBommunicates with an honest A (both roles
+//      do not leak their private keys), then adversary can 
+//      still knows na.
+lemma sec_of_B:
+ "not(
+     Ex pka pkb Na #t1 #t2 #i1 #i2.
+     SessionB(pka,pkb,Na)@t1
+     & KU(Na)@t2
+     /* without having performed a long-term key reveal. */
+     & HonestA(pka) @ i1
+     & HonestB(pkb) @ i2  
+  )"
+
+
+  lemma sec_of_B_test:
+ "not (Ex pka pkb Na Nb #t1 #t2 #m1 #m2 #i1 #i2.
+     SessionB(pka,pkb,Na)@t1
+     & KU(Na)@t2
+     /* without having performed a long-term key reveal. */
+     & HonestA(pka) @ i1
+     & HonestB(pkb) @ i2
+     & SessionBuiltA(pka, Na, Nb) @ m1 & SessionBuiltB(pkb, Na, Nb) @ m2 ) "
+
+
+
+lemma sanity1: //make sure that a valid protocol run exists
+  exists-trace
+  "Ex pka pkb k #t1 . SessionA(pka,pkb,k)@t1"
+
+lemma sanity2:
+  exists-trace
+  "Ex pka pkb k #t1 . SessionB(pka,pkb,k)@t1"
+
+
+
+end
+
+
+// ==============================================================================
+
+//   source (all-traces): verified (37 steps)
+//   secrecy (all-traces): verified (99 steps)
+//   Confident_aux (all-traces): verified (99 steps)
+//   test (all-traces): falsified - found trace (5 steps)
+//   SessionBuilt (exists-trace): verified (14 steps)
+//   HonestImpl (all-traces): verified (3 steps)
+//   Confidentiality (all-traces): falsified - found trace (20 steps)
+//   sec_of_A (all-traces): verified (4 steps)
+//   sec_of_B (all-traces): falsified - found trace (16 steps)
+//   sec_of_B_test (all-traces): falsified - found trace (24 steps)
+//   sanity1 (exists-trace): verified (13 steps)
+//   sanity2 (exists-trace): verified (16 steps)
+
+// ==============================================================================

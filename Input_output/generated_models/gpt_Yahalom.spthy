@@ -1,0 +1,52 @@
+theory Yahalom_raw_output
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+functions: pk/1
+
+let Alice(Kas, idB, idA)=
+new Na;
+let message1 = <idA, Na> in 
+out(message1);
+in(message3);
+let <gamma_0, gamma_1> = message3 in
+// let gamma_3 = sdec(gamma_1, Kbs) in
+// let <idA, Kab> = gamma_3 in
+let gamma_2 = sdec(gamma_0, Kas) in
+let <=idB, Kab, =Na, Nb> = gamma_2 in
+// let message4 = <senc(<idA, Kab>, Kbs), senc(Nb, Kab)> in 
+// Can not construct message4 from {'gamma_2', 'Kas', 'Nb', 'message3', 'message1', 'gamma_1', 'idA', 'idB', 'gamma_0', 'Kab', 'Na'}
+// out(message4);
+0
+
+let Server(idA, Kas, idB, Kbs)=
+in(message2);
+let gamma_0 = sdec(message2, Kbs) in
+let <=idA, Na, Nb> = gamma_0 in
+new Kab;
+let message3 = <senc(<idB, Kab, Na, Nb>, Kas), senc(<idA, Kab>, Kbs)> in 
+out(message3);
+0
+
+let Bob(idA, idB, Kbs)=
+in(message1);
+let <=idA, Na> = message1 in
+new Nb;
+let message2 = senc(<idA, Na, Nb>, Kbs) in 
+out(message2);
+in(message4);
+let <gamma_0, gamma_1> = message4 in
+let gamma_2 = sdec(gamma_0, Kbs) in
+let <=idA, Kab> = gamma_2 in
+let =Nb = sdec(gamma_1, Kab) in
+0
+
+
+process:
+!(   
+  new Kas; out(pk(Kas)); event HonestAlice(pk(Kas));
+  new Kbs; out(pk(Kbs)); event HonestBob(pk(Kbs));
+  let idA = pk(Kas) in out(idA);  
+  let idB = pk(Kbs) in out(idB); 
+  (   !Alice(Kas, idB, idA) | !Server(idA, Kas, idB, Kbs) | !Bob(idA, idB, Kbs) )
+)
+end

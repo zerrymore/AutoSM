@@ -1,0 +1,47 @@
+theory woo_lam_pi_f_raw_output
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+functions: id/1
+let Alice(Kas, idB, idA)=
+out(idA);
+in(Nb);
+let message = senc(<idA, idB, Nb>, Kas) in 
+out(message);
+0
+
+let Bob(idB, Kbs, idA)=
+in(idA);
+new Nb;
+out(Nb);
+in(message);
+// let gamma_0 = sdec(message, Kas) in
+// let <idA, idB, Nb> = gamma_0 in
+let pack = senc(<message, idA, idB, Nb>, Kbs) in 
+out(pack);
+in(new_message);
+let gamma_1 = sdec(new_message, Kbs) in
+let <=idA, =idB, =Nb> = gamma_1 in
+0
+
+let Server(Kas, idB, Kbs, idA)=
+in(pack);
+let gamma_0 = sdec(pack, Kbs) in
+let <message, =idA, =idB, Nb> = gamma_0 in
+let gamma_1 = sdec(message, Kas) in
+let <=idA, =idB, =Nb> = gamma_1 in
+let new_message = senc(<idA, idB, Nb>, Kbs) in 
+out(new_message);
+0
+
+
+process:
+!(
+  new Kas; out(id(Kas)); event HonestA(id(Kas));
+  new Kbs; out(id(Kbs)); event HonestB(id(Kbs));
+  let idA = id(Kas) in out(idA); 
+  let idB = id(Kbs) in out(idB); 
+  (
+    !Alice(Kas, idB, idA) | !Bob(idB, Kbs, idA) | !Server(Kas, idB, Kbs, idA)
+  )
+)
+end

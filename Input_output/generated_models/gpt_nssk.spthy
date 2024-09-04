@@ -1,0 +1,55 @@
+theory nssk_raw_output
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+functions: id/1, dec/1
+let Alice(idA, Kas, idB)=
+new Na;
+let message1 = <idA, idB, Na> in 
+out(message1);
+in(message2);
+let gamma_0 = sdec(message2, Kas) in
+let <=Na, Kab, =idB, gamma_1> = gamma_0 in
+// let gamma_2 = sdec(gamma_1, Kbs) in
+// let <Kab, idA> = gamma_2 in
+// let message3 = senc(<Kab, idA>, Kbs) in 
+// Can not construct message3 from {'idB', 'gamma_0', 'gamma_1', 'Kas', 'message1', 'idA', 'Na', 'message2', 'Kab'}
+out(gamma_1);
+in(message4);
+let Nb = sdec(message4, Kab) in
+let message5 = senc(dec(Nb), Kab) in 
+out(message5);
+0
+
+let Bob(Kbs, idA, idB)=
+new Nb;
+in(message3);
+let gamma_0 = sdec(message3, Kbs) in
+let <Kab, =idA> = gamma_0 in
+let message4 = senc(Nb, Kab) in 
+out(message4);
+in(message5);
+let gamma_1 = sdec(message5, Kab) in
+let dec(=Nb) = gamma_1 in
+0
+
+let Server(Kbs, idA, Kas, idB)=
+new Kab;
+in(message1);
+let <=idA, =idB, Na> = message1 in
+let message2 = senc(<Na, Kab, idB, senc(<Kab, idA>, Kbs)>, Kas) in 
+out(message2);
+0
+
+
+process:
+!(
+  new Kas; new Kbs; 
+  let idA = id(Kas) in out(idA); 
+  let idB = id(Kbs) in out(idB); 
+  !(
+    Alice(idA, Kas, idB) |
+    Bob(Kbs, idA, idB) |
+    Server(Kbs, idA, Kas, idB)
+  )
+)
+end

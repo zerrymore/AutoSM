@@ -1,0 +1,41 @@
+theory denning_sacco_raw_output
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+functions: id/1
+
+let Alice(Kas, idA, idB)=
+out(<idA, idB>);
+in(message1);
+let gamma_0 = sdec(message1, Kas) in
+let <=idB, Kab, T, gamma_1> = gamma_0 in
+// let gamma_2 = sdec(gamma_1, Kbs) in
+// let <Kab, idA, T> = gamma_2 in
+// let message2 = senc(<Kab, idA, T>, Kbs) in 
+// Can not construct message2 from {'idA', 'gamma_1', 'gamma_0', 'Kas', 'T', 'Kab', 'message1', 'idB'}
+out(gamma_1);
+0
+
+let S(Kbs, Kas, idA, idB)=
+in(<=idA, =idB>);
+new T;
+new Kab;
+let message1 = senc(<idB, Kab, T, senc(<Kab, idA, T>, Kbs)>, Kas) in 
+out(message1);
+0
+
+let Bob(Kbs, idA, idB)=
+in(message2);
+let gamma_0 = sdec(message2, Kbs) in
+let <Kab, =idA, T> = gamma_0 in
+0
+
+
+process:
+!(   
+  new Kas; out(id(Kas)); event HonestAlice(id(Kas));
+  new Kbs; out(id(Kbs)); event HonestBob(id(Kbs));
+  let idA = id(Kas) in  out(idA);   
+  let idB = id(Kbs) in  out(idB); 
+  (   !Alice(Kas, idA, idB) | !S(Kbs, Kas, idA, idB) | !Bob(Kbs, idA, idB))
+)
+end

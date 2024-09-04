@@ -1,0 +1,143 @@
+theory Yahalom_with_prop
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+functions: id/1
+
+let Alice(Kas, idB, idA)=
+    new Na;
+    let message1 = <idA, Na> in 
+    out(message1);
+    in(message3);
+    let <gamma_0, gamma_1> = message3 in
+    // let gamma_3 = sdec(gamma_1, Kbs) in
+    // let <idA, Kab> = gamma_3 in
+    let gamma_2 = sdec(gamma_0, Kas) in
+    let <=idB, Kab, =Na, Nb> = gamma_2 in
+    // let message4 = <senc(<idA, Kab>, Kbs), senc(Nb, Kab)> in 
+    // Can not construct message4 from {'gamma_2', 'Kas', 'Nb', 'message3', 'message1', 'gamma_1', 'idA', 'idB', 'gamma_0', 'Kab', 'Na'}
+    // out(message4);
+    event AUTO_IN_TERM_2_0_0_0_1_1_1_1__A_2(gamma_0, Nb);
+    event CommitA(idA, idB, <Na,Nb>);
+    event RunningA(idA, idB, <Kab, Na, Nb>);
+    event Secret(idA, idB, Kab);
+    let message4 = <gamma_1, senc(Nb, Kab)> in
+    out(message4);
+    0
+
+let Server(idA, Kas, idB, Kbs)=
+    in(message2);
+    let gamma_0 = sdec(message2, Kbs) in
+    let <=idA, Na, Nb> = gamma_0 in
+    event AUTO_IN_TERM_1_0_1_0_1_1_1__S_1( message2, <Na, Nb>);
+    new Kab;
+    let message3 = <senc(<idB, Kab, Na, Nb>, Kas), senc(<idA, Kab>, Kbs)> in 
+    event Server(idA,idB, <Kab,Na,Nb>);
+    event AUTO_OUT_TERM_2_0_0_0_1_1_1_1__A_2(senc(<idB, Kab, Na, Nb>, Kas));
+    out(message3);
+    0
+
+let Bob(idA, idB, Kbs)=
+    in(message1);
+    let <=idA, Na> = message1 in
+    new Nb;
+    event RunningB(idB, idA, <Na, Nb>);
+    let message2 = senc(<idA, Na, Nb>, Kbs) in 
+    event AUTO_OUT_TERM_1_0_1_0_1_1_1__S_1(message2);
+    out(message2);
+    in(message4);
+    let <gamma_0, gamma_1> = message4 in
+    let gamma_2 = sdec(gamma_0, Kbs) in
+    let <=idA, Kab> = gamma_2 in
+    let =Nb = sdec(gamma_1, Kab) in
+    event IN_B(gamma_1, Nb);
+    event CommitB(idB,idA,<Kab,Na,Nb>);
+    event Secret(idB,idA,Kab);
+    0
+
+
+process:
+!(   
+  new Kas; out(id(Kas)); event HonestAlice(id(Kas));
+  new Kbs; out(id(Kbs)); event HonestBob(id(Kbs));
+  let idA = id(Kas) in out(idA);  
+  let idB = id(Kbs) in out(idB); 
+  (   !Alice(Kas, idB, idA) | !Server(idA, Kas, idB, Kbs) | !Bob(idA, idB, Kbs) )
+)
+
+
+
+lemma AUTO_typing[sources, reuse]:
+  all-traces
+  "
+    (All x m #i.
+      (AUTO_IN_TERM_1_0_1_0_1_1_1__S_1( m, x ) @ #i) ==>
+      ((Ex #j. (!KU( x ) @ #j) & (#j < #i)) |
+       (Ex #j. (AUTO_OUT_TERM_1_0_1_0_1_1_1__S_1( m ) @ #j) & (#j < #i)))) &
+   (All x m #i.
+     (AUTO_IN_TERM_2_0_0_0_1_1_1_1__A_2( m, x ) @ #i) ==>
+     ((Ex #j. (!KU( x ) @ #j) & (#j < #i)) |
+      (Ex #j. (AUTO_OUT_TERM_2_0_0_0_1_1_1_1__A_2( m ) @ #j) & (#j < #i))))"
+      
+
+lemma executability:
+exists-trace
+"Ex A B kab na nb #i #j #k.
+  CommitB(B,A,<kab,na,nb>)@i 
+  & CommitA(A,B,<na,nb>)@j & #j<#i
+  & Server(A,B,<kab,na,nb>)@k & #k < #j"
+
+
+// check the secrecy of the newly generated session key
+lemma secrecy:
+  "All A B k #i. Secret(A,B,k)@i ==> not (Ex #j. K(k)@j )  "
+
+
+  lemma test[reuse]:
+  "All A B t #i.
+    CommitB(B, A, t) @i
+    ==> Ex #j. RunningA(A,B, t) @j"
+
+
+// check the authenticity of the transaction from B's point of view
+lemma noninjectiveagreement_B:
+  "All A B t #i.
+    CommitB(B, A, t) @i
+    ==> (Ex #j. RunningA(A,B, t) @j
+        & j < i)"
+
+
+// check the authenticity of the transaction from A's point of view
+lemma noninjectiveagreement_A:
+  "All A B t #i.
+    CommitA(A, B, t) @i
+    ==> ((Ex #j. RunningB(B,A,t) @j
+        & j < i)
+        )"
+
+
+
+
+// check the authenticity and freshness of the transaction from B's point of view
+lemma injectiveagreement_B:
+"All A B t #i. CommitB(B,A,t) @i
+  ==> ((Ex #j. RunningA(A,B,t) @j
+      & j < i
+      & not (Ex A2 B2 #i2. CommitB(B2,A2,t) @i2
+                         & not (#i2 = #i)))
+    )"
+
+
+
+// check the authenticity and freshness of the transaction from A's point of view
+lemma injectiveagreement_A:
+"All A B t #i. CommitA(A,B,t)@i
+  ==> ((Ex #j. RunningB(B,A,t) @j
+      & j < i
+      & not (Ex A2 B2 #i2. CommitA(A2,B2,t) @i2
+                         & not (#i2 = #i))))"
+
+end
+
+
+
+end

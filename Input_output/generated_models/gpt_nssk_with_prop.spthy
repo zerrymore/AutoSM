@@ -1,0 +1,112 @@
+theory nssk_with_prop
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+functions: id/1, dec/1
+let Alice(idA, Kas, idB)=
+new Na;
+let message1 = <idA, idB, Na> in 
+out(message1);
+in(message2);
+let gamma_0 = sdec(message2, Kas) in
+let <=Na, Kab, =idB, gamma_1> = gamma_0 in
+// let gamma_2 = sdec(gamma_1, Kbs) in
+// let <Kab, idA> = gamma_2 in
+// let message3 = senc(<Kab, idA>, Kbs) in 
+// Can not construct message3 from {'idB', 'gamma_0', 'gamma_1', 'Kas', 'message1', 'idA', 'Na', 'message2', 'Kab'}
+out(gamma_1);
+in(message4);
+let Nb = sdec(message4, Kab) in
+let message5 = senc(dec(Nb), Kab) in 
+event Running_A(idA, idB, <'A', 'B', dec(Nb), Kab>);
+event Commit_A(idA, idB, <'A', 'B', Nb, Kab>);
+out(message5);
+0
+
+let Bob(Kbs, idA, idB)=
+new Nb;
+in(message3);
+let gamma_0 = sdec(message3, Kbs) in
+let <Kab, =idA> = gamma_0 in
+let message4 = senc(Nb, Kab) in
+event Running_B(idA, idB, <'A', 'B', Nb, Kab>);
+event Secret(idA, idB, Kab);
+out(message4);
+in(message5);
+let gamma_1 = sdec(message5, Kab) in
+let dec(=Nb) = gamma_1 in
+event Commit_B(idA, idB, <'A', 'B', dec(Nb), Kab>);
+0
+
+let Server(Kbs, idA, Kas, idB)=
+new Kab;
+in(message1);
+let <=idA, =idB, Na> = message1 in
+let message2 = senc(<Na, Kab, idB, senc(<Kab, idA>, Kbs)>, Kas) in 
+event Secret(idA, idB, Kab);   // Added
+out(message2);
+0
+
+
+process:
+!(
+  new Kas; new Kbs; 
+  let idA = id(Kas) in out(idA); 
+  let idB = id(Kbs) in out(idB); 
+  !(
+    Alice(idA, Kas, idB) |
+    Bob(Kbs, idA, idB) |
+    Server(Kbs, idA, Kas, idB)
+  )
+)
+
+
+
+lemma executability:
+ exists-trace
+ " Ex A B nb kab #i #j #k #m.
+   Commit_B(A,B,<'A', 'B', dec(nb),kab>)@#i
+  & Commit_A(A,B,<'A', 'B', nb,kab>)@#j & #j<#i
+  & Running_A(A,B,<'A', 'B', dec(nb),kab>)@#m
+  & Running_B(A,B,<'A', 'B', nb,kab>)@#k & #k<#j
+ "
+
+// check the secrecy of a secret x protected by the long-term key of A and B
+lemma Secrecy:
+ "not(
+     Ex A B m #i .
+       Secret(A, B, m)@ #i
+       & (Ex #r. K(m) @ #r)
+   )
+ "
+
+// check the authenticity and freshness of the transaction from B's point of view
+lemma injectiveagreement_B:
+  "All A B t #i.
+    Commit_B(A,B,t) @i
+    ==> (Ex #j. Running_A(A,B,t) @j
+        & j < i
+        & not (Ex A2 B2 #i2. Commit_B(A2,B2,t) @i2
+                           & not (#i2 = #i)))"
+
+// check the authenticity of the transaction from B's point of view
+lemma agreement_B:
+ "All A B t #i.
+   Commit_B(A,B,t) @i
+   ==> (Ex #j. Running_A(A,B,t) @j  & j < i)"
+
+// check the authenticity and freshness of the transaction from A's point of view
+lemma injectiveagreement_A:
+  "All A B t #i.
+    Commit_A(A,B,t) @i
+    ==> (Ex #j. Running_B(A,B,t) @j
+        & j < i
+        & not (Ex A2 B2 #i2. Commit_A(A2,B2,t) @i2
+                           & not (#i2 = #i)))"
+
+// check the authenticity of the transaction from A's point of view
+lemma agreement_A:
+ "All A B t #i.
+   Commit_A(A,B,t) @i
+   ==> (Ex #j. Running_B(A,B,t) @j  & j < i)"
+
+end

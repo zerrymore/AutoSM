@@ -1,0 +1,16 @@
+The Denning-Sacco protocol facilitates secure communication by allowing two parties (Alice and Bob) \
+to establish a shared session key via a trusted Key Distribution Center (KDC). \
+    
+Alice initiates the communication by sending a message to the KDC (S), \
+requesting a session key to communicate with Bob (B). The message includes the identities of Alice (A) and Bob (B). 
+    
+The KDC responds to Alice with an encrypted message using Kas. The message includes: \
+(1) The identity of Bob (B), indicating the session key is for communication with Bob. \
+(2) The session key (Kab) for Alice and Bob to use. \
+(3) A timestamp (T) to ensure the message's freshness which is a fresh nonce.
+(4) An encrypted part for Bob {Kab, A, T}Kbs, which includes the session key (Kab), the identity of Alice (A),\
+and the timestamp (T), all encrypted with Bob's key (Kbs). This ensures that only Bob can decrypt and use this information.
+
+Alice forwards the encrypted part {Kab, A, T}Kbs to Bob. \
+This message allows Bob to decrypt it using his key (Kbs) to retrieve the session key (Kab) \
+and verify Alice's identity and the message's freshness with the timestamp.

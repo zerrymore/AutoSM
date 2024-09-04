@@ -1,0 +1,25 @@
+Alice and Server shares a key Kas, Bob shares a Kbs with Server initially.
+All the identitis  can be known publickly.
+
+A -> B: Alice starts the protocol by sending her identity (A) and a freshly generated \
+nonce (Na) to Bob. This message indicates Alice's intention to communicate securely and \
+serves as a challenge to prove Bob's identity in later steps.
+
+B -> S: Bob responds to Alice's request by sending a message to the Server (S). \
+This message includes Bob's identity (B), and an encrypted package {A, Na, Nb}Kbs \
+containing Alice's identity, Alice's nonce (Na), and Bob's freshly generated nonce (Nb), \
+all encrypted with Bob's key (Kbs). This ensures that only the Server can decrypt and \
+process the message, proving Bob's identity to the Server.
+
+S -> A: The Server processes Bob's request and sends a message including two packages: \
+The first package {B, Kab, Na, Nb}Kas is encrypted with Alice's key (Kas) and includes \
+Bob's identity (B), the session key (Kab), and both nonces (Na, Nb). This message assures \
+Alice of Bob's participation and provides the session key.The second package {A, Kab}Kbs \
+is encrypted with Bob's key (Kbs) and includes Alice's identity (A) and the session key (Kab), \
+intended for Bob.
+
+A -> B: Alice forwards the second package {A, Kab}Kbs to Bob, proving her ability to \
+communicate with the Server and her possession of the session key. She also sends an \
+encrypted message {Nb}Kab, which contains Bob's nonce encrypted with the session key (Kab). \
+This step confirms to Bob that Alice has received and accepted the session key, \
+and it validates Alice's identity to Bob.

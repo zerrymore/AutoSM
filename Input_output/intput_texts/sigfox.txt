@@ -1,0 +1,7 @@
+Both the public keys of client and Server can be known by each. The secrect key is private, only known by himself.
+The SigFox server (A) pushes an asymmetric-encrypted notification (na) with its signature to devices (B).
+The server uses the public key of B (pkB) and generates a fresh data item na. It then encrypts the data and the server's public key 
+(pkA) using the the public key of client, pkB to generate the message aenc(<pkA, na>, pkB). 
+Then A signs the message using its own private key ltkA. A sends the message along with its signature (<mess, sig>) to the device B. 
+B receives the asymmetrically encrypted message with a signature, then perform signature 
+verification on received message.

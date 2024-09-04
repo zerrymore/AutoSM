@@ -1,0 +1,110 @@
+theory woo_lam_pi_f_with_prop
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+functions: id/1
+
+let Alice(Kas, idB, idA)=
+    out(idA);
+    in(Nb);
+    let message = senc(<idA, idB, Nb>, Kas) in 
+    event OUT_A_message( message );
+    event Running_A(idA, idB, <'A', 'B', Nb>);
+    event Secret(idA, idB, Kas);
+    out(message);
+    0
+
+let Bob(idB, Kbs, idA)=
+    in(idA);
+    new Nb;
+    event Running_B(idA, idB, <'A', 'B', Nb>);
+    out(Nb);
+    in(message);
+    // let gamma_0 = sdec(message, Kas) in
+    // let <idA, idB, Nb> = gamma_0 in
+    let pack = senc(<message, idA, idB, Nb>, Kbs) in 
+    event OUT_Bob_pack( pack );
+    event Secret(idA, idB, Kbs);
+    out(pack);
+    in(new_message);
+    let gamma_1 = sdec(new_message, Kbs) in
+    let <=idA, =idB, =Nb> = gamma_1 in
+    event Commit_B(idA, idB, <'A', 'B', Nb>);
+    0
+
+let Server(Kas, idB, Kbs, idA)=
+    in(pack);
+    let gamma_0 = sdec(pack, Kbs) in
+    let <message, =idA, =idB, Nb> = gamma_0 in
+    let gamma_1 = sdec(message, Kas) in
+    let <=idA, =idB, =Nb> = gamma_1 in
+    let new_message = senc(<idA, idB, Nb>, Kbs) in
+    event IN_Server_message(message, Nb);
+    out(new_message);
+    0
+
+
+process:
+!(
+  new Kas; out(id(Kas)); event HonestA(id(Kas));
+  new Kbs; out(id(Kbs)); event HonestB(id(Kbs));
+  let idA = id(Kas) in out(idA); 
+  let idB = id(Kbs) in out(idB); 
+  (
+    !Alice(Kas, idB, idA) | !Bob(idB, Kbs, idA) | !Server(Kas, idB, Kbs, idA)
+  )
+)
+
+
+// ====================
+// ====== Lemmas ======
+// ====================
+lemma AUTO_typing [sources]:
+  all-traces
+  "(
+    (All x m #i.
+      (IN_Server_message( m, x ) @ #i) ⇒
+      ((∃ #j. (!KU( x ) @ #j) & (#j < #i)) |
+       (∃ #j. (OUT_Bob_pack( m ) @ #j) & (#j < #i))))) &
+   (All x m #i.
+     (IN_Server_message( m, x ) @ #i) ⇒
+     ((∃ #j. (!KU( x ) @ #j) & (#j < #i)) |
+      (∃ #j.
+        (OUT_A_message( m ) @ #j) & (#j < #i))))"
+
+// sanity check: check if honest execution is possible
+lemma executability:
+ exists-trace
+ " Ex A B t #i #j #k.
+   Commit_B(A,B,t)@#i
+  & Running_A(A,B,t)@#j & #j < #i
+  & Running_B(A,B,t)@#k & #k < #j
+ "
+
+// check the secrecy of a secret x protected by the long-term key of A and B
+lemma Secrecy:
+ "
+   not(
+     Ex A B m #i .
+       Secret(A, B, m)@ #i
+       & (Ex #r. K(m) @ #r)
+   )
+ "
+
+// check the authenticity and freshness of the transaction from B's point of view
+lemma injectiveagreement_B:
+  "All A B t #i.
+    Commit_B(A,B,t) @i
+    ==> (Ex #j. Running_A(A,B,t) @j
+        & j < i
+        & not (Ex A2 B2 #i2. Commit_B(A2,B2,t) @i2
+                           & not (#i2 = #i)))"
+
+// check the authenticity of the transaction from B's point of view
+lemma agreement_B:
+ "All A B t #i.
+   Commit_B(A,B,t) @i
+   ==> (Ex #j. Running_A(A,B,t) @j  & j < i)"
+
+
+
+end

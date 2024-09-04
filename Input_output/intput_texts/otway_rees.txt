@@ -1,0 +1,22 @@
+In the following description, `A`, `B` are the identities of principal A, B repectively.
+`kas`, `kab` are shared symmetric keys between A and S, between A  and B respectively.
+A knows the key `Kas`, `A` and `B` initially,
+B knows symmetric key `Kbs`, `A`, `B` and S knows both `Kas` and `Kbs` and identits `A` and `B` initially.
+
+1. A sends B the protocol session number I (a fresh nonce), his identity, the identity of the principal
+with whom he wishes to communicate, and a message encrypted with the key `kas`, i.e.,
+the message1 is `<I,A,B,{Na,I,A,B}kas>`.
+
+2. B receives A's message and concats it with his own message encrypted with the key kbs (`{Nb,I,A,B}kbs`) before  
+sending it to the trusted server S. 
+
+3. S receives the message and is able to retrieve the session number, the random number 
+from A: `Na`, using his shared key kas, the random number from B: `Nb` with the other shared 
+key `kbs`, and generates the session key `kab`. With this information, he is able to generate
+message 3 and sends it to B. message3=`I,{Na,kab}kas,{Nb, kab}kbs`
+
+4. The principal B receives message 3, removes the last encrypted part with his 
+shared key, decrypts this sub-message with his key `kbs`, retrieves the session key `kab`, 
+and sends the remaining part of the message to A. In this way, A is also able to 
+retrieve the session key kab, based on the last part of message 4 (`I,{Na,kab}kas`),
+by using his shared key kas, and the two principals are able to start communicating. 

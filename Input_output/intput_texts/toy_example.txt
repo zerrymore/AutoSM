@@ -1,0 +1,8 @@
+Alex computes a nonce and sends it to Blake. (A -> B: ANonce)
+When Blake receives Alex's nonce, Blake computes their own nonce and sends it to Alex. (B -> A: BNonce)
+When Alex receives Blake's nonce, Alex does two things: Alex installs a session key SK, which is derived 
+from ANonce and BNonce by applying a key derivation function (i.e., SK = kdf(ANonce, BNonce)).
+Once the session key is installed, Alex sends a message with the string "ACK"  to Blake (A -> B: "ACK") 
+and switches to a 'DONE' state to indicate that the protocol has been executed successfully on Alex's side.
+When Blake receives the "ACK" message, Blake also computes the session key SK = kdf(ANonce, BNonce), 
+installs it and switches to a 'DONE' state.    

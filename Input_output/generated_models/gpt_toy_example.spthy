@@ -1,0 +1,27 @@
+theory toy_example_raw_output
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+functions: kdf/2
+
+let Alex()=
+    new ANonce;
+    out(ANonce);
+    in(BNonce);
+    let SK = kdf(ANonce, BNonce) in 
+    out('ACK');
+    0
+
+let Blake()=
+    in(ANonce);
+    new BNonce;
+    out(BNonce);
+    in('ACK');
+    let SK = kdf(ANonce, BNonce) in 
+    0
+
+
+process:
+!(   
+  !Alex() | !Blake()
+)
+end

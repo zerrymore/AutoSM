@@ -1,0 +1,50 @@
+theory sigfox_with_prop
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+// functions: pk/1  
+
+let Server(skA, pkB, pkA)=
+    new na;
+    let message = aenc(<pkA, na>, pkB) in 
+    let sig = sign(message, skA) in 
+    let mess_with_sig = <message, sig> in 
+    event Send(pkB, message);
+    event SecretA(na);
+    out(mess_with_sig);
+    0
+
+let Device(pkA, skB)=
+    event Role('B');
+    in(mess_with_sig);
+    let <message, sig> = mess_with_sig in
+    // let sign(message, skA) = sig in
+    let gamma_0 = adec(message, skB) in
+    let <=pkA, na> = gamma_0 in
+    if verify(sig, message, pkA)=true then
+        event Recv(pk(skB), message);
+        event SecretB(na);
+        0
+
+
+process:
+!(   
+  new skA; out(pk(skA));
+  !(   
+    new skB; out(pk(skB));
+    let pkA = pk(skA) in  out(pkA);  
+    let pkB = pk(skB) in  out(pkB); 
+    (   !Server(skA, pkB, pkA) | !Device(pkA, skB))
+  )
+)
+
+
+lemma executable: exists-trace 
+"Ex A B m #i #j. Send(A,m)@i & Recv(B,m) @j"
+
+lemma secret_A: all-traces 
+	"All n #i. SecretA(n) @i  ==> (not (Ex #j. K(n)@j))"
+	
+lemma secret_B: all-traces 
+	"All n #i. SecretB(n) @i & Role('B') @i ==> (not (Ex #j. K(n)@j)) "
+    
+end

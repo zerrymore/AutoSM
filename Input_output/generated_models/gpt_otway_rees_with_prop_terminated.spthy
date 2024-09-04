@@ -1,0 +1,197 @@
+theory otway_rees_with_prop
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+functions: id/1
+
+let A(idA, kas, idB)=
+    new I;
+    new Na;
+    let message1 = <I, idA, idB, senc(<'1', Na, I, idA, idB>, kas)> in 
+    event Running_A(idA, idB, <I, Na>);
+    event OUT_A_msg1(message1);
+    out(message1);
+    in(message4);
+    let <=I, gamma_0> = message4 in
+    let gamma_1 = sdec(gamma_0, kas) in
+    let <'3', =Na, kab> = gamma_1 in
+    event Commit_A(idA, idB, <I, kab>);
+    event Secret(idA, idB, kab);
+    event SessionA(idA, idB, kab);
+    event Secret(idA, idB, kab);
+    0
+
+let B(idA, idB, kbs)=
+    in(message1);
+    let <I, =idA, =idB, gamma_0> = message1 in
+    // let gamma_1 = sdec(gamma_0, kas) in
+    // let <Na, I, idA, idB> = gamma_1 in
+    new Nb;
+    let message2 = <message1, senc(<'2', Nb, I, idA, idB>, kbs)> in 
+    event Running_B(idA, idB, <I, Nb>);
+    event OUT_B_msg2(message2);
+    out(message2);
+    in(message3);
+    let <=I, gamma_2, gamma_3> = message3 in
+    let gamma_4 = sdec(gamma_3, kbs) in
+    let <'4', =Nb, kab> = gamma_4 in
+    // let gamma_5 = sdec(gamma_2, kas) in
+    // let <Na, kab> = gamma_5 in
+    let decryptedPart = sdec(senc(<Nb, kab>, kbs), kbs) in 
+    // let message4 = <I, senc(<Na, kab>, kas)> in 
+    // Can not construct message4 from {'kbs', 'gamma_3', 'gamma_2', 'gamma_4', 'idA', 'idB', 'I', 'kab', 'decryptedPart', 'message2', 'gamma_0', 'Nb', 'message3', 'message1'}
+    // out(message4);
+    let message4 = <I, gamma_2> in
+    event Secret(idA, idB, kab);
+    event SessionB(idA, idB, kab);
+    event Commit_B(idA, idB, <I, kab>);
+    out(message4);
+    0
+
+
+let S(idA, kas, kbs, idB)=
+    in(message2);
+    let <message1, gamma_0> = message2 in
+    let <'1', I, =idA, =idB, gamma_1> = message1 in
+    let gamma_2 = sdec(gamma_1, kas) in
+    let <Na, =I, =idA, =idB> = gamma_2 in
+    let gamma_3 = sdec(gamma_0, kbs) in
+    let <'2', Nb, =I, =idA, =idB> = gamma_3 in
+    new kab;
+    let message3 = <I, senc(<'3', Na, kab>, kas), senc(<'4', Nb, kab>, kbs)> in 
+    event Secret(idA, idB, kab);
+    event Running_S(idA, idB, <I, kab>);
+    event Commit_S_A(idA, idB, <I, Na>);
+    event Commit_S_B(idA, idB, <I, Nb>);
+    event IN_S_Nb(message2, Nb);
+    event IN_S_Na(message2, Na);
+    out(message3);
+    0
+
+
+process:
+!(    
+  new kas; new kbs;  
+  let idA = id(kas) in out(idA);  
+  let idB = id(kbs) in out(idB);  
+  (!A(idA, kas, idB) | !B(idA, idB, kbs) | !S(idA, kas, kbs, idB))  
+)
+
+
+
+lemma AUTO_typing_Nb [sources]:
+all-traces
+  "(All x m #i.
+     (IN_S_Nb( m, x ) @ #i) ==>
+     ((Ex #j. (!KU( x ) @ #j) ∧ (#j < #i)) |
+      (Ex #j. (OUT_B_msg2( m ) @ #j) & (#j < #i))))
+    & (All x m #i.
+        (IN_S_Na( m, x ) @ #i) ==>
+        ((Ex #j. (!KU( x ) @ #j) ∧ (#j < #i)) |
+        (Ex #j. (OUT_A_msg1( m ) @ #j) & (#j < #i))))"
+      
+
+lemma Secrecy:
+  "
+    not(
+      Ex A B m #i .
+        Secret(A, B, m)@ #i
+        & (Ex #r. K(m) @ #r)
+    )
+  "
+
+// check the authenticity and freshness of the transaction from B's point of view
+lemma injectiveagreement_B:
+   "All A B t #i.
+     Commit_B(A,B,t) @i
+     ==> (Ex #j. Running_S(A,B,t) @j
+         & j < i
+         & not (Ex A2 B2 #i2. Commit_B(A2,B2,t) @i2
+                            & not (#i2 = #i)))"
+
+// check the authenticity of the transaction from B's point of view
+lemma agreement_B:
+  "All A B t #i.
+    Commit_B(A,B,t) @i
+    ==> (Ex #j. Running_S(A,B,t) @j  & j < i)"
+
+// check the authenticity and freshness of the transaction from A's point of view
+lemma injectiveagreement_A:
+   "All A B t #i.
+     Commit_A(A,B,t) @i
+     ==> (Ex #j. Running_S(A,B,t) @j
+         & j < i
+         & not (Ex A2 B2 #i2. Commit_A(A2,B2,t) @i2
+                            & not (#i2 = #i)))"
+
+// check the authenticity of the transaction from A's point of view
+lemma agreement_A:
+  "All A B t #i.
+    Commit_A(A,B,t) @i
+    ==> (Ex #j. Running_S(A,B,t) @j  & j < i)"
+
+// check the authenticity and freshness of the transaction from the server's point of view
+lemma injectiveagreement_S:
+   "(All A B t #i.
+     Commit_S_A(A,B,t) @i
+     ==> (Ex #j. Running_A(A,B,t) @j
+         & j < i
+         & not (Ex A2 B2 #i2. Commit_S_A(A2,B2,t) @i2
+                            & not (#i2 = #i))))
+  & (All A B t #i.
+     Commit_S_B(A,B,t) @i
+     ==> (Ex #j. Running_B(A,B,t) @j
+         & j < i
+         & not (Ex A2 B2 #i2. Commit_S_B(A2,B2,t) @i2
+                            & not (#i2 = #i))))"
+
+// check the authenticity of the transaction from the server's point of view
+lemma agreement_S:
+  "(All A B t #i.
+    Commit_S_A(A,B,t) @i
+    ==> (Ex #j. Running_A(A,B,t) @j  & j < i))
+  & (All A B t #i.
+    Commit_S_B(A,B,t) @i
+    ==> (Ex #j. Running_B(A,B,t) @j  & j < i))"
+
+    
+// sanity check: check if honest execution is possible
+lemma executability:
+ exists-trace
+ "// To simplify the proof, consider only executions where all the events are unique
+ (All A A2 B B2 t t2 #i #j.(
+    Running_A(A, B, t) @ #i
+  & Running_A(A2, B2, t2) @ #j
+  ==> #i = #j))
+ &
+ (All A A2 B B2 t t2 #i #j.(
+    Running_B(A, B, t) @ #i
+  & Running_B(A2, B2, t2) @ #j
+  ==> #i = #j))
+ &
+ (All A A2 B B2 t t2 #i #j.(
+    Running_S(A, B, t) @ #i
+  & Running_S(A2, B2, t2) @ #j
+  ==> #i = #j))
+ &
+ (All A A2 B B2 t t2 #i #j.(
+    Commit_A(A, B, t) @ #i
+  & Commit_A(A2, B2, t2) @ #j
+  ==> #i = #j))
+ &
+ (All A A2 B B2 t t2 #i #j.(
+    Commit_B(A, B, t) @ #i
+  & Commit_B(A2, B2, t2) @ #j
+  ==> #i = #j))
+ &
+ // We want an execution with all for events, and no corruption
+ ( Ex A B t t2 t3 #i #j #k #l #m.
+   Running_A(A,B,t)@#i
+ & Running_B(A,B,t2)@#j & #i<#j
+ & Running_S(A,B,t3)@#k & #j<#k
+ & Commit_B(A,B,t3)@#l & #k<#l
+ & Commit_A(A,B,t3)@#m & #l<#m
+ )
+ "
+
+
+end

@@ -1,0 +1,37 @@
+theory X509_raw_output
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+functions: hash/1
+let Alice(A, skA, pkB, B)=
+new Ta;
+new Na;
+new Xa;
+new Ya;
+let msg = <A, Ta, Na, B, Xa> in 
+let encPart = aenc(Ya, pkB) in 
+let hashPart = hash(<msg, encPart>) in 
+let signedPart = aenc(hashPart, skA) in 
+let finalMessage = <msg, encPart, hashPart, signedPart> in 
+out(finalMessage);
+0
+
+let Bob(A, pkA, skB, B)=
+in(finalMessage);
+let <msg, encPart, hashPart, signedPart> = finalMessage in
+let hash(gamma_0) = hashPart in
+let <=msg, =encPart> = gamma_0 in
+let <=A, Ta, Na, =B, Xa> = msg in
+let =hashPart = adec(signedPart, pkA) in
+// let Ya = adec(encPart, skB) in
+0
+
+
+process:
+!(   
+  new skA; out(pk(skA)); event HonestA(pk(skA));
+  new pkB; out(pkB); event HonestB(pkB);
+  let A = pk(skA) in  out(A);   
+  let B = pkB in  out(B); 
+  (   !Alice(A, skA, pkB, B) | !Bob(A, pk(skA), pkB, B))
+)
+end

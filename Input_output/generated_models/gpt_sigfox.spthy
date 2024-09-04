@@ -1,0 +1,32 @@
+theory sigfox_raw_output
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+functions: pk/1
+let Server(skA, pkB, pkA)=
+new na;
+let message = aenc(<pkA, na>, pkB) in 
+let sig = sign(message, skA) in 
+let mess_with_sig = <message, sig> in 
+out(mess_with_sig);
+0
+
+let Device(pkA, skB)=
+in(mess_with_sig);
+let <message, sig> = mess_with_sig in
+// let sign(message, skA) = sig in
+let gamma_0 = adec(message, skB) in
+let <=pkA, na> = gamma_0 in
+0
+
+
+process:
+!(   
+  new skA; out(pk(skA));
+  !(   
+    new skB; out(pk(skB));
+    let pkA = pk(skA) in  out(pkA);  
+    let pkB = pk(skB) in  out(pkB); 
+    (   !Server(skA, pkB, pkA) | !Device(pkA, skB))
+  )
+)
+end

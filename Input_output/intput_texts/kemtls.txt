@@ -1,0 +1,46 @@
+There are conceptually three phases to KEMTLS, each of which
+establishes one or more “stage” keys.
+Phase 1: Ephemeral key exchange using KEMs. 
+After establishing the TCP connection, 
+the KEMTLS handshake begins with the client sending one or more ephemeral KEM public keys pke
+in its 'ClientHello' message, as well as the list of public key authentication, key exchange, 
+and authenticated encryption methods it supports. 
+
+The server responds in the 'ServerHello' message
+with an encapsulation cte against pke and the algorithms it selected from the client's proposal; 
+note that if (none of) the pke the client sent was for the key-exchange method the server selected,
+a special HelloRetryRequest message is sent, prompting a new 'ClientHello' message.
+Nonces rc and rs are also transmitted for freshness.
+
+At this point, the client and server have an unauthenticated shared secret sse.
+KEMTLS follows the TLS 1.3 key schedule, which applies a sequence of HKDF operations to the shared secret sse 
+and the transcript to derive (a) the client and server handshake traffic secrets CHTS and SHTS 
+which are used to encrypt subsequent flows in the handshake, and (b) a "derived handshake secret" dHS
+which is kept as the current secret state of the key schedule.
+
+Phase 2: Implicitly authenticated key exchange using KEMs.
+In the same server-to-client flight as 'ServerHello', 
+the server also sends a certificate containing its long-term KEM public key pks.
+The client encapsulates against pks and sends the resulting ciphertext in its 'ClientKemCiphertext' message. 
+This yields an implicitly authenticated shared secret ssS.
+The key schedule's secret state dHS from phase 1 is combined with ssS using HKDF 
+to give an "authenticated handshake secret" AHS from which are derived 
+(c) the client and server authenticated handshake traffic secrets CAHTS and SAHTS 
+which are used to encrypt subsequent flows in the handshake, 
+and (d) an updated secret state dAHS of the key schedule. 
+A master secret MS can now be derived from the key schedule's secret state dAHS. 
+From the master secret, several more keys are derived: 
+(e) "finished keys" fkc and fks which will be used to authenticate the handshake 
+and (f) client and server application transport secrets CATS and SATS 
+from which are derived application encryption keys. 
+The client now sends a confirmation message 'ClientFinished' to the server 
+which uses a message authentication code with key fkc to authenticate the handshake transcript. 
+In the same flight of messages, 
+the client is also able to start sending application data encrypted under keys derived from CATS; 
+this is implicitly authenticated.
+
+Phase 3: Confirmation / explicit authentication. 
+The server responds with its confirmation in the 'ServerFinished' message,
+authenticating the handshake transcript using MAC key fks.
+In the same flight, the server sends application data encrypted under keys derived from SATS. 
+Once the client receives and verifies ServerFinished, the server is explicitly authenticated.

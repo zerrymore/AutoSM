@@ -1,0 +1,88 @@
+theory X509_with_prop
+begin
+builtins: diffie-hellman, symmetric-encryption, xor, hashing, asymmetric-encryption
+functions: hash/1, sign/2, verify/2
+equations: verify(sign(m, k), pk(k)) = m  // This is added mannually,
+
+
+let Alice(A, skA, pkB, B)=
+    event Role_A(skA);
+    new Ta;
+    new Na;
+    new Xa;
+    new Ya;
+    let msg = <A, Ta, Na, B, Xa> in 
+    let encPart = aenc(Ya, pkB) in 
+    let hashPart = hash(<msg, encPart>) in 
+    let signedPart = sign(hashPart, skA) in 
+    let finalMessage = <msg, encPart, hashPart, signedPart> in 
+    event Running_A(A, B, <'A','B', Xa, Ya>);
+    event SecretA(A, B, Ya);
+    event Out_A_1(msg);
+    out(finalMessage);
+    0
+
+let Bob(A, pkA, skB, B)=
+    event Role_B(skB);
+    in(finalMessage);
+    let <msg, encPart, hashPart, signedPart> = finalMessage in
+    let hash(gamma_0) = hashPart in
+    let <=msg, =encPart> = gamma_0 in
+    let <=A, Ta, Na, =B, Xa> = msg in
+    let =hashPart = verify(signedPart, pkA) in
+    let Ya = adec(encPart, skB) in    // This line is also added manually
+    event Commit_B(A, B, <'A','B',Xa, Ya>);
+    event Secret(A, B, Ya);
+    0
+
+
+process:
+!(   
+  new skA; out(pk(skA)); event HonestA(pk(skA));
+  new skB; out(pk(skB)); event HonestB(pk(skB));
+  let A = pk(skA) in  out(A);   
+  let B = pk(skB) in  out(B); 
+  (   !Alice(A, skA, pk(skB), B) | !Bob(A, pk(skA), skB, B))
+)
+
+
+lemma Secrecy:
+  "
+    not(
+      Ex A B m #i.
+        Secret(A, B, m)@ #i
+        // & SecretB(A, B, m)@ #j
+        & (Ex #t. HonestA(A) @ t)
+        & (Ex #t. HonestB(B) @ t)
+        & (Ex #r. K(m) @ #r)
+    )
+  "
+
+// check the authenticity and freshness of the transaction from B's point of view
+lemma injectiveagreement_B:
+   "All A B t #i.
+     Commit_B(A,B,t) @i
+     ==> (Ex #j. Running_A(A,B,t) @j
+         & j < i
+         & not (Ex A2 B2 #i2. Commit_B(A2,B2,t) @i2
+                            & not (#i2 = #i)))
+  "
+
+// check the authenticity of the transaction from B's point of view
+lemma agreement_B:
+  "All A B t #i.
+    Commit_B(A,B,t) @i
+    ==> (Ex #j. Running_A(A,B,t) @j  & j < i)
+  "
+
+// sanity check: check if honest execution is possible
+lemma Session_key_honest_setup:
+  exists-trace
+  " Ex A B t #i #j.
+        Running_A(A, B, t) @ #i
+      & Commit_B(A, B, t)@ #j
+  "
+
+
+
+end

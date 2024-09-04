@@ -1,0 +1,194 @@
+theory Otway_Rees
+begin
+
+builtins: symmetric-encryption
+
+functions: id/1
+
+let A(Kas, A, B) =      
+   new m;
+   new Na;
+   let msg1 = <m, A, B, senc(<'1', Na, m, A, B>, Kas)> in
+   event Running_A(A, B, <m,Na>);
+   out(msg1);
+   in(msg2);
+   let <=m, senc(<'3', =Na, Kab>, =Kas)> = msg2 in
+   event Commit_A(A, B, <m,Kab>);
+   event Secret(A, B, Kab);
+   event SessionA(A, B, Kab);
+   event Secret(A, B, Kab)
+
+let B(Kbs, A, B)=      
+   in(msg);
+   let <m, =A, =B, c> = msg in
+   new Nb;
+   let msg2 = <m, A, B, c, senc(<'2', Nb, m, A, B>, Kbs)> in
+   event Running_B(A,B, <m,Nb>);
+   out(msg2);
+   in(msg3);
+   let <=m, package1, senc(<'4', =Nb, Kab>, =Kbs)> = msg3 in
+   let msg4 = <m, package1> in
+   event Secret(A, B, Kab);
+   event SessionB(A, B, Kab);
+   event Commit_B(A, B, <m, Kab>);
+   out(msg4)
+
+let Server(Kas, Kbs, A, B) =      
+   in(msg);
+   let <m, =A, =B, senc(<'1', Na, m, =A, =B>, =Kas), senc(<'2', Nb, m, =A, =B>, =Kbs)> = msg in
+   new Kab;
+   let msg2 = <m, senc(<'3', Na, Kab>, Kas), senc(<'4', Nb, Kab>, Kbs)> in
+   event Secret(A, B, Kab);
+   event Running_S(A, B, <m,Kab>);
+   event Commit_S_A(A, B, <m,Na>);
+   event Commit_S_B(A, B, <m,Nb>);
+   out(msg2)
+
+
+process:
+    ! ( 
+        new Kas; event HonestA(id(Kas));
+        new Kbs; event HonestB(id(Kbs));
+        out(id(Kas)); 
+        out(id(Kbs));
+        (
+            !A(Kas, id(Kas), id(Kbs)) || !B(Kbs, id(Kas), id(Kbs)) || !Server(Kas, Kbs, id(Kas), id(Kbs))
+        )
+    )
+
+
+// ====================
+// ====== Lemmas ======
+// ====================
+
+// check the secrecy of a secret x protected by the long-term key of A and B
+lemma Secrecy:
+  "
+    not(
+      Ex A B m #i .
+        Secret(A, B, m)@ #i
+        & (Ex #r. K(m) @ #r)
+    )
+  "
+
+// check the authenticity and freshness of the transaction from B's point of view
+lemma injectiveagreement_B:
+   "All A B t #i.
+     Commit_B(A,B,t) @i
+     ==> (Ex #j. Running_S(A,B,t) @j
+         & j < i
+         & not (Ex A2 B2 #i2. Commit_B(A2,B2,t) @i2
+                            & not (#i2 = #i)))"
+
+// check the authenticity of the transaction from B's point of view
+lemma agreement_B:
+  "All A B t #i.
+    Commit_B(A,B,t) @i
+    ==> (Ex #j. Running_S(A,B,t) @j  & j < i)"
+
+// check the authenticity and freshness of the transaction from A's point of view
+lemma injectiveagreement_A:
+   "All A B t #i.
+     Commit_A(A,B,t) @i
+     ==> (Ex #j. Running_S(A,B,t) @j
+         & j < i
+         & not (Ex A2 B2 #i2. Commit_A(A2,B2,t) @i2
+                            & not (#i2 = #i)))"
+
+// check the authenticity of the transaction from A's point of view
+lemma agreement_A:
+  "All A B t #i.
+    Commit_A(A,B,t) @i
+    ==> (Ex #j. Running_S(A,B,t) @j  & j < i)"
+
+// check the authenticity and freshness of the transaction from the server's point of view
+lemma injectiveagreement_S:
+   "(All A B t #i.
+     Commit_S_A(A,B,t) @i
+     ==> (Ex #j. Running_A(A,B,t) @j
+         & j < i
+         & not (Ex A2 B2 #i2. Commit_S_A(A2,B2,t) @i2
+                            & not (#i2 = #i))))
+  & (All A B t #i.
+     Commit_S_B(A,B,t) @i
+     ==> (Ex #j. Running_B(A,B,t) @j
+         & j < i
+         & not (Ex A2 B2 #i2. Commit_S_B(A2,B2,t) @i2
+                            & not (#i2 = #i))))"
+
+// check the authenticity of the transaction from the server's point of view
+lemma agreement_S:
+  "(All A B t #i.
+    Commit_S_A(A,B,t) @i
+    ==> (Ex #j. Running_A(A,B,t) @j  & j < i))
+  & (All A B t #i.
+    Commit_S_B(A,B,t) @i
+    ==> (Ex #j. Running_B(A,B,t) @j  & j < i))"
+
+// sanity check: check if honest execution is possible
+lemma executability:
+ exists-trace
+ "// To simplify the proof, consider only executions where all the events are unique
+ (All A A2 B B2 t t2 #i #j.(
+    Running_A(A, B, t) @ #i
+  & Running_A(A2, B2, t2) @ #j
+  ==> #i = #j))
+ &
+ (All A A2 B B2 t t2 #i #j.(
+    Running_B(A, B, t) @ #i
+  & Running_B(A2, B2, t2) @ #j
+  ==> #i = #j))
+ &
+ (All A A2 B B2 t t2 #i #j.(
+    Running_S(A, B, t) @ #i
+  & Running_S(A2, B2, t2) @ #j
+  ==> #i = #j))
+ &
+ (All A A2 B B2 t t2 #i #j.(
+    Commit_A(A, B, t) @ #i
+  & Commit_A(A2, B2, t2) @ #j
+  ==> #i = #j))
+ &
+ (All A A2 B B2 t t2 #i #j.(
+    Commit_B(A, B, t) @ #i
+  & Commit_B(A2, B2, t2) @ #j
+  ==> #i = #j))
+ &
+ // We want an execution with all for events, and no corruption
+ ( Ex A B t t2 t3 #i #j #k #l #m.
+   Running_A(A,B,t)@#i
+ & Running_B(A,B,t2)@#j & #i<#j
+ & Running_S(A,B,t3)@#k & #j<#k
+ & Commit_B(A,B,t3)@#l & #k<#l
+ & Commit_A(A,B,t3)@#m & #l<#m
+ )
+ "
+
+end
+
+/* --------------------------------------------------------------------------------------                                
+ *  The model is under Delvo-Yao, i.e., any key will not be leaked.
+ *  But the wide-known attach for the protocol should be under eCK,
+ *  If you want to cover the attack, add key reveal statements, then 
+ *   `Confidentiality` will be falsified, the conterexample represents the attach.
+--------------------------------------------------------------------------------------*/
+
+
+// ==============================================================================
+// summary of summaries:
+
+// analyzed: temp.spthy
+
+//   processing time: 34.73s
+  
+//   Secrecy (all-traces): verified (72 steps)
+//   injectiveagreement_B (all-traces): verified (23 steps)
+//   agreement_B (all-traces): verified (11 steps)
+//   injectiveagreement_A (all-traces): verified (13 steps)
+//   agreement_A (all-traces): verified (9 steps)
+//   injectiveagreement_S (all-traces): falsified - found trace (13 steps)
+//   agreement_S (all-traces): verified (19 steps)
+//   executability (exists-trace): verified (14 steps)
+//   AUTO_typing (all-traces): verified (2881 steps)
+
+// ==============================================================================

@@ -1,0 +1,10 @@
+Alice knows his sercet key skA, public key pkA and the public of bob pkB.
+Alice starts the protocol by sending her identity A together with a freshly generated random number Na. 
+This message is encrypted using an asymmetric encryption algorithm with B's public key (denoted pub(B)).
+We suppose that only agent Bob (whose identity is B) knows the secret key corresponding to pub(B). 
+Next Bob receives the message {A, Na}pub(B) sent by Alice. 
+Using his private key, Bob decrypts the message. He sends the received nonce Na together with a freshly generated nonce Nb 
+encrypted with A's public key (pub(A)) to Alice. Finally Alice receives the message {Na, Nb}pub(A).
+She decrypts the message and checks that the nonce NA corresponds to the nonce previously generated and sent to Bob. 
+She sends the nonce Nb to Bob encrypted with Bob's public key. Upon reception of this message Bob 
+decrypts it and checks that the nonce corresponds to the one previously generated.

@@ -1,0 +1,38 @@
+theory toy_example_with_prop
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+functions: kdf/2
+
+let Alex()=
+    new ANonce;
+    out(ANonce);
+    in(BNonce);
+    let SK = kdf(ANonce, BNonce) in 
+    event Install(ANonce, SK);
+    out('ACK');
+    0
+
+let Blake()=
+    in(ANonce);
+    new BNonce;
+    out(BNonce);
+    in('ACK');
+    let SK = kdf(ANonce, BNonce) in 
+    event Install(BNonce, SK);
+    0
+
+
+process:
+!(   
+  !Alex() | !Blake()
+)
+
+
+lemma executability:
+exists-trace
+"Ex #i #j SK a b.
+    Install(a, SK)@i & Install(b, SK)@j & i< j"
+
+end
+
+

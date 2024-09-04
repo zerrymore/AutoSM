@@ -1,0 +1,59 @@
+theory Naxos
+begin
+
+builtins: diffie-hellman
+
+functions: h1/1
+functions: h2/1
+
+let I(~lkI, pkI, pkR) =
+	/*=== NaxosI_1 ===*/
+	new ~eskI;
+	new ~tid;
+	let exI = h1(< ~eskI, ~lkI>) in
+	let hkI = 'g'^exI in
+	out(hkI);
+
+	/*=== NaxosI_R ===*/
+	in(Y);
+	let exI = h1(< ~eskI, ~lkI >) in
+	let kI = h2(< Y^~lkI, pkR^exI, Y^exI, pkI, pkR >) in
+	event SessionKeyI( ~tid, pkI, pkR, kI );
+	event CompleteInit(~tid, pkR)
+
+
+let R(~lkR, pkR, pkI) =
+	/*=== NaxosR ===*/
+	in(X);
+	new ~tid;
+	new ~eskR;
+  let exR = h1(< ~eskR, ~lkR >) in
+  let hkr = 'g'^exR in
+  let kR  = h2(< pkI^exR, X^~lkR, X^exR, pkI, pkR >) in
+	event SessionKeyR( ~tid, pkR, pkI, kR );
+	event CompleteResp(~tid, pkR);
+	out( hkr )
+
+
+	process:
+	!(
+		new ~lkI; out('g'^~lkI); event HonestA('g'^~lkI);
+		!(	new ~lkR; out('g'^~lkR); event HonestB('g'^~lkR);
+			(		!I(~lkI, 'g'^~lkI,'g'^~lkR)  | !R(~lkR, 'g'^~lkR,'g'^~lkI) ) ) )
+
+
+lemma exists_session: 
+	exists-trace
+	"Ex I R tidI tidR #i #j keymat.
+			SessionKeyR(tidI, R, I, keymat) @ #i
+    & SessionKeyI(tidR, I, R, keymat) @ #j 
+		& i < j"
+
+
+lemma CompleteResp: 
+	exists-trace
+	"Ex tid pkR #i. CompleteResp(tid, pkR) @ i"
+
+
+
+end

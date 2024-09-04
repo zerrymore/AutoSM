@@ -1,0 +1,118 @@
+theory Woo_Lam_Pi_f
+begin
+
+functions: id/1
+builtins: symmetric-encryption
+
+let A(Kas, idA, idB) =
+  in(Nb);
+  let message1 = senc(<'1', idA,idB,Nb>, Kas) in
+  event AUTO_OUT_TERM_0_0_0_1_1_1_1_0_1_1_1__S_to_B( message1 );
+  event Running_A(idA, idB, <'A', 'B', Nb>);
+  event Secret(idA,idB, Kas);
+  out(message1); 0
+
+let B(Kbs, idA, idB) =
+//   in(=idA);
+  new Nb;
+  event Running_B(idA, idB, <'A', 'B', Nb>);
+  out(Nb);
+  in(cypher2);
+  let message2 = senc(<'2', idA,idB,Nb, cypher2>, Kbs) in
+  event AUTO_OUT_TERM_0_0_0_1_1_1_0__S_to_B( message2 );
+  event Secret(idA,idB, Kbs);
+  out(message2);
+  in(cypher3);
+  let message3 = sdec(cypher3, Kbs) in 
+  let <'3', =idA, =idB, =Nb> = message3 in 
+  event Commit_B(idA, idB, <'A', 'B', Nb>);
+  0
+
+let S(Kas, Kbs, idA, idB) =
+  in(cypher4);
+  let message2 = sdec(cypher4, Kbs) in
+  let <'2', =idA, =idB, Nb, cypher5> = message2 in
+  let <'1', =idA, =idB, =Nb> = sdec(cypher5, Kas) in
+  event AUTO_IN_TERM_0_0_0_1_1_1_0__S_to_B(cypher5, Nb);
+  event AUTO_IN_TERM_0_0_0_1_1_1_1_0_1_1_1__S_to_B( cypher5, Nb);
+  let message3 = senc(<'3', idA, idB, Nb>, Kbs) in
+  out(message3); 0
+
+
+  
+process:
+!(   
+  new Kas; out(id(Kas)); event HonestA(id(Kas));
+  new Kbs; out(id(Kbs)); event HonestB(id(Kbs));
+  !(    
+    !A(Kas, id(Kas), id(Kbs)) | !B(Kbs, id(Kas), id(Kbs)) | !S(Kas, Kbs, id(Kas), id(Kbs))
+  )
+)
+// ====================
+// ====== Lemmas ======
+// ====================
+lemma AUTO_typing [sources]:
+  all-traces
+  "(
+    (∀ x m #i.
+      (AUTO_IN_TERM_0_0_0_1_1_1_0__S_to_B( m, x ) @ #i) ⇒
+      ((∃ #j. (!KU( x ) @ #j) ∧ (#j < #i)) ∨
+       (∃ #j. (AUTO_OUT_TERM_0_0_0_1_1_1_0__S_to_B( m ) @ #j) ∧ (#j < #i))))) ∧
+   (∀ x m #i.
+     (AUTO_IN_TERM_0_0_0_1_1_1_1_0_1_1_1__S_to_B( m, x ) @ #i) ⇒
+     ((∃ #j. (!KU( x ) @ #j) ∧ (#j < #i)) ∨
+      (∃ #j.
+        (AUTO_OUT_TERM_0_0_0_1_1_1_1_0_1_1_1__S_to_B( m ) @ #j) ∧ (#j < #i))))"
+
+// sanity check: check if honest execution is possible
+lemma executability:
+ exists-trace
+ " Ex A B t #i #j #k.
+   Commit_B(A,B,t)@#i
+  & Running_A(A,B,t)@#j & #j<#i
+  & Running_B(A,B,t)@#k & #k<#j
+ "
+
+// check the secrecy of a secret x protected by the long-term key of A and B
+lemma Secrecy:
+ "
+   not(
+     Ex A B m #i .
+       Secret(A, B, m)@ #i
+       & (Ex #r. K(m) @ #r)
+   )
+ "
+
+// check the authenticity and freshness of the transaction from B's point of view
+lemma injectiveagreement_B:
+  "All A B t #i.
+    Commit_B(A,B,t) @i
+    ==> (Ex #j. Running_A(A,B,t) @j
+        & j < i
+        & not (Ex A2 B2 #i2. Commit_B(A2,B2,t) @i2
+                           & not (#i2 = #i)))"
+
+// check the authenticity of the transaction from B's point of view
+lemma agreement_B:
+ "All A B t #i.
+   Commit_B(A,B,t) @i
+   ==> (Ex #j. Running_A(A,B,t) @j  & j < i)"
+
+
+end
+
+
+// ==============================================================================
+// summary of summaries:
+
+// analyzed: woo.spthy
+
+//   processing time: 1.96s
+  
+//   AUTO_typing (all-traces): verified (25 steps)
+//   executability (exists-trace): verified (8 steps)
+//   Secrecy (all-traces): verified (6 steps)
+//   injectiveagreement_B (all-traces): verified (13 steps)
+//   agreement_B (all-traces): verified (9 steps)
+
+// ==============================================================================

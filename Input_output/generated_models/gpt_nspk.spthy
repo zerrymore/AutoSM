@@ -1,0 +1,40 @@
+theory nspk_raw_output
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+
+
+let Alice(idA, skA, pkA, pkB)=
+new Na;
+let message1 = aenc(<idA, Na>, pkB) in 
+out(message1);
+in(message2);
+let gamma_0 = adec(message2, skA) in
+let <=Na, Nb> = gamma_0 in
+let message3 = aenc(Nb, pkB) in 
+out(message3);
+0
+
+let Bob(skB, pkA, pkB)=
+in(message1);
+let gamma_0 = adec(message1, skB) in
+let <idA, Na> = gamma_0 in
+new Nb;
+let message2 = aenc(<Na, Nb>, pkA) in 
+out(message2);
+in(message3);
+let =Nb = adec(message3, skB) in
+0
+
+
+process:
+!(   
+  new skA; out(pk(skA)); event HonestA(pk(skA));
+  let idA = pk(skA) in out(idA);
+  !(   
+    new skB; out(pk(skB)); event HonestB(pk(skB));
+    let pkA = pk(skA) in out(pkA);
+    let pkB = pk(skB) in out(pkB);
+    (   !Alice(idA, skA, pkA, pkB) | !Bob(skB, pkA, pkB))
+  )
+)
+end

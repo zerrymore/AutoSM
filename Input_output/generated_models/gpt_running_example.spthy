@@ -1,0 +1,28 @@
+theory running_example_raw_output
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+functions: pk/1, adec/2, hash/1, aenc/2
+let Client(pkS)=
+new k;
+let cypher = aenc(k, pkS) in 
+out(cypher);
+in(H);
+let hash(=k) = H in
+0
+
+let Server(skS)=
+in(cypher);
+let k = adec(cypher, skS) in
+let H = hash(k) in 
+out(H);
+0
+
+
+process:
+!(   
+  new skS; out(pk(skS)); event HonestS(pk(skS));
+  let pkS = pk(skS) in out(pkS);
+  new k; let H = hash(k) in out(H);
+  (!Client(pkS) | !Server(skS))
+)
+end

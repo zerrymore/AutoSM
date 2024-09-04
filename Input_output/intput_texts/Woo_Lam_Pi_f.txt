@@ -1,0 +1,25 @@
+The Woo and Lam Pi f protocol is a variant of the original Woo and Lam Pi protocol, 
+designed for secure authentication between two principals with the assistance of a trusted third party. 
+This version specifically emphasizes the use of shared keys for encryption and authentication. 
+Here's a concise description:
+1. Alice starts the authentication process by sending her identity (A) to Bob, 
+signaling her intention to establish a secure communication.
+
+2. Bob generates a nonce (Nb) and sends it to Alice. 
+This nonce acts as a challenge to prove Alice's identity in a secure manner.
+
+3. Alice constructs a message containing her identity (A), Bob's identity (B), 
+and the nonce (Nb). She then encrypts this message with the shared key between her and the Server (S), 
+Kas, and sends this encrypted message to Bob. This step aims to prove Alice's 
+identity to Bob by utilizing the shared secret with the Server.
+
+4. Bob forwards the message received from Alice to the Server for verification. 
+He includes the original message from Alice and adds his own identity (B) and the 
+nonce (Nb) for context. This entire package is encrypted with the shared key between 
+Bob and the Server, Kbs, ensuring that only the Server can decrypt and verify the contents.
+
+5. The Server decrypts Bob's message using Kbs, verifies the authenticity and integrity 
+of Alice's message, and then constructs a new message containing Alice's and Bob's 
+identities along with the nonce (Nb). This message is encrypted with the shared key 
+between Bob and the Server, Kbs, and sent back to Bob.
+This confirms to Bob that Alice's identity has been successfully authenticated.
