@@ -38,15 +38,14 @@ Kbs for Alice to forward to Bob and also a copy for Alice. \
 Since Alice may be requesting keys for several different people, \
 the nonce assures Alice that the message is fresh and that \
 the server is replying to that particular message and the inclusion of Bob's name \
-tells Alice who she is to share this key with. The message sent out in this phase \
-is senc(<Na, B, Kab, senc(<Kab, A>, Kbs)>, Kas).
+tells Alice who she is to share this key with ( S -> A: {Na, Kab, B, {Kab, A}Kbs}Kas ).
 
 3. Alice forwards the message senc(<Kab, A>, Kbs) to Bob who can decrypt it \
 with the key he shares with the server Kbs, thus authenticating the data. 
 
 4. Bob sends Alice a nonce Nb encrypted under Kab to show that he has the key.
 
-5. Alice performs a simple operation 'dec' on the nonce, re-encrypts it \
+5. Alice performs a simple operation 'dec' on the nonce (dec(Nb)), re-encrypts it \
 and sends it back verifying that she is still alive and that she holds the key.
 """
 
@@ -58,7 +57,7 @@ B knows symmetric key `Kbs`, `A`, `B` and S knows both `Kas` and `Kbs` and ident
 
 1. A sends B the protocol session number I (a fresh nonce), his identity, the identity of the principal
 with whom he wishes to communicate, and a message encrypted with the key `kas`, i.e.,
-the message1 is `I,A,B,{Na,I,A,B}kas`.
+the message1 is `<I,A,B,{Na,I,A,B}kas>`.
 
 2. B receives A's message and concats it with his own message encrypted with the key kbs (`{Nb,I,A,B}kbs`) before  
 sending it to the trusted server S. 
@@ -131,6 +130,7 @@ using her shared key with the server to verify the session key.
 (package 2) An encrypted version of the nonce Na using the session key (Kab), \
 allowing A to verify that B has correctly received and decrypted the session key.
 (package 3) B's nonce (Nb), introducing a challenge for A to ensure B's message's authenticity and freshness.
+B -> A: <package1, package2, Nb>
 
 4. Final Acknowledgment by A: A decrypts B's message, verifies the nonce Na, \
 and responds to B's challenge by encrypting B's nonce (Nb) with the session key (Kab) \
@@ -217,11 +217,15 @@ Both Ta, Na, Xa and Ya are fresh nonce. Tha public key of both roles are known p
 Alice initiates communication by sending a message to Bob that includes her identity (A), \
 a timestamp (Ta) to mark the message's time, a nonce (Na) for ensuring the message's freshness, \
 Bob's identity (B), some data (Xa), and user-specific data (Ya) encrypted with Bob's public key (PK(B)) for confidentiality. \
+
 This entire package, except the encrypted part {Ya}PK(B), is then signed with Alice's private key (SK(A)) to ensure authenticity. \
 The signed part includes a hash of the entire message (including {Ya}PK(B)) to verify the integrity and origin of the message. \
-For simplification, the message is  `<A, Ta, Na, B, Xa, {Ya}PK(B), {h(Ta, Na, B, Xa, {Ya}PK(B))}SK(A)>` where `<...>` operator \
-means the concatation of string.
+For simplification, the message which is sent from A to B is  `<A, Ta, Na, B, Xa, {Ya}PK(B), hash_part, {hash_part}SK(A)>` \
+where `<...>` operator denotes concatation of string, {}PK denotes asymmetric.
 """
+temp = """<A, Ta, Na, B, Xa, {Ya}PK(B), {h(Ta, Na, B, Xa, {Ya}PK(B))}SK(A)>"""
+
+
 
 Woo_Lam_Pi_f = """\
 The Woo and Lam Pi f protocol is a variant of the original Woo and Lam Pi protocol, \
@@ -240,7 +244,7 @@ Kas, and sends this encrypted message to Bob. This step aims to prove Alice's \
 identity to Bob by utilizing the shared secret with the Server.
 
 4. Bob forwards the message received from Alice to the Server for verification. \
-He includes the original message from Alice and adds his own identity (B) and the \
+He includes the original message from Alice and adds Alice's identity (A), his own identity (B) and the \
 nonce (Nb) for context. This entire package is encrypted with the shared key between \
 Bob and the Server, Kbs, ensuring that only the Server can decrypt and verify the contents.
 
@@ -284,27 +288,35 @@ This confirms the secure channel's establishment and the nonce's acceptance for 
 """
 
 sigfox = """\
-Both the public keys of client and Server can be known by each. The secrect key is private, only known by himself.
-The SigFox server (A) pushes an asymmetric-encrypted notification (na) with its signature to devices (B).
-The server uses the public key of B (pkB) and generates a fresh data item na. It then encrypts the data and the server's public key \
-(pkA) using the the public key of client, pkB to generate the message aenc(<pkA, na>, pkB). \
-Then A signs the message using its own private key ltkA. A sends the message along with its signature (<mess, sig>) to the device B. \
-B receives the asymmetrically encrypted message with a signature, then perform signature \
-verification on received message.
+SigFox essentially uses TLS 1.2 PKC (public key cryptography) and shares its security goals. 
+The server pushes an asymmetric-encrypted notification (na) with its signature to devices.
+The server uses the public key of the device (pkB) and generates a fresh data item na. It then encrypts the data and the server's public key \
+(pkA) using the the public key of client pkB, to generate the message aenc(<pkA, na>, pkB). \
+Then the server signs the message using its own private key skA and sends the message along with its signature (<mess, sig>) to the device. \
+Once the device receives the asymmetrically encrypted message with a signature, then perform signature verification on received message.
 """
+
+tmp = """
+Both the public keys of client and Server can be known by each. The secrect key is private, only known by himself.
+The SigFox server pushes an asymmetric-encrypted notification (na) with its signature to devices.
+The server uses the public key of device (pkB) and generates a fresh data item na. It then encrypts the data and the server's public key \
+(pkA) using the the public key of client, pkB to generate the message aenc(<pkA, na>, pkB). \
+Then the server signs the message using its own private key ltkA. The server sends the message along with its signature (<mess, sig>) to the device. \
+Device receives the asymmetrically encrypted message with a signature, then perform signature \
+verification on received message."""
 
 Neu_Stu = """\
 1. Initial Request by A:
 Principal A initiates the protocol by sending its identity along with a nonce (Na) to Principal B. \
 The nonce serves as a challenge to ensure the freshness of the session and protect against replay attacks.
 
-2. Request Forwarding by B:
+2. Request Forwarding by B (B	->	S	:  	B, {A, Na, Tb}Kbs, Nb):
 Upon receiving A's request, B forwards this request to the Server (S). B includes its own identity, \
 a package encrypted with B's server-shared key (Kbs) containing A's identity, the nonce Na, and a \
 timestamp (Tb) to ensure timeliness. B also generates and sends its own nonce (Nb) to the server, \
 aiming for mutual authentication.
 
-3. Server's Response:
+3. Server's Response to A (S -> A: <package1, package2>):
 The Server responds with two encrypted packages:
 (package 1) The first package is encrypted with A's server-shared key (Kas) and contains B's identity, \
 A's nonce (Na), a session key (Kab) for A and B to use, and the timestamp (Tb).
@@ -312,27 +324,28 @@ A's nonce (Na), a session key (Kab) for A and B to use, and the timestamp (Tb).
 includes A's identity, the session key (Kab), and the timestamp (Tb). The server also sends back \
 B's nonce (Nb) to confirm its receipt.
 
-4. Transmission to B:
+4. Transmission to B (A -> B: 	{A, Kab, Tb}Kbs, {Nb}Kab ):
 A sends to B the second package it received from the server, proving it has successfully decrypted \
 the server's message and obtained the session key (Kab). A also sends Nb encrypted with Kab, \
 ensuring that only B can decrypt it, which proves to B that A possesses the correct session key.
 
-5. First Message Exchange:
+5. First Message Exchange (A	->	B	:  	Ma, {A, Kab, Tb}Kbs):
 A sends a message (Ma) directly to B, along with the repeated transmission of the second package \
 ({A, Kab, Tb}Kbs). This serves as an additional authentication step and ensures that \
 both parties acknowledge the established session key.
 
-6. Response by B:
+6. Response by B (B	->	A	:  	Mb, {Ma}Kab):
 B responds with its own message (Mb) and the encryption of A's message (Ma) using the session key (Kab), \
 further confirming the successful establishment of the secure session and mutual authentication.
 
-7. Final Acknowledgment by A:
+7. Final Acknowledgment by A (A	->	B	:  	{Mb}Kab):
 A completes the protocol by sending the encryption of B's message (Mb) using the session key (Kab), \
 finalizing the mutual authentication process.
 """
 
 
 nsl = """\
+Alice knows his sercet key skA, public key pkA and the public of bob pkB.
 Alice starts the protocol by sending her identity A together with a freshly generated random number Na. \
 This message is encrypted using an asymmetric encryption algorithm with B's public key (denoted pub(B)). \
 We suppose that only agent Bob (whose identity is B) knows the secret key corresponding to pub(B). \
@@ -347,28 +360,149 @@ decrypts it and checks that the nonce corresponds to the one previously generate
 ssh = """\
 SSH protocol: 
 The following steps are used to exchange a key. Here C is the client; S is the server; p is a large safe \
-prime; g is a generator for a subgroup of GF(p); q is the order of the subgroup; V_S is S's identification string; \
+prime; g is a generator for a subgroup of GF(p); V_S is S's identification string; \
 V_C is C's identification string; K_S is S's public host key; I_C is C's SSH_MSG_KEXINIT message and \
 I_S is S's SSH_MSG_KEXINIT message that have been exchanged before this part begins.
 
-C generates a random number x (1 < x < q) and computese = g^x mod p. C sends e to S.
+C generates a random number x and computese = g^x. C sends e to S.
 
-S generates a random number y (0 < y < q) and computes f = g^y mod p. S receives e. It computes K = e^y mod p, \
+S generates a random number y and computes f = g^y. S receives e. It computes K = e^y, \
 H = hash(V_C || V_S || I_C || I_S || K_S || e || f || K) (these elements are encoded according to their types; \
 see below), and signature s on H with its private host key. S sends (K_S || f || s) to C. The signing operation \
 may involve a second hashing operation.
 
 C verifies that K_S really is the host key for S (e.g., using certificates or a local database). C is also allowed \
 to accept the key without verification; however, doing so will render the protocol insecure against active attacks \
-(but may be desirable for practical reasons in the short term in many environments). C then computes K = f^x mod p,\
+(but may be desirable for practical reasons in the short term in many environments). C then computes K = f^x,\
 H = hash(V_C || V_S || I_C || I_S || K_S || e || f || K), and verifies the signature s on H.
+"""
+
+
+ssh = """\
+The Diffie-Hellman (DH) key exchange provides a shared secret that
+cannot be determined by either party alone.  The key exchange is
+combined with a signature with the host key to provide host
+authentication.  This key exchange method provides explicit server
+authentication as defined in Section 7.
+The following steps are used to exchange a key.  In this, C is the
+client; S is the server; p is a large safe prime; g is a generator
+for a subgroup of GF(p); q is the order of the subgroup; V_S is S's
+identification string; V_C is C's identification string; K_S is S's
+public host key; I_C is C's SSH_MSG_KEXINIT message and I_S is S's
+SSH_MSG_KEXINIT message that have been exchanged before this part
+begins.
+
+1. C generates a random number x (1 < x < q) and computes
+    e = g^x mod p.  C sends e to S.
+
+2. S generates a random number y (0 < y < q) and computes
+    f = g^y mod p.  S receives e.  It computes K = e^y mod p,
+    H = hash(V_C || V_S || I_C || I_S || K_S || e || f || K)
+    (these elements are encoded according to their types; see below),
+    and signature s on H with its private host key.  S sends
+    (K_S || f || s) to C.  The signing operation may involve a
+    second hashing operation.
+
+3. C verifies that K_S really is the host key for S (e.g., using
+    certificates or a local database).  C is also allowed to accept
+    the key without verification; however, doing so will render the
+    protocol insecure against active attacks (but may be desirable for
+    practical reasons in the short term in many environments).  C then
+    computes K = f^x mod p, H = hash(V_C || V_S || I_C || I_S || K_S
+    || e || f || K), and verifies the signature s on H.
+
+
+This is implemented with the following messages.  The hash algorithm
+for computing the exchange hash is defined by the method name, and is
+called HASH.  The public key algorithm for signing is negotiated with
+the SSH_MSG_KEXINIT messages.
+
+
+The key exchange produces two values: a shared secret K, and an
+exchange hash H.  Encryption and authentication keys are derived from
+these.  The exchange hash H from the first key exchange is
+additionally used as the session identifier, which is a unique
+identifier for this connection.  It is used by authentication methods
+as a part of the data that is signed as a proof of possession of a
+private key.  Once computed, the session identifier is not changed,
+even if keys are later re-exchanged.
+
+Each key exchange method specifies a hash function that is used in
+the key exchange.  The same hash algorithm MUST be used in key
+derivation.  Here, we'll call it HASH.
+
+Encryption keys MUST be computed as HASH, of a known value and K, as
+follows:
+
+o  Initial IV client to server: HASH(K || H || "A" || session_id)
+    (Here K is encoded as mpint and "A" as byte and session_id as raw
+    data.  "A" means the single character A, ASCII 65).
+o  Initial IV server to client: HASH(K || H || "B" || session_id)
+o  Encryption key client to server: HASH(K || H || "C" || session_id)
+o  Encryption key server to client: HASH(K || H || "D" || session_id)
+o  Integrity key client to server: HASH(K || H || "E" || session_id)
+o  Integrity key server to client: HASH(K || H || "F" || session_id)
+
+Key data MUST be taken from the beginning of the hash output.  As
+many bytes as needed are taken from the beginning of the hash value.
+If the key length needed is longer than the output of the HASH, the
+key is extended by computing HASH of the concatenation of K and H and
+the entire key so far, and appending the resulting bytes (as many as
+HASH generates) to the key.  This process is repeated until enough
+key material is available; the key is taken from the beginning of
+this value. 
 """
 
 edhoc = """\
 edhoc:"""
 
-kemtls = """\
-kemtls:"""
+kemtls = """
+There are conceptually three phases to KEMTLS, each of which
+establishes one or more “stage” keys.
+Phase 1: Ephemeral key exchange using KEMs. 
+After establishing the TCP connection, 
+the KEMTLS handshake begins with the client sending one or more ephemeral KEM public keys pke
+in its 'ClientHello' message, as well as the list of public key authentication, key exchange, 
+and authenticated encryption methods it supports. 
+
+The server responds in the 'ServerHello' message
+with an encapsulation cte against pke and the algorithms it selected from the client's proposal; 
+note that if (none of) the pke the client sent was for the key-exchange method the server selected,
+a special HelloRetryRequest message is sent, prompting a new 'ClientHello' message.
+Nonces rc and rs are also transmitted for freshness.
+
+At this point, the client and server have an unauthenticated shared secret sse.
+KEMTLS follows the TLS 1.3 key schedule, which applies a sequence of HKDF operations to the shared secret sse 
+and the transcript to derive (a) the client and server handshake traffic secrets CHTS and SHTS 
+which are used to encrypt subsequent flows in the handshake, and (b) a "derived handshake secret" dHS
+which is kept as the current secret state of the key schedule.
+
+Phase 2: Implicitly authenticated key exchange using KEMs.
+In the same server-to-client flight as 'ServerHello', 
+the server also sends a certificate containing its long-term KEM public key pks.
+The client encapsulates against pks and sends the resulting ciphertext in its 'ClientKemCiphertext' message. 
+This yields an implicitly authenticated shared secret ssS.
+The key schedule's secret state dHS from phase 1 is combined with ssS using HKDF 
+to give an "authenticated handshake secret" AHS from which are derived 
+(c) the client and server authenticated handshake traffic secrets CAHTS and SAHTS 
+which are used to encrypt subsequent flows in the handshake, 
+and (d) an updated secret state dAHS of the key schedule. 
+A master secret MS can now be derived from the key schedule's secret state dAHS. 
+From the master secret, several more keys are derived: 
+(e) "finished keys" fkc and fks which will be used to authenticate the handshake 
+and (f) client and server application transport secrets CATS and SATS 
+from which are derived application encryption keys. 
+The client now sends a confirmation message 'ClientFinished' to the server 
+which uses a message authentication code with key fkc to authenticate the handshake transcript. 
+In the same flight of messages, 
+the client is also able to start sending application data encrypted under keys derived from CATS; 
+this is implicitly authenticated.
+
+Phase 3: Confirmation / explicit authentication. \
+The server responds with its confirmation in the 'ServerFinished' message,
+authenticating the handshake transcript using MAC key fks.
+In the same flight, the server sends application data encrypted under keys derived from SATS. 
+Once the client receives and verifies ServerFinished, the server is explicitly authenticated."""
 
 naxos = """\
 In this protocol, each party x has a long-term private key lkx and a corresponding public key pkx = 'g'^lkx, \
@@ -402,7 +536,7 @@ DB = {
     "Neu_Stu": Neu_Stu,
     "ssh": ssh,
     # "edhoc": edhoc,
-    # "kemtls": kemtls,
+    "kemtls": kemtls,
     "naxos": naxos,
     # "lake": lake,
 }

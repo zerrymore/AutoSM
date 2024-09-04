@@ -67,6 +67,8 @@ def __syn_assign(params, index=None, process_name=None):
 def __syn_exp(params, index=None, process_name=None):
     # print("mul:", params)
     # if len(params) == 2:
+    if params[0] == 'g':
+        return f"'g'^{params[1]}"
     return f'{params[0]}^{params[1]}'
 
 def __syn_Checks(params, index=None, process_name=None):

@@ -23,11 +23,17 @@ The `func` in `Op` must match the corresponding predicate described in natural l
 Note: Expressions listed above cannot serve as arguments to `Op`; for example, `Op(R, Gen/Send/, ...)` is prohibited. 
 Do not parse any decryption operation, like Op(A, assign(msg, dec(...)))
 
-For each `Send`, there should be a corresponding `Recv`.
-A message should be binded to a variable before sending it.
+
+Common knowledge: 
+for Diffie-Hellman key exchange, we often use function `exp(g, x)` without considering mod operation (e.g., mod p).
 
 our task is to complete each expression by directly filling in the placeholders denoted by /* >>The lambda calculus << */. \
 Do not include any explanations, comments, or additional text outside of the required expressions.
+
+!! For each `Send`, there should be a corresponding `Recv`.
+!! A message should be first binded to a variable before sending it. e.g.,
+  Op(A, assign(V, t))  // binds term t to a variable V
+  Send(A, V)
 """
 
 
@@ -296,7 +302,6 @@ process:
     let idA = id(Kab); out(idA);
     (!Alice(Kab, idA)  | !Bob(Kab, idA))
   )
-)
 end
 """
 
@@ -952,6 +957,7 @@ of the protocol, an incomplete applied-pi calculus style specification.
 Your job is to:
 - Identify the meaning of each variable in the provided set.
 - Determine which variables should be initially known by the specific role.
+Though some initial knowledge may not be explicit, you should figure them out.
 
 Common Knowledge:
 - Role identities and public keys are typically publicly known.

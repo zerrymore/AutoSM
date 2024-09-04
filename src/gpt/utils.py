@@ -79,6 +79,16 @@ def fix_missing_closing_brackets(input_str):
 
     return fixed_str
 
+
+def deconstruct_expr(expr:str) -> bool:
+    deconstruct_ops = ["sdec", "adec"]
+    for op in deconstruct_ops:
+        if op in expr:
+            return True
+    return False
+    
+
+
 def parse_diff(diff_text):
     old_version = []
     new_version = []
