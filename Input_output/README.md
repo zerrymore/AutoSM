@@ -1,6 +1,3 @@
-# README
-
-
 ## Directories structure
 
 ```
