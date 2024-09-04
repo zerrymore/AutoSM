@@ -1,7 +1,0 @@
-Gen(C, k)
-Op(C, assign(message3, aenc(k, pkS)))
-Send(C, S, message3)
-Recv(S, C, message3)
-Op(S, assign(hash_k, hash(k)))
-Send(S, C, hash_k)
-Recv(C, S, hash_k)
