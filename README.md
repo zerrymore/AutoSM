@@ -44,8 +44,9 @@ This tool can generate formal specifications (symbolic model) for a protocol aut
 - run the tool's frontend
     ```bash
     cd src
-    python -m flask --app tool.py run
+    python -m flask --app tool run
     ```
+**I recommend use ```python -m flask --app rewrite run``` to use the lastest version of the tool.**
 - (Optional) add ```--debug``` for debug mode.
 - Then open web-based tool at http://127.0.0.1:5000
 
@@ -53,28 +54,14 @@ This tool can generate formal specifications (symbolic model) for a protocol aut
 ## Directories structure
 ```
 ⚒️ AutoSM 
-├── 📂 benchmark
-│ ├── 📝 nsl.txt 
-│ ├── ...
-│ ├── 📜 nsl_verified.spthy
-│ └── ...
-├── 📂 src
-| ├── 📂 gpt
-| | ├── 📜 BNF
-| | ├── ⚙️ parser.py
-| | ├── ⚙️ analysizer.py
-| | ├── ⚙️ translator.py
-| | └── ⚙️ prompts.py
-| └── 📂 utils
+├── 📂 Input_output
+├── 📂 src: The source code.
 ├── 📂 static
 └── 📂 templates
   └── 📜 home.html
 ```
 
-- 📂 benchmark
-    - 📝 .txt: the protocol's description in natural langauge (**input** of our tool)
-    - 📜 _verified.spthy: the complete **Sapic+** file including the symbolic model and the properties encoded in first-order-logic (**FOL**).
-
+- 📂 Input_output: The examples used to present the workflow.
 - 📂 src: the source code of our implementation
 - 📂 static: static configurations including images and .css file.
 - 📂 templates: html page of web-based frontend 
