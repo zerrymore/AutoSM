@@ -1,4 +1,4 @@
-# 🤔⚒️: A Framework for Translating Natural Language to Protocol's Symbolic Model with LLMs⚙️
+# 🤔⚒️: LLM-Aided Automatic Modelling for Security Protocol Verification⚙️
 
 This repo contains a benchmark for symbolic model synthesis and a tool with web-based frontend.
 
