@@ -1,19 +1,20 @@
 import json
 import datetime
 from pathlib import Path
-from gpt.prompt_all import *
-from gpt.gptcore import BaseChatClass
-from gpt.prompt import get_incontext_learning_contents
-from gpt.utils import append_blank_line, compile_verify
-from flask import Flask, render_template, jsonify, request, session, Response
-from utils.gen_html import loadText, sapic_hl_gen
-from gpt.gen_msc import calculus_to_msc
+
 from gpt.parser import *
 from gpt.benchmark import DB
 from gpt.rewriter import Rewriter
-from conf.jsoninfo import load_json_config
 from gpt.utils import setup_logger
 from gpt.bnf import pretty_stmts
+from gpt.gptcore import BaseChatClass
+from gpt.prompt_all import *
+from gpt.gen_msc import calculus_to_msc
+from gpt.prompt import get_incontext_learning_contents
+from gpt.utils import append_blank_line, compile_verify
+from utils.gen_html import loadText, sapic_hl_gen
+from conf.jsoninfo import load_json_config
+from flask import Flask, render_template, jsonify, request, Response
 
 
 setup_logger()
@@ -29,11 +30,6 @@ functions: {functions}
 {top_spec}
 end
 """
-
-HINT = """\
-# Here display a sequence of lambda
-# calculus, describing the beheavior
-# of the roles in this protocol."""
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.secret_key = "your_secret_key"
@@ -109,7 +105,7 @@ def few_shot():
                         hint="",
                     )
 
-                    """Step4: Rewrite draft into local processes"""
+                    """Step4: Rewrite global expressions into local processes"""
                     with open("intermediate.txt", "w") as file:
                         file.write(role_spec_with_init)
 

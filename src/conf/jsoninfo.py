@@ -4,7 +4,6 @@ import json
 import os, sys
 from typing import Any, Dict, Text
 
-
 def write_json_config_to_env(config: Dict[Text, Any]) -> None:
     # Write the JSON config to the environment.
     for key in config:
