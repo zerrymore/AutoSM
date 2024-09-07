@@ -828,9 +828,6 @@ def rewrite_local_process(
                     undeconstructed_mapping,
                     hasDeconstructed,
                 )
-                # for v in pointers.keys():
-                #     print(v, tree2str(pointers[v]))
-                # print()
 
     # Take pointers as a return value to ensure it can update
     return j, pointers
@@ -867,7 +864,8 @@ def Rewriter(code: str) -> str:
         parameters: Tree = role.children[1]
         for k in parameters.children:
 
-            ##== Initialize the knowledge set K ==##
+            ##== Initialize the knowledge set K  ==##
+            # K |= {}
             K |= {tree2str(k)}
 
         stms: Tree = role.children[2]

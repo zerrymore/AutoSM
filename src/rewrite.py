@@ -141,11 +141,8 @@ def few_shot():
                         while j < len(comments) + len(new_stmt):
                             if j in comments:
                                 stmt_l += [comments[j]]
-                                # print(f"this is comment, line {j}: {comments[j]}")
-                                # print(i, j, comments[j])
                             else:
                                 stmt_l += [new_stmt[i]]
-                                # print(f"this is code, line {i}: {new_stmt[i]}")
                                 i += 1
                             j += 1
                         new_spec = "\n".join(stmt_l)

@@ -22,17 +22,19 @@ def num_tokens_from_messages(messages, model="gpt-3.5-turbo-0613"):
         "gpt-4-32k-0314",
         "gpt-4-0613",
         "gpt-4-32k-0613",
-        }:
+    }:
         tokens_per_message = 3
         tokens_per_name = 1
     elif model == "gpt-3.5-turbo-0301":
-        tokens_per_message = 4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
+        tokens_per_message = (
+            4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
+        )
         tokens_per_name = -6  # if there's a name, the role is omitted
     elif "gpt-3.5-turbo" in model:
-        #print("Warning: gpt-3.5-turbo may update over time. Returning num tokens assuming gpt-3.5-turbo-0613.")
+        # print("Warning: gpt-3.5-turbo may update over time. Returning num tokens assuming gpt-3.5-turbo-0613.")
         return num_tokens_from_messages(messages, model="gpt-3.5-turbo-0613")
     elif "gpt-4" in model:
-        #print("Warning: gpt-4 may update over time. Returning num tokens assuming gpt-4-0613.")
+        # print("Warning: gpt-4 may update over time. Returning num tokens assuming gpt-4-0613.")
         return num_tokens_from_messages(messages, model="gpt-4-0613")
     else:
         raise NotImplementedError(
@@ -55,7 +57,9 @@ def find_best_reply_content(reply_list):
 
 
 class BaseChatClass:
-    def __init__(self, conversation_list=[], continuous_talking=True, useOpenKey=False) -> None:
+    def __init__(
+        self, conversation_list=[], continuous_talking=True, useOpenKey=False
+    ) -> None:
         # set API KEY
         if useOpenKey:
             openai.api_base = os.environ.get("API_URL_BASE")
@@ -64,52 +68,61 @@ class BaseChatClass:
         else:
             openai.api_key = os.environ.get("OPENAI_API_KEY")
             openai.api_base = os.environ.get("API_URL_BASE")
-        
+
         self.conversation_list = conversation_list
         self.continuous_talking = continuous_talking
-    
+
     def show_conversation(self, msg_list):
         for msg in msg_list:
-            if msg['role'] == 'user':
+            if msg["role"] == "user":
                 print(f"\U0001f47b: {msg['content']}\n")
             else:
                 print(f"\U0001f47D: {msg['content']}\n")
-    
+
     # 提示chatgpt
-    def get_respone(self, prompt, model="gpt-3.5-turbo", maxTokens=2048, temperature_arg=0.5, stream_out=True, stop_str=None, n_choices=1):
+    def get_respone(
+        self,
+        prompt,
+        model="gpt-3.5-turbo",
+        maxTokens=2048,
+        temperature_arg=0.5,
+        stream_out=True,
+        stop_str=None,
+        n_choices=1,
+    ):
 
         if self.continuous_talking:
-            self.conversation_list.append({"role":"user", "content":prompt})
+            self.conversation_list.append({"role": "user", "content": prompt})
 
         for i in range(3):
             try:
                 response = openai.ChatCompletion.create(
-                    model = model,
-                    messages = self.conversation_list,
-                    max_tokens = maxTokens,
-                    temperature = temperature_arg,
-                    frequency_penalty = 0,
-                    presence_penalty = 0,
-                    top_p = 1,
-                    stream = stream_out,
-                    stop = stop_str,
-                    n = n_choices,
+                    model=model,
+                    messages=self.conversation_list,
+                    max_tokens=maxTokens,
+                    temperature=temperature_arg,
+                    frequency_penalty=0,
+                    presence_penalty=0,
+                    top_p=1,
+                    stream=stream_out,
+                    stop=stop_str,
+                    n=n_choices,
                 )
                 break
             except openai.error.RateLimitError as e:
                 if i < 2:
                     # if the error is due to rate limit, wait 10 seconds and try again
                     logging.warning(e, f"\nwait {(i+1)*10} seconds and try again")
-                    time.sleep((i+1)*10)
+                    time.sleep((i + 1) * 10)
                 else:
                     raise e
             except Exception as e:
                 if i < 2:
                     logging.warning(e, f"\nwait {(i+1)*2} seconds and try again")
-                    time.sleep((i+1)*2)
+                    time.sleep((i + 1) * 2)
                 else:
                     raise e
-        
+
         logging.info(f"LLM {model} querying ...\n")
         full_reply_content_list = []
         # use stream of chunks
@@ -120,40 +133,45 @@ class BaseChatClass:
                 collected_messages.append([])
 
             # iterate through the stream of events
-            print(f"\U0001f47D: ", end = '')
+            print(f"\U0001f47D: ", end="")
             for chunk in response:
-                chunk_msg = chunk.choices[0]['delta'] # extract the message
-                collected_messages[chunk.choices[0]['index']].append(chunk_msg)  # save the message
-                if chunk.choices[0]['index'] == 0:
-                    print(chunk_msg.get('content', ''), end = '')
+                chunk_msg = chunk.choices[0]["delta"]  # extract the message
+                collected_messages[chunk.choices[0]["index"]].append(
+                    chunk_msg
+                )  # save the message
+                if chunk.choices[0]["index"] == 0:
+                    print(chunk_msg.get("content", ""), end="")
             print("\n")
 
             # get the full reply content in list
             for each_collected_message in collected_messages:
-                full_reply_content_list.append(''.join([m.get('content', '') for m in each_collected_message]))
-            
+                full_reply_content_list.append(
+                    "".join([m.get("content", "") for m in each_collected_message])
+                )
+
             # get the useage of the API
             # prompt_tokens = num_tokens_from_messages(self.conversation_list, model)
             tmp_cvlist = self.conversation_list.copy()
             for each_reply_content in full_reply_content_list:
-                tmp_cvlist.append({'role':'assistant', 'content':each_reply_content})
-            tokens_usage = num_tokens_from_messages(tmp_cvlist, model) - n_choices*5
+                tmp_cvlist.append({"role": "assistant", "content": each_reply_content})
+            tokens_usage = num_tokens_from_messages(tmp_cvlist, model) - n_choices * 5
 
         # don't use stream of chunks
         else:
             # get the reply content
             for each_choice in response.choices:
-                one_reply_content = each_choice.message['content']
+                one_reply_content = each_choice.message["content"]
                 full_reply_content_list.append(one_reply_content)
                 logging.info(f"\U0001f47D: {one_reply_content}\n")
-            #get the useage of the API
+            # get the useage of the API
             tokens_usage = response.usage["total_tokens"]
-            
+
         # find the best reply
         best_reply_content = find_best_reply_content(full_reply_content_list)
-        
-        # 下面这一步是把chatGPT的回答也添加到对话列表中，这样下一次问问题的时候就能形成上下文了
+
         if self.continuous_talking:
-            self.conversation_list.append({"role":"assistant", "content":best_reply_content})
+            self.conversation_list.append(
+                {"role": "assistant", "content": best_reply_content}
+            )
 
         return full_reply_content_list, tokens_usage
