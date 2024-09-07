@@ -6,12 +6,16 @@ from gpt.parser import *
 from gpt.benchmark import DB
 from gpt.rewriter import Rewriter
 from gpt.utils import setup_logger
-from gpt.bnf import pretty_stmts
+# from gpt.bnf import pretty_stmts
 from gpt.gptcore import BaseChatClass
 from gpt.prompt_all import *
+from gpt.parser import collect_func_declarations, format_local_processes_with_indents
 from gpt.gen_msc import calculus_to_msc
 from gpt.prompt import get_incontext_learning_contents
 from gpt.utils import append_blank_line, compile_verify
+from gpt.top_spec import generate_top_spec
+from gpt.utils import remove_comments_from_sapic, extract_line_commment_from_spec
+
 from utils.gen_html import loadText, sapic_hl_gen
 from conf.jsoninfo import load_json_config
 from flask import Flask, render_template, jsonify, request, Response
@@ -93,85 +97,45 @@ def few_shot():
                 """Step2: Tranform the lambda expressions to partial Sapic+ specification"""
                 Role_spec = T_transform(Lambda_spec)
 
+
                 if Role_spec:
                     """Step3: Determine the initial knowledge"""
                     role_spec_with_init = determin_initial_role_vars(
-                        doc,
-                        Role_spec,
-                        llm_model,
-                        temperature,
-                        n_choices,
-                        maxTokens,
-                        hint="",
+                        doc=doc,
+                        spec=Role_spec,
+                        llm_model=llm_model,
+                        temperature=temperature,
+                        n_choices=n_choices,
+                        maxTokens=maxTokens,
                     )
 
                     """Step4: Rewrite global expressions into local processes"""
                     with open("intermediate.txt", "w") as file:
                         file.write(role_spec_with_init)
 
-                    new_spec = Rewriter(role_spec_with_init)
-
-                    comments = {}
-                    for i, line in enumerate(new_spec.split("\n")):
-                        if line.strip().startswith("//"):
-                            comments[i] = line
+                    ##==   lambda expresions ~~> local processes  ==##
+                    local_processes = Rewriter(role_spec_with_init)
 
                     """Step5: Generate top specfications from local processes"""
-                    from gpt.top_spec import generate_top_spec
-
                     top_spec = generate_top_spec(
-                        doc, new_spec, llm_model, temperature, n_choices, maxTokens
+                        doc=doc, 
+                        local_processes=local_processes, 
+                        llm_model=llm_model, 
+                        temperature=temperature, 
+                        n_choices=n_choices, 
+                        maxTokens=maxTokens
                     )
 
-                    """Function declaration"""
-                    from gpt.utils import remove_comments_from_sapic
 
-                    role_root = parse_with_fallback(RoleParser, new_spec)
-                    role_root = parse_with_fallback(
-                        RoleParser, remove_comments_from_sapic(new_spec)
-                    )
-
-                    try:
-                        new_stmt = []
-                        pretty_stmts(role_root, new_stmt)
-                        new_spec = "\n".join(new_stmt)
-
-                        i, j = 0, 0
-                        stmt_l = []
-                        while j < len(comments) + len(new_stmt):
-                            if j in comments:
-                                stmt_l += [comments[j]]
-                            else:
-                                stmt_l += [new_stmt[i]]
-                                i += 1
-                            j += 1
-                        new_spec = "\n".join(stmt_l)
-                    except:
-                        pass
-
-                    top_spec_without_comments = remove_comments_from_sapic(top_spec)
-                    config_root = parse_with_fallback(
-                        TopParser, top_spec_without_comments
-                    )
-
-                    func_nodes = []
-                    for root in [role_root, config_root]:
-                        try:
-                            func_nodes += collect_subtrees(root, "func")
-                        except Exception as e:
-                            # 处理或记录特定异常
-                            pass
-
-                    functions = set()
-                    for node in func_nodes:
-                        node: Tree
-                        func_name = node.children[0].value
-                        arity = len(node.children[1].children)
-                        functions.add(f"{func_name}/{arity}")
+                    local_processes = format_local_processes_with_indents(local_processes)
+                    
+                    """Function declaration"""                
+                    functions = collect_func_declarations(local_processes, top_spec)
+                    
 
                     spec = SPEC_TEMPLATE.format(
                         functions=", ".join(list(functions)),
-                        new_spec=new_spec,
+                        new_spec=local_processes,
                         top_spec=top_spec,
                     )
 
