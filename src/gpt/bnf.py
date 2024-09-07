@@ -185,7 +185,6 @@ def tree2stmt(node) -> str:
     return reconstructed_string
 
 
-
 def pretty_stmts(root:Tree, stmt_list:list, indent_num=1) -> str:
     if root.data == 'role':
             # role            : "let" NAME "(" parameters ")" "=" stms 
@@ -216,7 +215,6 @@ def pretty_stmts(root:Tree, stmt_list:list, indent_num=1) -> str:
         for child in root.children:
             if isinstance(child, Tree):
                 pretty_stmts(child, stmt_list, indent_num)
-
 
 
 if __name__ == "__main__":

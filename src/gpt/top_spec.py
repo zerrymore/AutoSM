@@ -36,4 +36,3 @@ def generate_top_spec(doc:str, local_processes:str, llm_model, temperature, n_ch
     top_spec = eliminate_comments_from_top_spec(top_spec[0])
     
     return top_spec
-    

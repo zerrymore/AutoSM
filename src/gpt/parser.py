@@ -2,7 +2,12 @@ from gpt.gptcore import BaseChatClass
 import re
 from gpt.prompt import get_incontext_learning_contents
 from gpt.prompt_all import *
-from gpt.utils import fix_missing_closing_brackets, deconstruct_expr
+from gpt.utils import (
+    fix_missing_closing_brackets,
+    deconstruct_expr,
+    remove_comments_from_sapic,
+    extract_line_commment_from_spec
+)
 import logging
 from lark import Token, Tree
 from gpt.analysizer import RoleParser, TopParser
@@ -25,6 +30,66 @@ def collect_subtrees(tree_node, name: str):
             subtrees.extend(collect_subtrees(child, name))
     return subtrees
 
+
+def collect_func_declarations(local_processes:str, top_process:str) -> list:
+    """collect function declaration from top process and local processes.
+
+    Returns:
+        functions:list of function name with arity
+    """
+    role_root = parse_with_fallback(
+        RoleParser, remove_comments_from_sapic(local_processes)
+    )
+    top_spec_without_comments = remove_comments_from_sapic(top_process)
+    config_root = parse_with_fallback(TopParser, top_spec_without_comments)
+
+    func_nodes = []
+    for root in [role_root, config_root]:
+        try:
+            func_nodes += collect_subtrees(root, "func")
+        except Exception as e:
+            pass
+
+    functions = set()
+    for node in func_nodes:
+        node: Tree
+        func_name = node.children[0].value
+        arity = len(node.children[1].children)
+        functions.add(f"{func_name}/{arity}")
+    return functions
+
+
+from gpt.bnf import pretty_stmts
+        
+def format_local_processes_with_indents(local_processes:str) -> str:
+    
+    comments = extract_line_commment_from_spec(local_processes)
+            
+    role_root = parse_with_fallback(
+        RoleParser, remove_comments_from_sapic(local_processes)
+    )
+
+    # try:
+    new_stmt = []
+    pretty_stmts(role_root, new_stmt)
+    new_spec = "\n".join(new_stmt)
+
+    i, j = 0, 0
+    stmt_l = []
+    while j < len(comments) + len(new_stmt):
+        if j in comments:
+            stmt_l += [comments[j]]
+        else:
+            stmt_l += [new_stmt[i]]
+            i += 1
+        j += 1
+    new_spec = "\n".join(stmt_l)
+    return new_spec
+    # except:
+    #     return ""
+    
+    
+    
 
 def _vars(tree_node):
     if isinstance(tree_node, Token):
@@ -172,7 +237,7 @@ def T_transform(Lambda_spec: str) -> str:
     try:
         ##== Filter out all the deconstrction expressions,  ==##
         ##== only allowing construction and I/O expressions ==##
-        
+
         corr_Lambda_spec = "\n".join(
             fix_missing_closing_brackets(line)
             for line in Lambda_spec.split("\n")

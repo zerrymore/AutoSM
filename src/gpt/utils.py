@@ -53,6 +53,21 @@ def extract_multiline_comment_from_sapic(source:str):
     return comments[0]
 
 
+def extract_line_commment_from_spec(spec:str) -> dict:
+    """extract comments starting with '//'
+
+    Args:
+        spec (str): the input specification
+
+    Returns:
+        comments: a dictionary, where key is line number, value is comment
+    """
+    comments = {}
+    for i, line in enumerate(spec.split("\n")):
+        if line.strip().startswith("//"):
+            comments[i] = line
+    return comments
+
 def fix_missing_closing_brackets(input_str):
     stack = []
     bracket_map = {')': '(', ']': '[', '}': '{'}
@@ -86,8 +101,6 @@ def deconstruct_expr(expr:str) -> bool:
         if op in expr:
             return True
     return False
-    
-
 
 def parse_diff(diff_text):
     old_version = []
