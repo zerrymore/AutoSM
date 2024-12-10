@@ -1,0 +1,21 @@
+/* Protocol specification from Figure 6 in the thesis. 
+   This specification demonstrates failed well-formedness checks
+   and cannot be translated. */
+
+Protocol secrecy: 
+
+Declarations: 
+    public fun/-1; 
+    private fun/2; 
+    
+Knowledge: 
+    A : secr, pk(A), m; 
+    
+Actions: 
+    [action] A -> A (secr) : aenc{secr}pk(A); 
+    [action] A <- A        : fun(secr); 
+    
+Goals: 
+    [secrecy] bar(secr) secret of B;
+    
+end

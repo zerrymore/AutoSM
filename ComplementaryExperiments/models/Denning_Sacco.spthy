@@ -1,0 +1,139 @@
+theory Denning_Sacco
+begin
+
+functions: pk/1, sk/1, aenc/2, adec/2
+
+builtins: symmetric-encryption
+
+equations:
+    adec(aenc(x.1, sk(x.2)), pk(x.2)) = x.1,
+    adec(aenc(x.1, pk(x.2)), sk(x.2)) = x.1
+
+rule Asymmetric_key_setup:
+    [ Fr(~f) ] --> [ !Sk($A, sk(~f)), !Pk($A, pk(~f)) ]
+
+rule Publish_public_keys:
+    [ !Pk(A, pkA) ] --> [ Out(pkA) ]
+
+rule Symmetric_key_setup:
+    [ Fr(~symK) ] --> [ !Key($A, $B, ~symK) ]
+
+rule Init_Knowledge:
+        [ !Key($A, $S, k_A_S),
+          !Key($B, $S, k_B_S),
+          !Pk($A, pk(k_A)),
+          !Pk($B, pk(k_B)),
+          !Pk($S, pk(k_S)),
+          !Sk($A, sk(k_A)),
+          !Sk($B, sk(k_B)),
+          !Sk($S, sk(k_S))
+        ]
+        --[  ]->
+        [ St_init_A($A, $B, sk(k_A), pk(k_A), k_A_S),
+          St_init_S($A, $B, $S, sk(k_S), pk(k_S), k_A_S, k_B_S),
+          St_init_B($A, $B, sk(k_B), pk(k_B), k_B_S)
+        ]
+
+// ROLE A
+rule ds1_A:
+        [ St_init_A(A, B, sk(k_A), pk(k_A), k_A_S)
+        ]
+        --[  ]->
+        [ Out(<A, B>),
+          St_ds1_A(A, B, sk(k_A), pk(k_A), k_A_S)
+        ]
+
+rule ds2_A:
+        [ St_ds1_A(A, B, sk(k_A), pk(k_A), k_A_S),
+          In(senc{<B, Kab, T, alpha>}k_A_S)
+        ]
+        --[ CommitA(A, B, <Kab, T>) 
+          , RunningA(A, B, <Kab, T>)  
+          , Secret(A, B, Kab) ]->
+        [ St_ds2_A(A, B, Kab, T, sk(k_A), pk(k_A), k_A_S, alpha)
+        ]
+
+rule ds3_A:
+        [ St_ds2_A(A, B, Kab, T, sk(k_A), pk(k_A), k_A_S, alpha)
+        ]
+        --[  ]->
+        [ Out(alpha),
+          St_ds3_A(A, B, Kab, T, sk(k_A), pk(k_A), k_A_S, alpha)
+        ]
+
+// ROLE S
+rule ds1_S:
+        [ St_init_S(A, B, S, sk(k_S), pk(k_S), k_A_S, k_B_S),
+          In(<A, B>)
+        ]
+        --[  ]->
+        [ St_ds1_S(A, B, S, sk(k_S), pk(k_S), k_A_S, k_B_S)
+        ]
+
+rule ds2_S:
+        [ St_ds1_S(A, B, S, sk(k_S), pk(k_S), k_A_S, k_B_S),
+          Fr(~Kab),
+          Fr(~T)
+        ]
+        --[  ]->
+        [ Out(senc{<B, ~Kab, ~T, senc{<~Kab, A, ~T>}k_B_S>}k_A_S),
+          St_ds2_S(A, B, ~Kab, S, ~T, sk(k_S), pk(k_S), k_A_S, k_B_S)
+        ]
+
+// ROLE B
+rule ds3_B:
+        [ St_init_B(A, B, sk(k_B), pk(k_B), k_B_S),
+          In(senc{<Kab, A, T>}k_B_S)
+        ]
+        --[ CommitB(B, A, <Kab,T>)
+          , Secret(B, A, <Kab,T>) ]->
+        [ St_ds3_B(A, B, Kab, T, sk(k_B), pk(k_B), k_B_S)
+        ]
+
+
+
+        lemma executability:
+        exists-trace
+        " Ex A B t #i #j.
+          CommitB(B,A,t)@#i
+         & CommitA(A,B,t)@#j & #j<#i
+        "
+       
+       // check the secrecy of the newly generated session key
+       lemma secrecy:
+         "All A B k #i. Secret(A,B,k)@i ==> not (Ex #j. K(k)@j ) "
+       
+       
+       
+       // check the authenticity of the transaction from B's point of view
+       lemma noninjectiveagreement_B:
+         "All A B t #i.
+           CommitB(B, A, t) @i
+           ==> ( Ex #j. RunningA(A,B,t) @j & j < i)"
+       
+       // check the authenticity and freshness of the transaction from B's point of view
+       // status: false due to multiplicity attack
+       lemma injectiveagreement_B:
+       "All A B t #i. CommitB(B,A,t) @i
+         ==>
+           (Ex #j. RunningA(A,B,t) @j
+             & j < i
+             & not (Ex B2 A2 #i2. CommitB(B2,A2,t) @i2
+             & not (#i2 = #i))
+           )"
+
+        //    ==============================================================================
+        //    summary of summaries:
+           
+        //    analyzed: Denning_Sacco.spthy
+           
+        //      processing time: 1.11s
+             
+        //      executability (exists-trace): verified (6 steps)
+        //      secrecy (all-traces): verified (16 steps)
+        //      noninjectiveagreement_B (all-traces): verified (6 steps)
+        //      injectiveagreement_B (all-traces): falsified - found trace (8 steps)
+        //      AUTO_typing (all-traces): verified (19 steps)
+           
+        //    ==============================================================================
+end

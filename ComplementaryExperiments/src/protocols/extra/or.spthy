@@ -1,0 +1,148 @@
+theory OTWAY_REES
+begin
+
+functions: pk/1, sk/1, aenc/2, adec/2
+
+builtins: symmetric-encryption
+
+equations:
+    adec(aenc(x.1, sk(x.2)), pk(x.2)) = x.1,
+    adec(aenc(x.1, pk(x.2)), sk(x.2)) = x.1
+
+rule Asymmetric_key_setup:
+    [ Fr(~f) ] --> [ !Sk($A, sk(~f)), !Pk($A, pk(~f)) ]
+
+rule Publish_public_keys:
+    [ !Pk(A, pkA) ] --> [ Out(pkA) ]
+
+rule Symmetric_key_setup:
+    [ Fr(~symK) ] --> [ !Key($A, $B, ~symK) ]
+
+rule Init_Knowledge:
+        [ !Key($A, $S, k_A_S),
+          !Key($B, $S, k_B_S),
+          !Pk($A, pk(k_A)),
+          !Pk($B, pk(k_B)),
+          !Pk($S, pk(k_S)),
+          !Sk($A, sk(k_A)),
+          !Sk($B, sk(k_B)),
+          !Sk($S, sk(k_S))
+        ]
+        --[  ]->
+        [ St_init_A($A, $B, sk(k_A), pk(k_A), k_A_S),
+          St_init_B($B, sk(k_B), pk(k_B), k_B_S),
+          St_init_S($S, sk(k_S), pk(k_S), k_A_S, k_B_S)
+        ]
+
+// ROLE A
+rule or1_A:
+        [ St_init_A(A, B, sk(k_A), pk(k_A), k_A_S),
+          Fr(~n1),
+          Fr(~i)
+        ]
+        --[  ]->
+        [ Out(<~i, A, B, senc{<~n1, ~i, A, B>}k_A_S>),
+          St_or1_A(A, B, ~i, ~n1, sk(k_A), pk(k_A), k_A_S)
+        ]
+
+rule or4_A:
+        [ St_or1_A(A, B, i, n1, sk(k_A), pk(k_A), k_A_S),
+          In(<i, senc{<n1, key>}k_A_S>)
+        ]
+        --[ Secret_secKey_A(key),
+            Commit_agreeA(key),
+            Running_agreeB(key)
+            /********************** */
+          , Commit_A(A, B, <i, Kab>) 
+          , Secret(A, B, key)
+          , SessionA(A, B, key)
+          , Secrect(A, B, key) ]->
+        [ St_or4_A(A, B, i, key, n1, sk(k_A), pk(k_A), k_A_S)
+        ]
+
+// ROLE B
+rule or1_B:
+        [ St_init_B(B, sk(k_B), pk(k_B), k_B_S),
+          In(<i, A, B, alpha>)
+        ]
+        --[  ]->
+        [ St_or1_B(A, B, i, sk(k_B), pk(k_B), k_B_S, alpha)
+        ]
+
+rule or2_B:
+        [ St_or1_B(A, B, i, sk(k_B), pk(k_B), k_B_S, alpha),
+          Fr(~n2)
+        ]
+        --[  ]->
+        [ Out(<i, A, B, alpha, senc{<~n2, i, A, B>}k_B_S>),
+          St_or2_B(A, B, i, ~n2, sk(k_B), pk(k_B), k_B_S, alpha)
+        ]
+
+rule or3_B:
+        [ St_or2_B(A, B, i, n2, sk(k_B), pk(k_B), k_B_S, alpha),
+          In(<i, beta, senc{<n2, key>}k_B_S>)
+        ]
+        --[ Running_agreeA(key)
+          , Secret(A, B, key)
+          , SessionB(A, B, key)
+          , Commit_B(A, B, <i, key>) ]->
+        [ St_or3_B(A, B, i, key, n2, sk(k_B), pk(k_B), k_B_S, beta, alpha)
+        ]
+
+rule or4_B:
+        [ St_or3_B(A, B, i, key, n2, sk(k_B), pk(k_B), k_B_S, beta, alpha)
+        ]
+        --[ Secret_secKey_B(key),
+            Commit_agreeB(key) ]->
+        [ Out(<i, beta>),
+          St_or4_B(A, B, i, key, n2, sk(k_B), pk(k_B), k_B_S, beta, alpha)
+        ]
+
+// ROLE S
+rule or2_S:
+        [ St_init_S(S, sk(k_S), pk(k_S), k_A_S, k_B_S),
+          In(<i, A, B, senc{<n1, i, A, B>}k_A_S, senc{<n2, i, A, B>}k_B_S>)
+        ]
+        --[  ]->
+        [ St_or2_S(A, B, S, i, n1, n2, sk(k_S), pk(k_S), k_A_S, k_B_S)
+        ]
+
+rule or3_S:
+        [ St_or2_S(A, B, S, i, n1, n2, sk(k_S), pk(k_S), k_A_S, k_B_S),
+          Fr(~key)
+        ]
+        --[ Secret(A, B, ~key)
+          , Running_S(A, B, <i,~key>)
+          , Commit_S_A(A, B, <i, n1>)
+          , Commit_S_B(A, B, <i, n2>) ]->
+        [ Out(<i, senc{<n1, ~key>}k_A_S, senc{<n2, ~key>}k_B_S>),
+          St_or3_S(A, B, S, i, ~key, n1, n2, sk(k_S), pk(k_S), k_A_S, k_B_S)
+        ]
+
+// lemma secKey:
+//     " not(
+//         Ex msg #i1 #i2 #j .
+//             Secret_secKey_A(msg) @ #i1 &
+//             Secret_secKey_B(msg) @ #i2 &
+//             K(msg) @ #j
+//     )"
+
+// lemma agreeA:
+//     " (All m1 #i .
+//         Commit_agreeA(m1)@ #i
+//         ==>
+//         (Ex #j . Running_agreeA(m1) @ #j & #j < #i) &
+//         (not (Ex #j . Commit_agreeA(m1) @ #j & not (#i = #j)))
+//     )"
+
+
+// lemma agreeB:
+//     " (All m1 #i .
+//         Commit_agreeB(m1)@ #i
+//         ==>
+//         (Ex #j . Running_agreeB(m1) @ #j & #j < #i) &
+//         (not (Ex #j . Commit_agreeB(m1) @ #j & not (#i = #j)))
+//     )"
+
+
+end

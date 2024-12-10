@@ -1,0 +1,23 @@
+Protocol nssk: 
+
+Declarations: dec/1;
+
+
+Knowledge: 
+    A: k(A, S), B; 
+    B: k(B, S), A; 
+    S: k(A, S), k(B, S), A, B; 
+
+Actions: 
+    [nssk1] A -> S (Na) : 
+        'One' . A . B . Na; 
+    [nssk2] S -> A (Kab) : 
+        senc{'Two' . Na . B . Kab . senc{'Three' . Kab . A}k(B, S) }k(A, S); 
+    [nssk3] A -> B : 
+        senc{'Three' . Kab . A}k(B, S);
+    [nssk4] B -> A (Nb) : 
+        senc{'Four' . Nb}Kab;
+    [nssk5] A -> B : 
+        senc{'Five' . dec(Nb)}Kab;
+end
+

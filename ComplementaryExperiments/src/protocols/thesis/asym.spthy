@@ -1,0 +1,57 @@
+theory Asym
+begin
+
+functions: pk/1, sk/1, aenc/2, adec/2
+
+equations:
+    adec(aenc(x.1, sk(x.2)), pk(x.2)) = x.1,
+    adec(aenc(x.1, pk(x.2)), sk(x.2)) = x.1
+
+rule Asymmetric_key_setup:
+    [ Fr(~f) ] --> [ !Sk($A, sk(~f)), !Pk($A, pk(~f)) ]
+
+rule Publish_public_keys:
+    [ !Pk(A, pkA) ] --> [ Out(pkA) ]
+
+rule Init_Knowledge:
+        [ !Pk($A, pk(k_A)),
+          !Pk($B, pk(k_B)),
+          !Sk($A, sk(k_A)),
+          !Sk($B, sk(k_B))
+        ]
+        --[  ]->
+        [ St_init_A($A, sk(k_A), pk(k_A)),
+          St_init_B($B, sk(k_B), pk(k_A), pk(k_B))
+        ]
+
+// ROLE A
+rule a1_A:
+        [ St_init_A(A, sk(k_A), pk(k_A)),
+          Fr(~n)
+        ]
+        --[ Secret_sec_A(~n) ]->
+        [ Out(aenc{~n}sk(k_A)),
+          St_a1_A(A, ~n, sk(k_A), pk(k_A))
+        ]
+
+// ROLE B
+rule a1_B:
+    let
+        alpha = aenc{n}sk(k_A)
+    in
+        [ St_init_B(B, sk(k_B), pk(k_A), pk(k_B)),
+          In(alpha)
+        ]
+        --[ Secret_sec_B(n) ]->
+        [ St_a1_B(B, n, sk(k_B), pk(k_A), pk(k_B), alpha)
+        ]
+
+lemma sec:
+    " not(
+        Ex msg #i1 #i2 #j .
+            Secret_sec_A(msg) @ #i1 &
+            Secret_sec_B(msg) @ #i2 &
+            K(msg) @ #j
+    )"
+
+end

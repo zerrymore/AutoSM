@@ -1,0 +1,23 @@
+/* Author: Dr. Ralf Sasse
+   Modeled on https://github.com/tamarin-prover/tamarin-prover/blob/develop/data/examples/csf12/SignedDH_PFS.spthy, 
+   (without reveals!) */
+
+Protocol SIGNED_DIFFIE_HELLMAN:
+
+Declarations:
+    g/0;
+    
+Knowledge:
+    A: pk(B), B;
+    B: pk(A), A;
+    
+Actions:
+    [dh_1] A -> B (x) : aenc{'One' . A . B . g()^x}sk(A);
+    [dh_2] B -> A (y) : aenc{'Two' . B . A . g()^y}sk(B);
+    
+Goals:
+    [key_secret]  g()^(x*y) secret of A, B; 
+    [key_secretA] g()^(x*y) secret of A;
+    [key_secretB] g()^(x*y) secret of B;
+    
+end

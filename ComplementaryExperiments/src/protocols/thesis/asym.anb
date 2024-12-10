@@ -1,0 +1,14 @@
+/* Protocol from Section 7.3 in the thesis */
+
+Protocol Asym: 
+
+Knowledge: 
+    B : pk(A); 
+    
+Actions: 
+    [a1] A -> B (n) : aenc{n}sk(A);
+    
+Goals: 
+    [sec]  n secret of A, B; 
+    
+end

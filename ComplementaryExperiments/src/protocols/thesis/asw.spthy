@@ -1,0 +1,160 @@
+theory ASW
+begin
+
+functions: pk/1, sk/1, aenc/2, adec/2
+
+builtins: hashing
+
+equations:
+    adec(aenc(x.1, sk(x.2)), pk(x.2)) = x.1,
+    adec(aenc(x.1, pk(x.2)), sk(x.2)) = x.1
+
+rule Asymmetric_key_setup:
+    [ Fr(~f) ] --> [ !Sk($A, sk(~f)), !Pk($A, pk(~f)) ]
+
+rule Publish_public_keys:
+    [ !Pk(A, pkA) ] --> [ Out(pkA) ]
+
+rule Init_Knowledge:
+        [ !Pk($A, pk(k_A)),
+          !Pk($B, pk(k_B)),
+          !Sk($A, sk(k_A)),
+          !Sk($B, sk(k_B)),
+          Fr(~m)
+        ]
+        --[  ]->
+        [ St_init_A($A, $B, ~m, sk(k_A), pk(k_A), pk(k_B)),
+          St_init_B($A, $B, sk(k_B), pk(k_A), pk(k_B))
+        ]
+
+// ROLE A
+rule asw1_A:
+        [ St_init_A(A, B, m, sk(k_A), pk(k_A), pk(k_B)),
+          Fr(~n_1)
+        ]
+        --[ Running_weakB(m),
+            Running_strongB(m) ]->
+        [ Out(aenc{<pk(k_A), pk(k_B), m, h(~n_1)>}sk(k_A)),
+          St_asw1_A(A, B, m, ~n_1, sk(k_A), pk(k_A), pk(k_B))
+        ]
+
+rule asw2_A:
+    let
+        beta = aenc{<aenc{<pk(k_A), pk(k_B), m, h(n_1)>}sk(k_A), alpha>}sk(k_B)
+    in
+        [ St_asw1_A(A, B, m, n_1, sk(k_A), pk(k_A), pk(k_B)),
+          In(beta)
+        ]
+        --[  ]->
+        [ St_asw2_A(A, B, m, n_1, sk(k_A), pk(k_A), pk(k_B), beta, alpha)
+        ]
+
+rule asw3_A:
+        [ St_asw2_A(A, B, m, n_1, sk(k_A), pk(k_A), pk(k_B), beta, alpha)
+        ]
+        --[  ]->
+        [ Out(n_1),
+          St_asw3_A(A, B, m, n_1, sk(k_A), pk(k_A), pk(k_B), beta, alpha)
+        ]
+
+rule asw4_A:
+    let
+        beta = aenc{<aenc{<pk(k_A), pk(k_B), m, h(n_1)>}sk(k_A), h(n_2)>}sk(k_B)
+        alpha = h(n_2)
+    in
+        [ St_asw3_A(A, B, m, n_1, sk(k_A), pk(k_A), pk(k_B), beta, alpha),
+          In(n_2)
+        ]
+        --[ Secret_secrecy_A(m),
+            Commit_weakA(m),
+            Commit_strongA(m) ]->
+        [ St_asw4_A(A, B, m, n_1, n_2, sk(k_A), pk(k_A), pk(k_B), beta)
+        ]
+
+// ROLE B
+rule asw1_B:
+    let
+        beta = aenc{<pk(k_A), pk(k_B), m, alpha>}sk(k_A)
+    in
+        [ St_init_B(A, B, sk(k_B), pk(k_A), pk(k_B)),
+          In(beta)
+        ]
+        --[ Running_weakA(m),
+            Running_strongA(m) ]->
+        [ St_asw1_B(A, B, m, sk(k_B), pk(k_A), pk(k_B), beta, alpha)
+        ]
+
+rule asw2_B:
+        [ St_asw1_B(A, B, m, sk(k_B), pk(k_A), pk(k_B), beta, alpha),
+          Fr(~n_2)
+        ]
+        --[  ]->
+        [ Out(aenc{<beta, h(~n_2)>}sk(k_B)),
+          St_asw2_B(A, B, m, ~n_2, sk(k_B), pk(k_A), pk(k_B), beta, alpha)
+        ]
+
+rule asw3_B:
+    let
+        beta = aenc{<pk(k_A), pk(k_B), m, h(n_1)>}sk(k_A)
+        alpha = h(n_1)
+    in
+        [ St_asw2_B(A, B, m, n_2, sk(k_B), pk(k_A), pk(k_B), beta, alpha),
+          In(n_1)
+        ]
+        --[  ]->
+        [ St_asw3_B(A, B, m, n_1, n_2, sk(k_B), pk(k_A), pk(k_B), beta)
+        ]
+
+rule asw4_B:
+        [ St_asw3_B(A, B, m, n_1, n_2, sk(k_B), pk(k_A), pk(k_B), beta)
+        ]
+        --[ Secret_secrecy_B(m),
+            Commit_weakB(m),
+            Commit_strongB(m) ]->
+        [ Out(n_2),
+          St_asw4_B(A, B, m, n_1, n_2, sk(k_B), pk(k_A), pk(k_B), beta)
+        ]
+
+lemma secrecy:
+    " not(
+        Ex msg #i1 #i2 #j .
+            Secret_secrecy_A(msg) @ #i1 &
+            Secret_secrecy_B(msg) @ #i2 &
+            K(msg) @ #j
+    )"
+
+lemma weakA:
+    " (All m1 #i .
+        Commit_weakA(m1)@ #i
+        ==>
+        (Ex #j . Running_weakA(m1) @ #j & #j < #i)
+    )"
+
+
+lemma weakB:
+    " (All m1 #i .
+        Commit_weakB(m1)@ #i
+        ==>
+        (Ex #j . Running_weakB(m1) @ #j & #j < #i)
+    )"
+
+
+lemma strongA:
+    " (All m1 #i .
+        Commit_strongA(m1)@ #i
+        ==>
+        (Ex #j . Running_strongA(m1) @ #j & #j < #i) &
+        (not (Ex #j . Commit_strongA(m1) @ #j & not (#i = #j)))
+    )"
+
+
+lemma strongB:
+    " (All m1 #i .
+        Commit_strongB(m1)@ #i
+        ==>
+        (Ex #j . Running_strongB(m1) @ #j & #j < #i) &
+        (not (Ex #j . Commit_strongB(m1) @ #j & not (#i = #j)))
+    )"
+
+
+end

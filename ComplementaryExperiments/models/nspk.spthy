@@ -1,0 +1,205 @@
+theory nspk
+begin
+
+functions: pk/1, sk/1, aenc/2, adec/2
+
+equations:
+    adec(aenc(x.1, sk(x.2)), pk(x.2)) = x.1,
+    adec(aenc(x.1, pk(x.2)), sk(x.2)) = x.1
+
+rule Asymmetric_key_setup:
+    [ Fr(~f) ] --> [ !Sk($A, sk(~f)), !Pk($A, pk(~f)) ]
+
+rule Publish_public_keys:
+    [ !Pk(A, pkA) ] --> [ Out(pkA) ]
+
+rule Init_Knowledge:
+        [ !Pk($A, pk(k_A)),
+          !Pk($B, pk(k_B)),
+          !Sk($A, sk(k_A)),
+          !Sk($B, sk(k_B))
+        ]
+        --[  HonestA($A), HonestB($B)  ]->
+        [ St_init_A($A, $B, sk(k_A), pk(k_A), pk(k_B)),
+          St_init_B($A, $B, sk(k_B), pk(k_A), pk(k_B))
+        ]
+
+// ROLE A
+rule nspk1_A:
+        [ St_init_A(A, B, sk(k_A), pk(k_A), pk(k_B)),
+          Fr(~Na)
+        ]
+        --[ OUT_I_1(aenc(<~Na, A>, pk(k_B))) ]->
+        [ Out(aenc{<'One', ~Na, A>}pk(k_B)),
+          St_nspk1_A(A, B, ~Na, sk(k_A), pk(k_A), pk(k_B))
+        ]
+
+rule nspk2_A:
+        [ St_nspk1_A(A, B, Na, sk(k_A), pk(k_A), pk(k_B)),
+          In(aenc{<'Two', Na, Nb>}pk(k_A))
+        ]
+        --[  ]->
+        [ St_nspk2_A(A, B, Na, Nb, sk(k_A), pk(k_A), pk(k_B))
+        ]
+
+rule nspk3_A:
+        [ St_nspk2_A(A, B, Na, Nb, sk(k_A), pk(k_A), pk(k_B))
+        ]
+        --[ SessionBuiltA(A, Na, Nb)
+          , SessionA(A, B, Na)
+          , IN_I_2_nr(Nb, aenc(<Na,Nb>, pk(k_A)))
+          , OUT_I_2(aenc(Nb, pk(k_B))) ]->
+        [ Out(aenc{<'Three', Nb>}pk(k_B)),
+          St_nspk3_A(A, B, Na, Nb, sk(k_A), pk(k_A), pk(k_B))
+        ]
+
+// ROLE B
+rule nspk1_B:
+        [ St_init_B(A, B, sk(k_B), pk(k_A), pk(k_B)),
+          In(aenc{<'One', Na, A>}pk(k_B))
+        ]
+        --[ IN_R_1_ni(Na, aenc(<Na,A>, pk(k_B))) ]->
+        [ St_nspk1_B(A, B, Na, sk(k_B), pk(k_A), pk(k_B))
+        ]
+
+rule nspk2_B:
+        [ St_nspk1_B(A, B, Na, sk(k_B), pk(k_A), pk(k_B)),
+          Fr(~Nb)
+        ]
+        --[ OUT_R_1(aenc(<Na, ~Nb>,pk(k_A)))  ]->
+        [ Out(aenc{<'Two', Na, ~Nb>}pk(k_A)),
+          St_nspk2_B(A, B, Na, ~Nb, sk(k_B), pk(k_A), pk(k_B))
+        ]
+
+rule nspk3_B:
+        [ St_nspk2_B(A, B, Na, Nb, sk(k_B), pk(k_A), pk(k_B)),
+          In(aenc{<'Three', Nb>}pk(k_B))
+        ]
+        --[ SessionBuiltB(B, Na, Nb)
+          , SessionB(A, B, Na)
+          , IN_R_2(Nb, aenc(Nb, pk(k_B))) ]->
+        [ St_nspk3_B(A, B, Na, Nb, sk(k_B), pk(k_A), pk(k_B))
+        ]
+
+
+lemma source [sources, reuse, output=[msr]]:
+    " (All ni m1 #i.
+          IN_R_1_ni( ni, m1) @ i
+          ==>
+          ( (Ex #j. KU(ni) @ j & j < i)
+          | (Ex #j. OUT_I_1( m1 ) @ j)
+          )
+      )
+    & (All nr m2 #i.
+          IN_I_2_nr( nr, m2) @ i
+          ==>
+          ( (Ex #j. KU(nr) @ j & j < i)
+          | (Ex #j. OUT_R_1( m2 ) @ j)
+          )
+      )
+      & (All nr m3 #i.
+        IN_R_2(nr, m3) @ i
+        ==>
+        ( (Ex #j. KU(nr) @ j & j < i)
+        | (Ex #j. OUT_I_2( m3 ) @ j)
+        )
+      )
+  "
+      
+      
+      
+      lemma Confident_aux[reuse]:
+        " not ( Ex pka Na Nb #t1 #t2.
+                  SessionBuiltA(pka,Na,Nb)@t1 & KU(Na)@t2 )"
+      
+      
+      lemma SessionBuilt:
+      exists-trace
+      "Ex pka pkb Na Nb #t1 #t2.
+        SessionBuiltA(pka,Na,Nb)@t1 & SessionBuiltB(pkb,Na,Nb)@t2"
+      
+      
+      lemma HonestImpl:
+        "All pka Na Nb #i. SessionBuiltA(pka,Na,Nb)@i ==> (Ex #j.HonestA(pka)@j)"
+      
+      // falsified
+      lemma Confidentiality:
+      "not(
+          Ex pka pkb Na Nb #t1 #t2 #t3 #i1 #i2.
+          /* If some roles claim have setup a shared secret of Na and Nb */
+          SessionBuiltA(pka,Na,Nb)@t1
+          & SessionBuiltB(pkb,Na,Nb)@t3
+          /* but the adversary knows Na, */
+          & KU(Na)@t2
+          /* and both roles are honest without having performed key leak.*/
+          & HonestA(pka) @ i1
+          & HonestB(pkb) @ i2
+       )"
+      
+      
+      // satisfied: 
+      //      If honest A communicates with an honest B (both roles
+      //      do not leak their private keys), then adversary can not
+      //      knows na.
+       lemma sec_of_A[reuse]:
+       "not(
+           Ex pka pkb Na #t1 #t2 #i1 #i2.
+           SessionA(pka,pkb,Na)@t1
+           & KU(Na)@t2
+           /* without having performed a long-term key reveal. */
+           & HonestA(pka) @ i1
+           & HonestB(pkb) @ i2
+        )"
+      
+      
+  lemma sec_of_B:
+    "not(
+        Ex pka pkb Na #t1 #t2 #i1 #i2.
+        SessionB(pka,pkb,Na)@t1
+        & KU(Na)@t2
+        /* without having performed a long-term key reveal. */
+        & HonestA(pka) @ i1
+        & HonestB(pkb) @ i2  
+    )"
+      
+      
+    lemma sec_of_B_test:
+    "not (Ex pka pkb Na Nb #t1 #t2 #m1 #m2 #i1 #i2.
+        SessionB(pka,pkb,Na)@t1
+        & KU(Na)@t2
+        /* without having performed a long-term key reveal. */
+        & HonestA(pka) @ i1
+        & HonestB(pkb) @ i2
+        & SessionBuiltA(pka, Na, Nb) @ m1 & SessionBuiltB(pkb, Na, Nb) @ m2 ) "
+  
+  
+      
+      lemma sanity1: //make sure that a valid protocol run exists
+        exists-trace
+        "Ex pka pkb k #t1 . SessionA(pka,pkb,k)@t1"
+      
+      lemma sanity2:
+        exists-trace
+        "Ex pka pkb k #t1 . SessionB(pka,pkb,k)@t1"
+      
+        
+// ==============================================================================
+// summary of summaries:
+
+// analyzed: nspk.spthy
+
+//   processing time: 1.17s
+  
+//   source (all-traces): verified (54 steps)
+//   Confident_aux (all-traces): verified (21 steps)
+//   SessionBuilt (exists-trace): verified (13 steps)
+//   HonestImpl (all-traces): verified (6 steps)
+//   Confidentiality (all-traces): verified (2 steps)
+//   sec_of_A (all-traces): verified (2 steps)
+//   sec_of_B (all-traces): verified (65 steps)
+//   sec_of_B_test (all-traces): verified (2 steps)
+//   sanity1 (exists-trace): verified (8 steps)
+//   sanity2 (exists-trace): verified (11 steps)
+
+// ==============================================================================
+end

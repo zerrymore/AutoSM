@@ -1,0 +1,108 @@
+theory CR
+begin
+
+functions: pk/1, sk/1, aenc/2, adec/2
+
+builtins: hashing
+
+equations:
+    adec(aenc(x.1, sk(x.2)), pk(x.2)) = x.1,
+    adec(aenc(x.1, pk(x.2)), sk(x.2)) = x.1
+
+rule Asymmetric_key_setup:
+    [ Fr(~f) ] --> [ !Sk($A, sk(~f)), !Pk($A, pk(~f)) ]
+
+rule Publish_public_keys:
+    [ !Pk(A, pkA) ] --> [ Out(pkA) ]
+
+rule Init_Knowledge:
+        [ !Pk($C, pk(k_C)),
+          !Pk($R, pk(k_R)),
+          !Sk($C, sk(k_C)),
+          !Sk($R, sk(k_R))
+        ]
+        --[  ]->
+        [ St_init_C($C, sk(k_C), pk(k_C), pk(k_R)),
+          St_init_R($R, sk(k_R), pk(k_R))
+        ]
+
+// ROLE C
+rule cr1_C:
+        [ St_init_C(C, sk(k_C), pk(k_C), pk(k_R)),
+          Fr(~n)
+        ]
+        --[  ]->
+        [ Out(aenc{~n}pk(k_R)),
+          St_cr1_C(C, ~n, sk(k_C), pk(k_C), pk(k_R))
+        ]
+
+rule cr2_C:
+        [ St_cr1_C(C, n, sk(k_C), pk(k_C), pk(k_R)),
+          In(h(n))
+        ]
+        --[ Secret_n_secret_C(n),
+            Secret_n_secretC_C(n),
+            Commit_authNonInj(n),
+            Commit_authInj(n) ]->
+        [ St_cr2_C(C, n, sk(k_C), pk(k_C), pk(k_R))
+        ]
+
+// ROLE R
+rule cr1_R:
+        [ St_init_R(R, sk(k_R), pk(k_R)),
+          In(aenc{n}pk(k_R))
+        ]
+        --[ Running_authNonInj(n),
+            Running_authInj(n) ]->
+        [ St_cr1_R(R, n, sk(k_R), pk(k_R))
+        ]
+
+rule cr2_R:
+        [ St_cr1_R(R, n, sk(k_R), pk(k_R))
+        ]
+        --[ Secret_n_secret_R(n),
+            Secret_n_secretR_R(n) ]->
+        [ Out(h(n)),
+          St_cr2_R(R, n, sk(k_R), pk(k_R))
+        ]
+
+lemma n_secret:
+    " not(
+        Ex msg #i1 #i2 #j .
+            Secret_n_secret_C(msg) @ #i1 &
+            Secret_n_secret_R(msg) @ #i2 &
+            K(msg) @ #j
+    )"
+
+lemma n_secretC:
+    " not(
+        Ex msg #i1 #j .
+            Secret_n_secretC_C(msg) @ #i1 &
+            K(msg) @ #j
+    )"
+
+lemma n_secretR:
+    " not(
+        Ex msg #i1 #j .
+            Secret_n_secretR_R(msg) @ #i1 &
+            K(msg) @ #j
+    )"
+
+lemma authNonInj:
+    " (All m1 #i .
+        Commit_authNonInj(m1)@ #i
+        ==>
+        (Ex #j . Running_authNonInj(m1) @ #j & #j < #i)
+    )"
+
+
+lemma authInj:
+    " (All m1 #i .
+        Commit_authInj(m1)@ #i
+        ==>
+        (Ex #j . Running_authInj(m1) @ #j & #j < #i) &
+        (not (Ex #j . Commit_authInj(m1) @ #j & not (#i = #j)))
+    )"
+
+
+end
