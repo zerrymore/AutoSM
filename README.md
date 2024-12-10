@@ -54,13 +54,14 @@ This tool can generate formal specifications (symbolic model) for a protocol aut
 ## Directories structure
 ```
 ⚒️ AutoSM 
+├── 📂 ComplementaryExperiments
 ├── 📂 Input_output
 ├── 📂 src: The source code.
 ├── 📂 static
 └── 📂 templates
   └── 📜 home.html
 ```
-
+- 📂 ComplementaryExperiments: Comparisons with one correct-by-construction approach
 - 📂 Input_output: The examples used to present the workflow.
 - 📂 src: the source code of our implementation
 - 📂 static: static configurations including images and .css file.
