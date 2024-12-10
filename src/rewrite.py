@@ -96,7 +96,8 @@ def few_shot():
 
                 """Step2: Tranform the lambda expressions to partial Sapic+ specification"""
                 Role_spec = T_transform(Lambda_spec)
-
+                with open("parsing_lambda_exprs.txt", "w") as file:
+                        file.write(Lambda_spec)
 
                 if Role_spec:
                     """Step3: Determine the initial knowledge"""
