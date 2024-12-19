@@ -37,8 +37,8 @@ This tool can generate formal specifications (symbolic model) for a protocol aut
 - Configure openai API key in src/conf/config.json,
     ```json
     {
-      "API_URL_BASE": <YOUR API URL BASE>,
-      "openai_api_key": <YOUR OPENAI KEY>,
+      "API_URL_BASE": [YOUR API URL BASE],
+      "openai_api_key": [YOUR OPENAI KEY],
     }
     ```
 - run the tool's frontend
