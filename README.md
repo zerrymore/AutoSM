@@ -23,7 +23,21 @@ This tool can generate formal specifications (symbolic model) for a protocol aut
     brew install tamarin-prover/tap/tamarin-prover
     ```
 - Make sure the prover equipped with a Sapic+ platform.
+- To check the installation of Tamarin, enter the command tamarin-prover --version in the command line. The output should resemble the following:
+```
+tamarin-prover 1.8.0, (C) David Basin, Cas Cremers, Jannik Dreier, Simon Meier, Ralf Sasse, Benedikt Schmidt, 2010-2023
 
+This program comes with ABSOLUTELY NO WARRANTY. It is free software, and you
+are welcome to redistribute it according to its LICENSE, see
+'https://github.com/tamarin-prover/tamarin-prover/blob/master/LICENSE'.
+
+maude tool: 'maude'
+ checking version: 2.7.1. OK.
+ checking installation: OK.
+Generated from:
+Tamarin version 1.8.0
+Maude version 2.7.1
+```
 
 2. Setup the conda environments, and install the related packages.
     ```bash
