@@ -6,13 +6,13 @@ This repo contains a benchmark for symbolic model synthesis and a tool with web-
 
 This tool can generate formal specifications (symbolic model) for a protocol automatically from unstructed natural language, empowered by LLMs' powered ability for semantic parsing. Comparing with existing text-to-code tasks, we pay more attention on the soundness of the general translation process, i.e., the output of the tool should be consistent with the unstructed natural language description semantically. We try to make as much control as possible for the overall process, though "black-box" LLM is introduced.
 
-<!-- ![My Image](static/images/workflow.jpg){ width=50% } -->
-<img src="static/images/workflow.jpg" style="width: 50%; height: auto;">
+<!-- ![My Image](static/images/workflow.jpg){ width=50% }
+<img src="static/images/workflow.jpg" style="width: 50%; height: auto;"> -->
 
-1. **Lccg:** a LLM-powered CCG parser, which takes protocol documents as input, parses them into lambda calculus expressions (that are defined specifically for modeling security protocols).
-2. **L-repair:** which repairs the broken specifications with static analysis techniques and user interaction to make them well-formed.
-3. **Algorithm T:** which transforms the lambda expressions into **Sapic+** specification **P**.
-4. **Compiler:** which takes the well-formed **Sapic+** process **P** as input and compiles it into models **R** accepted by the protocol verifiers (**Tamarin**, **DeepSec**, and **ProVerif**) directly.
+1. Parser, a LLM-powered CCG parser, which takes protocol documents as input, parses them into lambda calculus expressions (that are defined specifically for modeling security protocols).
+2. Repairer, which repairs the broken specifications with static analysis techniques and user interaction to make them well-formed.
+3. Rewriter, which transforms the lambda expressions into Sapic+ [1] specification.
+4. Compiler, which is designed and implemented by Cheval et al., taking the well-formed Sapic+ [1] process as input and compiles it into models accepted by the protocol verifiers (Tamarin, DeepSec, and ProVerif) directly.
 
 
 ## Setup
@@ -22,7 +22,7 @@ This tool can generate formal specifications (symbolic model) for a protocol aut
     ```bash
     brew install tamarin-prover/tap/tamarin-prover
     ```
-- Make sure the prover equipped with a Sapic+ [1] platform.
+- Make sure the prover equipped with a Sapic+ platform.
 
 
 2. Setup the conda environments, and install the related packages.
@@ -53,7 +53,7 @@ This tool can generate formal specifications (symbolic model) for a protocol aut
 
 ## Directories structure
 ```
-⚒️ AutoSM 
+📂 AutoSM 
 ├── 📂 ComplementaryExperiments
 ├── 📂 Input_output
 ├── 📂 src: The source code.
@@ -61,14 +61,16 @@ This tool can generate formal specifications (symbolic model) for a protocol aut
 └── 📂 templates
   └── 📜 home.html
 ```
-- 📂 ComplementaryExperiments: Comparisons with one correct-by-construction approach
-- 📂 Input_output: The examples used to present the workflow.
-- 📂 src: the source code of our implementation
-- 📂 static: static configurations including images and .css file.
-- 📂 templates: html page of web-based frontend 
+- `ComplementaryExperiments`: Comparisons with one correct-by-construction approach
+- `Input_output`: The examples used to present the workflow.
+- `src`: the source code of our implementation
+- `static`: static configurations including images and .css file.
+- `templates`: html page of web-based frontend 
 
 ## User tutorial
 
 Here gives an overivew for the general workflow of the tool. We use a toy example to illustrate how user can interact with the tool and how tool can generate formal specificaions and check the results automatically.
 
+## Reference
 
+[1] Cheval, Vincent, Charlie Jacomme, Steve Kremer, and Robert Künnemann. 2022. ''SAPIC+: Protocol Verifiers of the World, Unite!'' In 31st USENIX Security Symposium (USENIX Security 22), 3935–52.
