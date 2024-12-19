@@ -20,16 +20,13 @@ def write_json_config_to_env(config: Dict[Text, Any]) -> None:
             os.environ["https_proxy"] = str(config[key])
         elif key == 'open_ai_api_key':
             os.environ['OPENAI_API_KEY'] = str(config[key])
-            print("okokok")
-            print(os.environ.get("API_URL_BASE"))
-            print(os.environ.get("OPENAI_API_KEY"))
         # Otherwise, set the environment variable to the value of the key.
         else:
             os.environ[key] = str(config[key])
 
 
 def load_json_config() -> Dict[Text, Any]:
-    # Load the JSON config from the config.json file.
+    ##== Load the JSON config from the config.json file. ==##
     # returns the path to the current directory
     current_path = os.path.dirname(__file__)
     try:
@@ -37,7 +34,6 @@ def load_json_config() -> Dict[Text, Any]:
         with open(current_path+'/config.json', 'r') as f:
             # loads the config file into the variable config
             config = json.load(f)
-            print(config)
             # calls the function write_json_config_to_env and passes the config variable as a parameter
             write_json_config_to_env(config)
             # returns the config variable
