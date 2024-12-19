@@ -1,8 +1,8 @@
-# 🤔⚒️: LLM-Aided Automatic Modelling for Security Protocol Verification
+# LLM-Aided Automatic Modelling for Security Protocol Verification
 
 This repo contains a benchmark for symbolic model synthesis and a tool with web-based frontend.
 
-## 💡 Introduction
+## Introduction
 
 This tool can generate formal specifications (symbolic model) for a protocol automatically from unstructed natural language, empowered by LLMs' powered ability for semantic parsing. Comparing with existing text-to-code tasks, we pay more attention on the soundness of the general translation process, i.e., the output of the tool should be consistent with the unstructed natural language description semantically. We try to make as much control as possible for the overall process, though "black-box" LLM is introduced.
 
@@ -15,7 +15,7 @@ This tool can generate formal specifications (symbolic model) for a protocol aut
 4. **Compiler:** which takes the well-formed **Sapic+** process **P** as input and compiles it into models **R** accepted by the protocol verifiers (**Tamarin**, **DeepSec**, and **ProVerif**) directly.
 
 
-## 🛠️ Setup
+## Setup
 
 1. Install Tamarin-prover
 - Follow the [Tamarin manual](https://tamarin-prover.com/manual/master/book/002_installation.html).
@@ -32,7 +32,7 @@ This tool can generate formal specifications (symbolic model) for a protocol aut
     pip install -r requirements.txt
     ```
 
-## 🚀 Get Started
+## Configure
 
 - Configure openai API key in src/conf/config.json,
     ```json
@@ -67,7 +67,7 @@ This tool can generate formal specifications (symbolic model) for a protocol aut
 - 📂 static: static configurations including images and .css file.
 - 📂 templates: html page of web-based frontend 
 
-## 💬 User tutorial
+## User tutorial
 
 Here gives an overivew for the general workflow of the tool. We use a toy example to illustrate how user can interact with the tool and how tool can generate formal specificaions and check the results automatically.
 
