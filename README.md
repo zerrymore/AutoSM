@@ -46,7 +46,7 @@ This tool can generate formal specifications (symbolic model) for a protocol aut
     pip install -r requirements.txt
     ```
 
-## Configure
+## Configuration
 
 - Configure openai API key in src/conf/config.json,
     ```json
