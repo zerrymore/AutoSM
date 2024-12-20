@@ -83,6 +83,17 @@ The tool is composed of four stages, transitioning from natural language input t
 - `static`: static configurations including images and .css file.
 - `templates`: html page of web-based frontend 
 
+## Benchmark
+| Source               | Title                                                                                        | Authors                                    | Link                                                                                                      | Note                                                                                                                                                                                        |
+|----------------------|----------------------------------------------------------------------------------------------|--------------------------------------------|-----------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| GIAC paper           | Otway-Rees Key Exchange Protocol Specification                                               |                                            | [Link](https://www.giac.org/paper/gcih/81/man-in-the-middle-attack-initiator-otway-rees-key-exchange-protocol/100561) | We have rearranged the content order on page 6 of the original paper. Specifically, we have moved Table 2, which illustrates the messages in each step, to the description section.        |
+| Wikipedia            | Needham–Schroeder Symmetric protocol                                                         |                                            | [Link](https://en.wikipedia.org/wiki/Needham%E2%80%93Schroeder_protocol)                                  |                                                                                                                                                                                             |
+| Teaching Assignment  | Description of the Needham Schroeder public key protocol and its attack                      |                                            | [Link](https://members.loria.fr/VCortier/files/School/NS.pdf)                                             |                                                                                                                                                                                             |
+| CCS 2020             | Post-Quantum TLS Without Handshake Signatures (Full version, March 15, 2022)                 | Peter Schwabe, Douglas Stebila, Thom Wiggers | [Link](https://eprint.iacr.org/2020/534.pdf)                                                              | The protocol description is excerpted from Section 3, page 5 of the original paper.                                                                                                         |
+| Tamarin-manual       |                                                                                              |                                            | [Link](https://tamarin-prover.com/manual/master/book/005_protocol-specification-rules.html)               |                                                                                                                                                                                             |
+| RFC 4253             | The Secure Shell (SSH) Transport Layer Protocol                                              | T. Ylonen, C. Lonvick, Ed.                 | [Link](https://datatracker.ietf.org/doc/html/rfc4253)                                                     | We only select Section 8 and Section 7.2 as input, excluding other parts. These sections are reordered to reflect the actual order of protocol execution; that is, first performing the key exchange (Section 8), followed by retrieving the key from shared keys (Section 7.2). |
+
+
 ## User tutorial
 
 Here gives an overivew for the general workflow of the tool. We use a toy example to illustrate how user can interact with the tool and how tool can generate formal specificaions and check the results automatically.
@@ -90,3 +101,5 @@ Here gives an overivew for the general workflow of the tool. We use a toy exampl
 ## Reference
 
 [1] Cheval, Vincent, Charlie Jacomme, Steve Kremer, and Robert Künnemann. 2022. ''SAPIC+: Protocol Verifiers of the World, Unite!'' In 31st USENIX Security Symposium (USENIX Security 22), 3935–52.
+
+
