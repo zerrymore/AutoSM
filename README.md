@@ -161,37 +161,20 @@ Here gives an overivew for the general workflow of the tool. We use a NSPK examp
 
 
 ### References:
-1. Cheval, Vincent, Charlie Jacomme, Steve Kremer, and Robert Künnemann. 2022. **"SAPIC+: Protocol Verifiers of the World, Unite!"** In *31st USENIX Security Symposium (USENIX Security 22)*, 3935–52.
-
-2. Wikipedia. **"Needham–Schroeder protocol."** https://en.wikipedia.org/wiki/Needham%E2%80%93Schroeder_protocol
-
-3. Global Information Assurance Certification Paper.
-
-4. Schwabe, Peter, Douglas Stebila, and Thom Wiggers. **"Post-quantum TLS without handshake signatures."** *Proceedings of the 2020 ACM SIGSAC Conference on Computer and Communications Security*, 2020.
-
-5. Tamarin Prover Manual. https://tamarin-prover.com/manual/
-
-6. Ylonen, Tatu. **"RFC 4253: The secure shell (SSH) transport layer protocol."** (2006).
-
-7. Göran Selander, John Preuß Mattsson, and Francesca Palombini. **"Ephemeral Diffie-Hellman Over COSE (EDHOC)."** *Internet-Draft draft-ietf-lake-edhoc-02*, Internet Engineering Task Force, May 6, 2021.
-
-8. Benjamin Kiesl. **"Tamarin Toy Protocol."** [https://github.com/benjaminkiesl/tamarin_toy_protocol](https://github.com/benjaminkiesl/tamarin_toy_protocol)
-
-9. Wikipedia. **"Yahalom (protocol)"** https://en.wikipedia.org/wiki/Yahalom_(protocol)
-
-10. Kao, I-Lung, and Randy Chow. **"An efficient and secure authentication protocol using uncertified keys."** *ACM SIGOPS Operating Systems Review* 29.3 (1995): 14-21.
-
-11. Kim, Jun Young, et al. **"Automated analysis of secure internet of things protocols."** *Proceedings of the 33rd Annual Computer Security Applications Conference*, 2017.
-
-12. Wikipedia. **"Neuman-Stubblebine protocol"** https://en.wikipedia.org/wiki/Neuman%E2%80%93Stubblebine_protocol
-
-13. Shaikh, Siraj, and Vicky Bush. **"Analysing the Woo-Lam protocol using CSP and rank functions."** *Journal of Research and Practice in Information Technology* 38.1 (2006): 19-29.
-
-14. CCITT Recommendation X.509, *The Directory - Authentication Framework*, CCITT, December 1988.
-
-15. I'Anson, Collin, and Chris Mitchell. **"Security defects in CCITT recommendation X. 509: the directory authentication framework."** *ACM SIGCOMM Computer Communication Review* 20.2 (1990): 30-34.
-
-16. Conchinha, Bruno, David A. Basin, and Carlos Caleiro. **"FAST: an efficient decision procedure for deduction and static equivalence."** *22nd International Conference on Rewriting Techniques and Applications (RTA'11)*, 
-Schloss-Dagstuhl-Leibniz Zentrum für Informatik, 2011.
-
-17. Denning, Dorothy E., and Giovanni Maria Sacco. **"Timestamps in key distribution protocols."** *Communications of the ACM* 24.8 (1981): 533-536.
+[1] Cheval, Vincent, Charlie Jacomme, Steve Kremer, and Robert Künnemann. 2022. **"SAPIC+: Protocol Verifiers of the World, Unite!"** In *31st USENIX Security Symposium (USENIX Security 22)*, 3935–52.  
+[2] Wikipedia. **"Needham–Schroeder protocol."** [https://en.wikipedia.org/wiki/Needham%E2%80%93Schroeder_protocol](https://en.wikipedia.org/wiki/Needham%E2%80%93Schroeder_protocol)  
+[3] Global Information Assurance Certification Paper.  
+[4] Schwabe, Peter, Douglas Stebila, and Thom Wiggers. **"Post-quantum TLS without handshake signatures."** *Proceedings of the 2020 ACM SIGSAC Conference on Computer and Communications Security*, 2020.  
+[5] Tamarin Prover Manual. [https://tamarin-prover.com/manual/](https://tamarin-prover.com/manual/)  
+[6] Ylonen, Tatu. **"RFC 4253: The secure shell (SSH) transport layer protocol."** (2006).  
+[7] Göran Selander, John Preuß Mattsson, and Francesca Palombini. **"Ephemeral Diffie-Hellman Over COSE (EDHOC)."** *Internet-Draft draft-ietf-lake-edhoc-02*, Internet Engineering Task Force, May 6, 2021.  
+[8] Benjamin Kiesl. **"Tamarin Toy Protocol."** [https://github.com/benjaminkiesl/tamarin_toy_protocol](https://github.com/benjaminkiesl/tamarin_toy_protocol)  
+[9] Wikipedia. **"Yahalom (protocol)"** [https://en.wikipedia.org/wiki/Yahalom_(protocol)](https://en.wikipedia.org/wiki/Yahalom_(protocol))  
+[10] Kao, I-Lung, and Randy Chow. **"An efficient and secure authentication protocol using uncertified keys."** *ACM SIGOPS Operating Systems Review* 29.3 (1995): 14-21.  
+[11] Kim, Jun Young, et al. **"Automated analysis of secure internet of things protocols."** *Proceedings of the 33rd Annual Computer Security Applications Conference*, 2017.  
+[12] Wikipedia. **"Neuman–Stubblebine protocol"** [https://en.wikipedia.org/wiki/Neuman%E2%80%93Stubblebine_protocol](https://en.wikipedia.org/wiki/Neuman%E2%80%93Stubblebine_protocol)  
+[13] Shaikh, Siraj, and Vicky Bush. **"Analysing the Woo-Lam protocol using CSP and rank functions."** *Journal of Research and Practice in Information Technology* 38.1 (2006): 19-29.  
+[14] CCITT Recommendation X.509, *The Directory - Authentication Framework*, CCITT, December 1988.  
+[15] I'Anson, Collin, and Chris Mitchell. **"Security defects in CCITT recommendation X. 509: the directory authentication framework."** *ACM SIGCOMM Computer Communication Review* 20.2 (1990): 30-34.  
+[16] Conchinha, Bruno, David A. Basin, and Carlos Caleiro. **"FAST: an efficient decision procedure for deduction and static equivalence."** *22nd International Conference on Rewriting Techniques and Applications (RTA'11)*, Schloss-Dagstuhl-Leibniz Zentrum für Informatik, 2011.  
+[17] Denning, Dorothy E., and Giovann
