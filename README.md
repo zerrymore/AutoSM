@@ -1,6 +1,5 @@
 LLM-Aided Automatic Modelling for Security Protocol Verification
 ===
----
 
 This repository corresponds to the artifact of our ICSE submission and consists of three main components:
 
@@ -41,7 +40,6 @@ The tool is composed of four stages, transitioning from natural language input t
 4. Compiler, which is designed and implemented by Cheval et al., taking the well-formed Sapic+ process as input and compiles it into models accepted by the protocol verifiers (Tamarin, DeepSec, and ProVerif) directly.
 
 # How to use the tool?
----
 
 ## Setup
 
@@ -106,7 +104,6 @@ Here we take protocol `CCITT X509.1` as example to show how user can use the too
 
 
 # How we construct the Benchmark?
----
 
 Here, we provide more details about the benchmark introduced in this work. The benchmark consists of a set of three tuples ($N$, $\mathcal{P}$, $\mathcal{R}$), where $N$ represents the protocol description, $\mathcal{P}$ is the Sapic+ model, and $\mathcal{R}$ is the Tamarin model. We begin with $\mathcal{R}$, which is available in the Tamarin GitHub repository. To derive their corresponding $\mathit{N}$, we read the related documentation, such as RFCs, and extract and reformulate the core parts relevant to the model. As a result, some of the $N$ in our benchmark may not be identical to the original paper. For each given model $\mathcal{R}$, a set of safety properties $\Phi$ have been verified on $\mathcal{R}$. We manually build the Sapic+ model $\mathcal{P}$, ensuring that every property $\varphi \in \Phi$ which have been verified on $\mathcal{R}$ still holds on $\mathcal{P}$.
 
