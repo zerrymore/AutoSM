@@ -215,6 +215,12 @@ gamma = []
 
 
 def rewrite(external_stack: list, vdg: dict, pointers: dict, j: int):
+    ##===This function name is not ideal and should be renamed later.
+
+    # The function fully unfolds the received message based on its global definition.
+    # The result of the expansion is a block of statements, with no regard for pattern matching
+    # and without any nested functions.  ===##
+
     init_re = []
     ##== `deconstructed_vars` used to include all variavles that have been unbinded ==##
     deconstructed_vars = set()
@@ -659,6 +665,7 @@ def get_role_root(node: Tree, role_roots):
 
 def evaluate(mem: dict, var: str) -> str:
     """ """
+    # print(var)
     if var not in mem.keys():
         return var
     else:
@@ -675,10 +682,12 @@ def rewrite_local_process(
     vdg,
     pointers,
     unconstructed,
-    j,
+    j,  #== the intermediate variables  ==#
     undeconstructed_mapping: dict,
     hasDeconstructed,
-):
+)->int:
+    ##=== Given a broken spec, rewrite it with let-in deconstruct, 
+    ## adding pattern matching ===##
     if node.data == "new":
         nonce = tree2str(node.children[0])
         K |= {nonce}
@@ -737,6 +746,7 @@ def rewrite_local_process(
                 intended_out_msg = evaluate(
                     {**pointers, **unconstructed}, sending_message
                 )
+                print(pointers, k)
                 if evaluate(pointers, k) == intended_out_msg:
                     stmt = f"out({k});"
 
@@ -749,6 +759,8 @@ def rewrite_local_process(
         msg = in_args.children[0]
         assert msg.data == "expression"
         if msg.children[0].data != "term":
+            ##=== When the incoming message is not a term, e.g., in(aenc(Na, pka)) ===###
+            
             # stack = list(_vars(msg))
             # K |= _vars(msg)
 
@@ -777,11 +789,13 @@ def rewrite_local_process(
         local_p += [f"in({incoming_message});"]
         # j = 0
         rewrite_init, j = rewrite(stack, vdg, pointers, j)
-
+        print(f'STACK:{stack}, rewrite_init: {rewrite_init}')
         rewrite_init += ["0"]
         init_str = "\n".join(rewrite_init)
+        # print(f'init_str: {init_str}')
         last_str = init_str
-
+                                     
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
         ##== Recursively rewrite the term ==##
         while True:
             init_root = Parser.parse(last_str)
@@ -796,8 +810,26 @@ def rewrite_local_process(
 
             if inter_str == last_str:
                 break
+            else:
+                print(f'last_str:{last_str}')
+                print(f'inter_str:{inter_str}')
             last_str = inter_str
 
+        print(f'vdg: {vdg}')
+        print(f'in_vdg: {in_vdg}')
+        def is_dict_subset(small_dict, large_dict):
+            print(set(small_dict.keys()))
+            print(set(large_dict.keys()))
+            for key, value in small_dict.items():
+                # 检查 large_dict 是否包含该键
+                if key not in large_dict:
+                    return False
+                # 检查该键的值是否相同，使用集合比较确保无关顺序
+                if set(value) != set(large_dict[key]):
+                    return False
+            return True
+
+        print(is_dict_subset(in_vdg, vdg))
         vdg = {**vdg, **in_vdg}
         pointers = {**pointers, **in_pointers}
 
@@ -828,7 +860,6 @@ def rewrite_local_process(
                     undeconstructed_mapping,
                     hasDeconstructed,
                 )
-
     # Take pointers as a return value to ensure it can update
     return j, pointers
 
@@ -841,7 +872,7 @@ def Rewriter(code: str) -> str:
     pointers = {}
 
     """
-    #Todo: determine whether the program is well-formed globally
+    # Todo: determine whether the program is well-formed globally
     Definition (Global well-formed):
         There is no free variables with expressions, 
         i.e., every variable is either a fresh nonoce, a binding variable or 
@@ -852,6 +883,8 @@ def Rewriter(code: str) -> str:
     get_role_root(root, role_roots)
 
     res = ""
+    
+    # i = 0
     for role in role_roots:
 
         role_vdg = copy.deepcopy(vdg)
@@ -859,22 +892,22 @@ def Rewriter(code: str) -> str:
 
         assert isinstance(role, Tree)
         role_name = role.children[0].value
-
+        
+        ##=== Initialize the knowledge set K  ===##
         K = set()
         parameters: Tree = role.children[1]
         for k in parameters.children:
-
-            ##== Initialize the knowledge set K  ==##
-            # K |= {}
             K |= {tree2str(k)}
 
+        ##=== Initialize the signature  ===##
+        ##=== local_p is the transformed process spec ===##
         stms: Tree = role.children[2]
         local_p = []
         local_p += [f'let {role_name}({", ".join(list(K))})=']
 
         undeconstructed_mapping = {}
         hasDeconstructed = []
-        rewrite_local_process(
+        _, _ = rewrite_local_process(
             K,
             stms,
             local_p,
@@ -886,6 +919,7 @@ def Rewriter(code: str) -> str:
             hasDeconstructed,
         )
 
+        print(role_name)
         print("This is hasdeconstructed variable:")
         print(hasDeconstructed)
         print()
@@ -924,33 +958,54 @@ let S(kbs, kas, A, B) =
   let message3 = <I,senc(<Na,kab>, kas),senc(<Nb,kab>, kbs)> in
   out(message3); 0
   """
-    code = """
-let Alice(idB, Kas, idA) = 
+    test_case = """
+let Alice(idA, Kas) = 
   new Na;
-  let message1 = <idA,idB,Na> in
-  out(message1);
-  in(messageBtoA);
-  let Nb_encrypted = senc(Nb, Kab) in
-  out(Nb_encrypted); 0
+  out(<idA,Na>);
+  in(<message2,message3>);
+  let message4 = senc(<idA,Kab>, Kbs) in
+  let message5 = senc(Nb, Kab) in
+  out(<message4,message5>); 0
 
-let Server(idB, Kas, Kbs, idA) = 
-  in(message1);
-  new Kab;
-  let package1 = senc(<idA,idB,Na,Kab>, Kas) in
-  let package2 = senc(<idA,idB,Na,Kab>, Kbs) in
-  let compoundMessage = <package1,package2> in
-  out(compoundMessage); 0
-
-let Bob(idA, Kbs, idB) = 
-  in(compoundMessage);
+let Bob(idB, Kbs) = 
   new Nb;
-  let Na_encrypted = senc(Na, Kab) in
-  let messageBtoA = <package1,Na_encrypted,Nb> in
-  out(messageBtoA);
-  in(Nb_encrypted); 0
+  in(<idA,Na>);
+  new Nb;
+  let message1 = senc(<idB,idA,Na,Nb>, Kbs) in
+  out(message1);
+  in(<message4,message5>); 0
 
+let Server(idA, idB, Kas, Kbs) = 
+  new Kab;
+  in(message1);
+  let message2 = senc(<idB,Kab,Na,Nb>, Kas) in
+  let message3 = senc(<idA,Kab>, Kbs) in
+  out(<message2,message3>); 0
+"""
+#     code = """
+# let Alice(idB, Kas, idA) = 
+#   new Na;
+#   let message1 = <idA,idB,Na> in
+#   out(message1);
+#   in(messageBtoA);
+#   let Nb_encrypted = senc(Nb, Kab) in
+#   out(Nb_encrypted); 0
 
+# let Server(idB, Kas, Kbs, idA) = 
+#   in(message1);
+#   new Kab;
+#   let package1 = senc(<idA,idB,Na,Kab>, Kas) in
+#   let package2 = senc(<idA,idB,Na,Kab>, Kbs) in
+#   let compoundMessage = <package1,package2> in
+#   out(compoundMessage); 0
 
-  """
+# let Bob(idA, Kbs, idB) = 
+#   in(compoundMessage);
+#   new Nb;
+#   let Na_encrypted = senc(Na, Kab) in
+#   let messageBtoA = <package1,Na_encrypted,Nb> in
+#   out(messageBtoA);
+#   in(Nb_encrypted); 0
+#   """
 
-    print(Rewriter(code))
+    print(Rewriter(test_case))
