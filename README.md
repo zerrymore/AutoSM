@@ -14,14 +14,16 @@ First, we provide an overview of the directory structure of this repository. The
 # Directories structure
 ```
 📂 AutoSM
-├── 📂 ComplementaryExperiments
-├── 📂 Input_output
+├── 📂 ace-builds
+├── 📂 anb
+├── 📂 examples
 ├── 📂 src
 ├── 📂 static
 └── 📂 templates
 ```
-- `ComplementaryExperiments`: Comparisons with one correct-by-construction approach
-- `Input_output`: The examples used to present the workflow.
+- `ace-builds`: Ace is a code editor written in JavaScript, which is embedded in our frontend.
+- `anb`: Comparisons with one correct-by-construction approach.
+- `examples`: The examples used to present the workflow.
 - `src`: the source code of our implementation
 - `static`: static configurations including images and .css file.
 - `templates`: html page of web-based frontend 
