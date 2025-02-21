@@ -326,130 +326,6 @@ def inverse_key(key: str) -> str:
         return key
 
 
-"""
-def rewrite_receiv_event(mapping, pointers, K):
-    res = []
-    undeconstructed_vars = copy.deepcopy(mapping)
-    for v in mapping.keys():
-        p = mapping[v]
-        assert p.data == "expression"
-        p_tree = p.children[0]
-        if p_tree.data == "func":
-            func_name = p_tree.children[0].value
-            args = p_tree.children[1]
-            assert isinstance(args.children, list)
-            
-            if func_name == "senc":
-                plain = tree2str(args.children[0])
-                key = tree2str(args.children[1])
-                if key in K:
-                    if plain in K:
-                        stmt = f'let ={plain} = sdec({tree2str(v)}, {key}) in'
-                        
-                        # remove key that has been deconstructed
-                    else:
-                        stmt = f'let {plain} = sdec({tree2str(v)}, {key}) in'
-                    undeconstructed_vars.pop(v)
-                    K |= { plain }
-                else:
-                    vds = _vars(p)
-                    # for vd in vds:
-                    #     vtree = Tree('expression', [Tree('term', [Tree('nonce', [Token('NAME', f'{vd}')])])])
-                    #     unseen += [vtree]
-                        
-                    stmt = f'// let {plain} = sdec({tree2str(v)}, {key}) in'
-                res += [stmt]
-
-        
-            elif func_name == "aenc":
-                plain = tree2str(args.children[0])
-                key = tree2str(args.children[1])
-                if inverse_key(key) in K:
-                    if plain in K:
-                        stmt = f'let ={plain} = adec({tree2str(v)}, {inverse_key(key)}) in'
-                    else:
-                        stmt = f'let {plain} = adec({tree2str(v)}, {inverse_key(key)}) in'
-                    K |= { plain }
-                    undeconstructed_vars.pop(v)
-                    
-                else:
-                    stmt = f'// let {plain} = adec({tree2str(v)}, {inverse_key(key)}) in'
-                    pass
-                res += [stmt]
-            elif func_name == "sign":
-                msg = tree2str(args.children[0])
-                sig_key = tree2str(args.children[1])
-                if msg in K and inverse_key(sig_key) in K:
-                    # if inverse_key(sig_key) in K:
-                    stmt = f'if verify({tree2str(v)}, {msg}, {inverse_key(sig_key)}) = true then'
-                    undeconstructed_vars.pop(v)
-                else:
-                    stmt = f'// let {tree2str(p)} = {tree2str(v)} in'
-                res += [stmt]
-                
-            # ===  one direction function === #   
-            else:
-                func_args:Tree = p_tree.children[1]
-                func_vars:set = _vars(p_tree)
-                flag = True
-                for arg_v in func_vars:
-                    '''
-                    Here is an ad-hoc implementation
-                    We need determine wether the args of func can be constructed
-                    from knowledge set K
-                    '''
-                    gt = evaluate(pointers, arg_v)
-                    vars = set([t for t in _vars_from_str(gt) if not t.startswith("'")])
-                    if not vars.issubset(K):
-                        flag = False
-                    if arg_v in K:
-                        flag = True 
-                    
-                    
-                if not flag:
-                    # print(f'this is K:{K}')
-                    stmt = f'// let {tree2str(p)} = {tree2str(v)} in'
-                else:
-                    for i, f_arg in enumerate(func_args.children):
-                        c = tree2str(f_arg)
-                        if not c.startswith("'"):
-                            if c in K:
-                                func_args.children[i] = Tree('expression', [Tree('match', [Token('NAME', f'{c}')])])
-                        K |= { tree2str(f_arg) }
-                        
-                    undeconstructed_vars.pop(v)
-                    
-                    K |= { tree2str(v) }
-                    stmt = f'let {tree2str(p)} = {tree2str(v)} in'
-                res += [stmt]
-                    
-        elif p_tree.data == "concat":
-            if tree2str(v) in K:
-                concat_args = p_tree.children[0]
-                for i, c_arg in enumerate(concat_args.children):
-                    c = tree2str(c_arg)
-                    if not c.startswith("'"):
-                        if c in K:
-                            concat_args.children[i] = Tree('expression', [Tree('match', [Token('NAME', f'{c}')])])
-                    K |= { tree2str(c_arg) }
-                K |= { tree2str(v) }
-                # print(K)
-                undeconstructed_vars.pop(v)
-                
-                res += [f'let {tree2str(p)} = {tree2str(v)} in']
-            else:
-                res += [f'// let {tree2str(p)} = {tree2str(v)} in']
-    
-        elif p_tree.data == "term":
-            res += [f'let {tree2str(p)} = {tree2str(v)} in']
-        elif p_tree.data == "exp":
-                res += [f'// let {tree2str(p)} = {tree2str(v)} in']
-        # else:
-        #     res += [f'// let {tree2str(p)} = {tree2str(v)} in']
-        
-    return res, undeconstructed_vars
-"""
-
 
 def rewrite_receiv_event(mapping, pointers, K, hasDeconstructed: list):
     res = []
@@ -703,7 +579,20 @@ def rewrite_local_process(
         )
 
         if not vars_without_str.issubset(K):
-            stmt = f"// let {tree2str(node.children[0])} = {tree2str(node.children[1])} in \n// Can not construct {tree2str(node.children[0])} from {K}"
+            stmt = f"// let {tree2str(node.children[0])} = {tree2str(node.children[1])} in \n// Cannot construct {tree2str(node.children[0])} from {K}"
+            
+            
+            # An ad-hoc implementation
+            for k in K:
+                # print(k, evaluate(pointers, k))
+                intended_consturct_msg = evaluate(
+                    {**pointers, **unconstructed}, tree2str(node.children[0])
+                )
+                if evaluate(pointers, k) == intended_consturct_msg:
+                    stmt = f"let {tree2str(node.children[0])} = {k} in"
+                    K |= {tree2str(node.children[0])}
+                    break
+            
             unconstructed[tree2str(node.children[0])] = node.children[1]
         else:
             stmt = (
@@ -726,6 +615,8 @@ def rewrite_local_process(
     elif node.data == "out":
         stmt = ""
         sending_message = tree2str(node)
+
+        ## TODO Here is an implicit assumption that the VAR `sending_message` is a atomic rather a composite message
         if sending_message not in unconstructed.keys():
             stmt = f"out({sending_message});"
         else:
