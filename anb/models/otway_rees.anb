@@ -1,0 +1,41 @@
+/* The Otway Rees Authentication/Key-Exchange Protocol (OR). 
+   This protocol involves three roles and uses symmetric
+   encryption extensively.
+    
+   The OR protocol demonstrates well how messages that cannot be 
+   analyzed are treated: B can analyze neither senc{n1 . i . A . B}k(A, S)
+   nor senc{n1 . key}k(A, S), but simply forwards them. 
+   
+   The protocol is known to be insecure; Tamarin finds an attack for 
+   all of the three security goals. */
+
+Protocol OTWAY_REES: 
+
+Knowledge: 
+    A: k(A, S), B; 
+    B: k(B, S); 
+    S: k(A, S), k(B, S); 
+    
+Actions: 
+    [or1] A -> B (n1, i) : 
+        i . A . B . senc{'One' . n1 . i . A . B}k(A, S); 
+    [or2] B -> S (n2) : 
+        i . A . B . senc{'One' . n1 . i . A . B}k(A, S) . senc{'Two' . n2 . i . A . B}k(B, S); 
+    [or3] S -> B (key) : 
+        i . senc{'Three' . n1 . key}k(A, S) . senc{'Four' . n2 . key}k(B, S); 
+    [or4] B -> A : 
+        i . senc{'Three' . n1 . key}k(A, S); 
+
+
+
+
+Goals: 
+    [agreeA] 
+        A injectively agrees with B on key; 
+    [agreeB]
+        B injectively agrees with A on key; 
+    [secKey]
+        key secret of A, B; 
+    
+end
+

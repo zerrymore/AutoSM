@@ -1,0 +1,17 @@
+Protocol nspk: 
+
+Knowledge: 
+    A: pk(B), B; 
+    B: pk(A), A;
+
+Actions: 
+    [nspk1] A -> B (Na) : 
+        aenc{'One' . Na. A}pk(B) ;
+    [nspk2] B -> A (Nb) :
+        aenc{'Two' . Na . Nb}pk(A);
+    [nspk3] A -> B:
+        aenc{'Three' . Nb}pk(B);
+    
+
+
+end

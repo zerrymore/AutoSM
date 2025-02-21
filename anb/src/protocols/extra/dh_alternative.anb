@@ -1,0 +1,20 @@
+/* Same protocol as thesis/dh.anb, but implemented with the 
+   constant 'g' instead of the nullary public function g(). */
+
+Protocol DIFFIE_HELLMAN:
+
+Actions:
+    [dh_1] A -> B (x) : 'g'^x;
+    [dh_2] B -> A (y) : 'g'^y;
+    [dh_3] A -> B (n) : senc{n}('g'^(x*y));
+    
+Goals:
+    /* Goals that hold */
+    [key_secret]  'g'^(x*y) secret of A, B; 
+    
+    /* Goals that do not hold. 
+       See Section 3.4.2 of the thesis for explanations. */
+    [key_secretA] 'g'^(x*y) secret of A;
+    [key_secretB] 'g'^(x*y) secret of B;
+    
+end

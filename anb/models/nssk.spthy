@@ -1,0 +1,191 @@
+theory nssk
+begin
+
+functions: pk/1, sk/1, aenc/2, adec/2, dec/1
+
+builtins: symmetric-encryption
+
+equations:
+    adec(aenc(x.1, sk(x.2)), pk(x.2)) = x.1,
+    adec(aenc(x.1, pk(x.2)), sk(x.2)) = x.1
+
+rule Asymmetric_key_setup:
+    [ Fr(~f) ] --> [ !Sk($A, sk(~f)), !Pk($A, pk(~f)) ]
+
+rule Publish_public_keys:
+    [ !Pk(A, pkA) ] --> [ Out(pkA) ]
+
+rule Symmetric_key_setup:
+    [ Fr(~symK) ] --> [ !Key($A, $B, ~symK) ]
+
+rule Init_Knowledge:
+        [ !Key($A, $S, k_A_S),
+          !Key($B, $S, k_B_S),
+          !Pk($A, pk(k_A)),
+          !Pk($B, pk(k_B)),
+          !Pk($S, pk(k_S)),
+          !Sk($A, sk(k_A)),
+          !Sk($B, sk(k_B)),
+          !Sk($S, sk(k_S))
+        ]
+        --[  ]->
+        [ St_init_A($A, $B, sk(k_A), pk(k_A), k_A_S),
+          St_init_S($A, $B, $S, sk(k_S), pk(k_S), k_A_S, k_B_S),
+          St_init_B($A, $B, sk(k_B), pk(k_B), k_B_S)
+        ]
+
+// ROLE A
+rule nssk1_A:
+        [ St_init_A(A, B, sk(k_A), pk(k_A), k_A_S),
+          Fr(~Na)
+        ]
+        --[  ]->
+        [ Out(<'One', A, B, ~Na>),
+          St_nssk1_A(A, B, ~Na, sk(k_A), pk(k_A), k_A_S)
+        ]
+
+rule nssk2_A:
+        [ St_nssk1_A(A, B, Na, sk(k_A), pk(k_A), k_A_S),
+          In(senc{<'Two', Na, B, Kab, alpha>}k_A_S)
+        ]
+        --[  ]->
+        [ St_nssk2_A(A, B, Kab, Na, sk(k_A), pk(k_A), k_A_S, alpha)
+        ]
+
+rule nssk3_A:
+        [ St_nssk2_A(A, B, Kab, Na, sk(k_A), pk(k_A), k_A_S, alpha)
+        ]
+        --[  ]->
+        [ Out(alpha),
+          St_nssk3_A(A, B, Kab, Na, sk(k_A), pk(k_A), k_A_S, alpha)
+        ]
+
+rule nssk4_A:
+        [ St_nssk3_A(A, B, Kab, Na, sk(k_A), pk(k_A), k_A_S, alpha),
+          In(senc{<'Four', Nb>}Kab)
+        ]
+        --[  ]->
+        [ St_nssk4_A(A, B, Kab, Na, Nb, sk(k_A), pk(k_A), k_A_S, alpha)
+        ]
+
+rule nssk5_A:
+        [ St_nssk4_A(A, B, Kab, Na, Nb, sk(k_A), pk(k_A), k_A_S, alpha)
+        ]
+        --[ Running_A(A, B, <'A', 'B', dec(Nb), Kab>)
+          , Commit_A(A, B, <'A', 'B', Nb, Kab>) ]->
+        [ Out(senc{<'Five', dec(Nb)>}Kab),
+          St_nssk5_A(A, B, Kab, Na, Nb, sk(k_A), pk(k_A), k_A_S, alpha)
+        ]
+
+// ROLE S
+rule nssk1_S:
+        [ St_init_S(A, B, S, sk(k_S), pk(k_S), k_A_S, k_B_S),
+          In(<'One', A, B, Na>)
+        ]
+        --[  ]->
+        [ St_nssk1_S(A, B, Na, S, sk(k_S), pk(k_S), k_A_S, k_B_S)
+        ]
+
+rule nssk2_S:
+        [ St_nssk1_S(A, B, Na, S, sk(k_S), pk(k_S), k_A_S, k_B_S),
+          Fr(~Kab)
+        ]
+        --[ Secret(A, B, ~Kab)  ]->
+        [ Out(senc{<'Two', Na, B, ~Kab, senc{<'Three', ~Kab, A>}k_B_S>}k_A_S),
+          St_nssk2_S(A, B, ~Kab, Na, S, sk(k_S), pk(k_S), k_A_S, k_B_S)
+        ]
+
+// ROLE B
+rule nssk3_B:
+        [ St_init_B(A, B, sk(k_B), pk(k_B), k_B_S),
+          In(senc{<'Three', Kab, A>}k_B_S)
+        ]
+        --[  ]->
+        [ St_nssk3_B(A, B, Kab, sk(k_B), pk(k_B), k_B_S)
+        ]
+
+rule nssk4_B:
+        [ St_nssk3_B(A, B, Kab, sk(k_B), pk(k_B), k_B_S),
+          Fr(~Nb)
+        ]
+        --[ Running_B(A, B, <'A', 'B', ~Nb, Kab>)
+          , Secret(A, B, Kab) ]->
+        [ Out(senc{<'Four', ~Nb>}Kab),
+          St_nssk4_B(A, B, Kab, ~Nb, sk(k_B), pk(k_B), k_B_S)
+        ]
+
+rule nssk5_B:
+        [ St_nssk4_B(A, B, Kab, Nb, sk(k_B), pk(k_B), k_B_S),
+          In(senc{<'Five', dec(Nb)>}Kab)
+        ]
+        --[ Commit_B(A, B, <'A', 'B', dec(Nb), Kab>)   ]->
+        [ St_nssk5_B(A, B, Kab, Nb, sk(k_B), pk(k_B), k_B_S)
+        ]
+
+
+        lemma executability:
+ exists-trace
+ " Ex A B nb kab #i #j #k #m.
+   Commit_B(A,B,<'A', 'B', dec(nb),kab>)@#i
+  & Commit_A(A,B,<'A', 'B', nb,kab>)@#j & #j<#i
+  & Running_A(A,B,<'A', 'B', dec(nb),kab>)@#m
+  & Running_B(A,B,<'A', 'B', nb,kab>)@#k & #k<#j
+ "
+
+// check the secrecy of a secret x protected by the long-term key of A and B
+lemma Secrecy:
+ "not(
+     Ex A B m #i .
+       Secret(A, B, m)@ #i
+       & (Ex #r. K(m) @ #r)
+   )
+ "
+
+// check the authenticity and freshness of the transaction from B's point of view
+lemma injectiveagreement_B:
+  "All A B t #i.
+    Commit_B(A,B,t) @i
+    ==> (Ex #j. Running_A(A,B,t) @j
+        & j < i
+        & not (Ex A2 B2 #i2. Commit_B(A2,B2,t) @i2
+                           & not (#i2 = #i)))"
+
+// check the authenticity of the transaction from B's point of view
+lemma agreement_B:
+ "All A B t #i.
+   Commit_B(A,B,t) @i
+   ==> (Ex #j. Running_A(A,B,t) @j  & j < i)"
+
+// check the authenticity and freshness of the transaction from A's point of view
+lemma injectiveagreement_A:
+  "All A B t #i.
+    Commit_A(A,B,t) @i
+    ==> (Ex #j. Running_B(A,B,t) @j
+        & j < i
+        & not (Ex A2 B2 #i2. Commit_A(A2,B2,t) @i2
+                           & not (#i2 = #i)))"
+
+// check the authenticity of the transaction from A's point of view
+lemma agreement_A:
+ "All A B t #i.
+   Commit_A(A,B,t) @i
+   ==> (Ex #j. Running_B(A,B,t) @j  & j < i)"
+
+
+//    ==============================================================================
+//    summary of summaries:
+   
+//    analyzed: nssk.spthy
+   
+//      processing time: 2.35s
+     
+//      executability (exists-trace): verified (12 steps)
+//      Secrecy (all-traces): verified (14 steps)
+//      injectiveagreement_B (all-traces): verified (19 steps)
+//      agreement_B (all-traces): verified (15 steps)
+//      injectiveagreement_A (all-traces): verified (25 steps)
+//      agreement_A (all-traces): verified (13 steps)
+//      AUTO_typing (all-traces): verified (19 steps)
+   
+//    ==============================================================================
+end

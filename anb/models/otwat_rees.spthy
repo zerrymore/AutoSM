@@ -1,0 +1,229 @@
+theory OTWAY_REES
+begin
+
+functions: pk/1, sk/1, aenc/2, adec/2
+
+builtins: symmetric-encryption
+
+equations:
+    adec(aenc(x.1, sk(x.2)), pk(x.2)) = x.1,
+    adec(aenc(x.1, pk(x.2)), sk(x.2)) = x.1
+
+rule Asymmetric_key_setup:
+    [ Fr(~f) ] --> [ !Sk($A, sk(~f)), !Pk($A, pk(~f)) ]
+
+rule Publish_public_keys:
+    [ !Pk(A, pkA) ] --> [ Out(pkA) ]
+
+rule Symmetric_key_setup:
+    [ Fr(~symK) ] --> [ !Key($A, $B, ~symK) ]
+
+rule Init_Knowledge:
+        [ !Key($A, $S, k_A_S),
+          !Key($B, $S, k_B_S),
+          !Pk($A, pk(k_A)),
+          !Pk($B, pk(k_B)),
+          !Pk($S, pk(k_S)),
+          !Sk($A, sk(k_A)),
+          !Sk($B, sk(k_B)),
+          !Sk($S, sk(k_S))
+        ]
+        --[  ]->
+        [ St_init_A($A, $B, sk(k_A), pk(k_A), k_A_S),
+          St_init_B($B, sk(k_B), pk(k_B), k_B_S),
+          St_init_S($S, sk(k_S), pk(k_S), k_A_S, k_B_S)
+        ]
+
+// ROLE A
+rule or1_A:
+        [ St_init_A(A, B, sk(k_A), pk(k_A), k_A_S),
+          Fr(~n1),
+          Fr(~i)
+        ]
+        --[ Running_A(A, B, < ~i, ~n1>)  ]->
+        [ Out(<~i, A, B, senc{<'One', ~n1, ~i, A, B>}k_A_S>),
+          St_or1_A(A, B, ~i, ~n1, sk(k_A), pk(k_A), k_A_S)
+        ]
+
+rule or4_A:
+        [ St_or1_A(A, B, i, n1, sk(k_A), pk(k_A), k_A_S),
+          In(<i, senc{<'Three', n1, key>}k_A_S>)
+        ]
+        --[ Commit_A(A, B, <i, key>) 
+          , Secret(A, B, key)
+          , SessionA(A, B, key)
+          , Secrect(A, B, key) ]->
+        [ St_or4_A(A, B, i, key, n1, sk(k_A), pk(k_A), k_A_S)
+        ]
+
+// ROLE B
+rule or1_B:
+        [ St_init_B(B, sk(k_B), pk(k_B), k_B_S),
+          In(<i, A, B, alpha>)
+        ]
+        --[  ]->
+        [ St_or1_B(A, B, i, sk(k_B), pk(k_B), k_B_S, alpha)
+        ]
+
+rule or2_B:
+        [ St_or1_B(A, B, i, sk(k_B), pk(k_B), k_B_S, alpha),
+          Fr(~n2)
+        ]
+        --[ Running_B(A, B, <i, ~n2>) ]->
+        [ Out(<i, A, B, alpha, senc{<'Two', ~n2, i, A, B>}k_B_S>),
+          St_or2_B(A, B, i, ~n2, sk(k_B), pk(k_B), k_B_S, alpha)
+        ]
+
+rule or3_B:
+        [ St_or2_B(A, B, i, n2, sk(k_B), pk(k_B), k_B_S, alpha),
+          In(<i, beta, senc{<'Four', n2, key>}k_B_S>)
+        ]
+        --[ Running_agreeA(key)
+          , Secret(A, B, key)
+          , SessionB(A, B, key)
+          , Commit_B(A, B, <i, key>) ]->
+        [ St_or3_B(A, B, i, key, n2, sk(k_B), pk(k_B), k_B_S, alpha, beta)
+        ]
+
+rule or4_B:
+        [ St_or3_B(A, B, i, key, n2, sk(k_B), pk(k_B), k_B_S, alpha, beta)
+        ]
+        --[ Secret_secKey_B(key),
+            Commit_agreeB(key) ]->
+        [ Out(<i, beta>),
+          St_or4_B(A, B, i, key, n2, sk(k_B), pk(k_B), k_B_S, alpha, beta)
+        ]
+
+// ROLE S
+rule or2_S:
+        [ St_init_S(S, sk(k_S), pk(k_S), k_A_S, k_B_S),
+          In(<i, A, B, senc{<'One', n1, i, A, B>}k_A_S, senc{<'Two', n2, i, A, B
+          >}k_B_S>)
+        ]
+        --[  ]->
+        [ St_or2_S(A, B, S, i, n1, n2, sk(k_S), pk(k_S), k_A_S, k_B_S)
+        ]
+
+rule or3_S:
+        [ St_or2_S(A, B, S, i, n1, n2, sk(k_S), pk(k_S), k_A_S, k_B_S),
+          Fr(~key)
+        ]
+        --[  Secret(A, B, ~key)
+          , Running_S(A, B, <i, ~key>)
+          , Commit_S_A(A, B, <i, n1>)
+          , Commit_S_B(A, B, <i, n2>) ]->
+        [ Out(<i, senc{<'Three', n1, ~key>}k_A_S, senc{<'Four', n2, ~key>}k_B_S>
+          ),
+          St_or3_S(A, B, S, i, ~key, n1, n2, sk(k_S), pk(k_S), k_A_S, k_B_S)
+        ]
+
+        lemma injectiveagreement_B:
+        "All A B t #i.
+          Commit_B(A,B,t) @i
+          ==> (Ex #j. Running_S(A,B,t) @j
+              & j < i
+              & not (Ex A2 B2 #i2. Commit_B(A2,B2,t) @i2
+                                 & not (#i2 = #i)))"
+     
+     // check the authenticity of the transaction from B's point of view
+     lemma agreement_B:
+       "All A B t #i.
+         Commit_B(A,B,t) @i
+         ==> (Ex #j. Running_S(A,B,t) @j  & j < i)"
+     
+     // check the authenticity and freshness of the transaction from A's point of view
+     lemma injectiveagreement_A:
+        "All A B t #i.
+          Commit_A(A,B,t) @i
+          ==> (Ex #j. Running_S(A,B,t) @j
+              & j < i
+              & not (Ex A2 B2 #i2. Commit_A(A2,B2,t) @i2
+                                 & not (#i2 = #i)))"
+     
+     // check the authenticity of the transaction from A's point of view
+     lemma agreement_A:
+       "All A B t #i.
+         Commit_A(A,B,t) @i
+         ==> (Ex #j. Running_S(A,B,t) @j  & j < i)"
+     
+     // check the authenticity and freshness of the transaction from the server's point of view
+     lemma injectiveagreement_S:
+        "(All A B t #i.
+          Commit_S_A(A,B,t) @i
+          ==> (Ex #j. Running_A(A,B,t) @j
+              & j < i
+              & not (Ex A2 B2 #i2. Commit_S_A(A2,B2,t) @i2
+                                 & not (#i2 = #i))))
+       & (All A B t #i.
+          Commit_S_B(A,B,t) @i
+          ==> (Ex #j. Running_B(A,B,t) @j
+              & j < i
+              & not (Ex A2 B2 #i2. Commit_S_B(A2,B2,t) @i2
+                                 & not (#i2 = #i))))"
+     
+     // check the authenticity of the transaction from the server's point of view
+     lemma agreement_S:
+       "(All A B t #i.
+         Commit_S_A(A,B,t) @i
+         ==> (Ex #j. Running_A(A,B,t) @j  & j < i))
+       & (All A B t #i.
+         Commit_S_B(A,B,t) @i
+         ==> (Ex #j. Running_B(A,B,t) @j  & j < i))"
+     
+     // sanity check: check if honest execution is possible
+     lemma executability:
+      exists-trace
+      "// To simplify the proof, consider only executions where all the events are unique
+      (All A A2 B B2 t t2 #i #j.(
+         Running_A(A, B, t) @ #i
+       & Running_A(A2, B2, t2) @ #j
+       ==> #i = #j))
+      &
+      (All A A2 B B2 t t2 #i #j.(
+         Running_B(A, B, t) @ #i
+       & Running_B(A2, B2, t2) @ #j
+       ==> #i = #j))
+      &
+      (All A A2 B B2 t t2 #i #j.(
+         Running_S(A, B, t) @ #i
+       & Running_S(A2, B2, t2) @ #j
+       ==> #i = #j))
+      &
+      (All A A2 B B2 t t2 #i #j.(
+         Commit_A(A, B, t) @ #i
+       & Commit_A(A2, B2, t2) @ #j
+       ==> #i = #j))
+      &
+      (All A A2 B B2 t t2 #i #j.(
+         Commit_B(A, B, t) @ #i
+       & Commit_B(A2, B2, t2) @ #j
+       ==> #i = #j))
+      &
+      // We want an execution with all for events, and no corruption
+      ( Ex A B t t2 t3 #i #j #k #l #m.
+        Running_A(A,B,t)@#i
+      & Running_B(A,B,t2)@#j & #i<#j
+      & Running_S(A,B,t3)@#k & #j<#k
+      & Commit_B(A,B,t3)@#l & #k<#l
+      & Commit_A(A,B,t3)@#m & #l<#m
+      )
+      "
+      // ==============================================================================
+      // summary of summaries:
+      
+      // analyzed: or_AnB.spthy
+      
+      //   processing time: 5.67s
+        
+      //   injectiveagreement_B (all-traces): verified (17 steps)
+      //   agreement_B (all-traces): verified (9 steps)
+      //   injectiveagreement_A (all-traces): verified (11 steps)
+      //   agreement_A (all-traces): verified (7 steps)
+      //   injectiveagreement_S (all-traces): falsified - found trace (13 steps)
+      //   agreement_S (all-traces): verified (26 steps)
+      //   executability (exists-trace): verified (12 steps)
+      //   AUTO_typing (all-traces): verified (280 steps)
+      
+      // ==============================================================================
+
+end

@@ -1,0 +1,46 @@
+`ghc -package containers -o anb anb.hs -package mtl -package split -package parsec -package directory`
+
+This README contains information from the last page of the
+thesis. Note that example protocols are included in the folder
+'protocols'.
+
+The package Data.MultiSet needs to be installed before it can be
+compiled. It can be installed via Cabal or alternatively downloaded
+from https://hackage.haskell.org/package/multiset. The main file of
+the translator is code/anb.hs. Using Cabal and the Glasgow Compiler,
+the translator can be compiled with the following instructions:
+
+>> cabal install MultiSet
+>> ghc -package containers -o anb anb.hs -package mtl -package split -package parsec -package directory
+
+The program can now be invoked with the command ./anb.  Usage Assume
+that the executable of the translator is called anb. In this case, the
+translator is invoked according to the following pattern:
+
+>> ./anb [input-file and options]
+
+A short explanation of usage and possible options is displayed when
+called with the option --help (or -h). For instance:
+
+>> ./anb --help
+
+Only one file can be translated at a time and only input files with
+the file extension .anb are accepted.  A file protocol.anb can be
+translated by invoking:
+
+>> ./anb protocol.anb
+
+This will read the A&B specification and write the corresponding
+Tamarin code in the file protocol.  spthy. If the output should be
+written to file out.spthy instead, one can do this with the -o option:
+
+>> ./anb protocol.anb -o out.spthy
+
+Note that the translator does not produce any code if the A&B input
+does not pass all well-formedness checks. For verbose output, use the
+option -v:
+
+>> ./anb protocol.anb -v
+
+Verbose output contains the A&B specification, a representation of the
+IR and the generated Tamarin code.

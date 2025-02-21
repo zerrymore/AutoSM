@@ -1,0 +1,29 @@
+/* ASW protocol from Figure 5 in the thesis */
+
+Protocol ASW: 
+
+Knowledge: 
+    A : m, pk(B), B; 
+    B : pk(A), A; 
+    
+Actions: 
+    [asw1] A -> B (n_1) : 
+        aenc{ pk(A) . pk(B) . m . h(n_1) }sk(A); 
+    [asw2] B -> A (n_2) : 
+        aenc{ aenc{pk(A) . pk(B) . m . h(n_1)}sk(A) . h(n_2) }sk(B); 
+    [asw3] A -> B : 
+        n_1; 
+    [asw4] B -> A :
+        n_2; 
+        
+Goals: 
+    /* Goals that hold */
+    [weakA] A non-injectively agrees with B on m; 
+    [weakB] B non-injectively agrees with A on m; 
+    [strongA] A injectively agrees with B on m; 
+    
+    /* Goals that do not hold */
+    [strongB] B injectively agrees with A on m; 
+    [secrecy] m secret of A, B; 
+    
+end

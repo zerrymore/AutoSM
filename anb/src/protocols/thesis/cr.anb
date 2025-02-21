@@ -1,0 +1,25 @@
+/* CR protocol from Figure 5 in the thesis */
+
+Protocol CR: 
+Knowledge: 
+    C: pk(R); 
+    
+Actions: 
+    [cr1] C -> R (n) : aenc{n}pk(R); 
+    [cr2] R -> C     : h(n); 
+    
+Goals: 
+    /* Goals that hold */
+    [n_secret]   n secret of C, R; 
+    [authNonInj] C non-injectively agrees with R on n; 
+    [authInj]    C injectively agrees with R on n; 
+    
+    /* The following goals are not listed in the thesis. 
+       They second goals does not hold. This demonstrates that 
+       [n_secret] is not equivalent to [n_secretC] and [n_secretR]. 
+       See Section 3.4.2 of the thesis for similar goals in the 
+       DIFFIE-HELLMAN protocol and why they do not hold. */
+    [n_secretC] n secret of C;
+    [n_secretR] n secret of R;
+    
+end

@@ -1,0 +1,109 @@
+theory DIFFIE_HELLMAN
+begin
+
+functions: pk/1, sk/1, aenc/2, adec/2, g/0
+
+builtins: diffie-hellman, symmetric-encryption
+
+equations:
+    adec(aenc(x.1, sk(x.2)), pk(x.2)) = x.1,
+    adec(aenc(x.1, pk(x.2)), sk(x.2)) = x.1
+
+rule Asymmetric_key_setup:
+    [ Fr(~f) ] --> [ !Sk($A, sk(~f)), !Pk($A, pk(~f)) ]
+
+rule Publish_public_keys:
+    [ !Pk(A, pkA) ] --> [ Out(pkA) ]
+
+rule Symmetric_key_setup:
+    [ Fr(~symK) ] --> [ !Key($A, $B, ~symK) ]
+
+rule Init_Knowledge:
+        [ !Pk($A, pk(k_A)),
+          !Pk($B, pk(k_B)),
+          !Sk($A, sk(k_A)),
+          !Sk($B, sk(k_B))
+        ]
+        --[  ]->
+        [ St_init_A($A, sk(k_A), pk(k_A)),
+          St_init_B($B, sk(k_B), pk(k_B))
+        ]
+
+// ROLE A
+rule dh_1_A:
+        [ St_init_A(A, sk(k_A), pk(k_A)),
+          Fr(~x)
+        ]
+        --[  ]->
+        [ Out((g() ^ ~x)),
+          St_dh_1_A(A, ~x, sk(k_A), pk(k_A))
+        ]
+
+rule dh_2_A:
+        [ St_dh_1_A(A, x, sk(k_A), pk(k_A)),
+          In(alpha)
+        ]
+        --[  ]->
+        [ St_dh_2_A(A, x, sk(k_A), pk(k_A), alpha)
+        ]
+
+rule dh_3_A:
+        [ St_dh_2_A(A, x, sk(k_A), pk(k_A), alpha),
+          Fr(~n)
+        ]
+        --[ Secret_key_secret_A((alpha ^ x)),
+            Secret_key_secretA_A((alpha ^ x)) ]->
+        [ Out(senc{~n}(alpha ^ x)),
+          St_dh_3_A(A, ~n, x, sk(k_A), pk(k_A), alpha)
+        ]
+
+// ROLE B
+rule dh_1_B:
+        [ St_init_B(B, sk(k_B), pk(k_B)),
+          In(alpha)
+        ]
+        --[  ]->
+        [ St_dh_1_B(B, sk(k_B), pk(k_B), alpha)
+        ]
+
+rule dh_2_B:
+        [ St_dh_1_B(B, sk(k_B), pk(k_B), alpha),
+          Fr(~y)
+        ]
+        --[  ]->
+        [ Out((g() ^ ~y)),
+          St_dh_2_B(B, ~y, sk(k_B), pk(k_B), alpha)
+        ]
+
+rule dh_3_B:
+        [ St_dh_2_B(B, y, sk(k_B), pk(k_B), alpha),
+          In(senc{n}(alpha ^ y))
+        ]
+        --[ Secret_key_secret_B((alpha ^ y)),
+            Secret_key_secretB_B((alpha ^ y)) ]->
+        [ St_dh_3_B(B, n, y, sk(k_B), pk(k_B), alpha)
+        ]
+
+lemma key_secret:
+    " not(
+        Ex msg #i1 #i2 #j .
+            Secret_key_secret_A(msg) @ #i1 &
+            Secret_key_secret_B(msg) @ #i2 &
+            K(msg) @ #j
+    )"
+
+lemma key_secretA:
+    " not(
+        Ex msg #i1 #j .
+            Secret_key_secretA_A(msg) @ #i1 &
+            K(msg) @ #j
+    )"
+
+lemma key_secretB:
+    " not(
+        Ex msg #i1 #j .
+            Secret_key_secretB_B(msg) @ #i1 &
+            K(msg) @ #j
+    )"
+
+end

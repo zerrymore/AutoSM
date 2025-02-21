@@ -1,0 +1,18 @@
+
+Protocol Denning_Sacco: 
+
+Knowledge: 
+    A: k(A, S), B; 
+    B: k(B, S), A; 
+    S: k(A, S), k(B, S), A, B; 
+    
+Actions: 
+    [ds1] A -> S : 
+        A . B; 
+    [ds2] S -> A (Kab, T) : 
+        senc{B . Kab . T . senc{Kab . A . T}k(B, S) }k(A, S); 
+    [ds3] A -> B : 
+        senc{Kab . A . T}k(B, S);
+
+end
+
