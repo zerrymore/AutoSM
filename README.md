@@ -1,7 +1,7 @@
 LLM-Aided Automatic Modelling for Security Protocol Verification
 ===
 
-This repository corresponds to the artifact of our ICSE submission and consists of three main components:
+This repository corresponds to the artifact of our `ICSE 2025` and consists of three main components:
 
 - A new benchmark containing 18 protocol cases for evaluation.
 - A self-contained tool with a web frontend.
@@ -16,17 +16,19 @@ First, we provide an overview of the directory structure of this repository. The
 📂 AutoSM
 ├── 📂 ace-builds
 ├── 📂 anb
+├── 📂 benchmark
 ├── 📂 examples
 ├── 📂 src
 ├── 📂 static
 └── 📂 templates
 ```
-- `ace-builds`: Ace is a code editor written in JavaScript, which is embedded in our frontend.
+- `ace-builds`: [Ace](https://github.com/ajaxorg/ace-builds) is a code editor written in JavaScript, which is embedded in our frontend.
 - `anb`: Comparisons with one correct-by-construction approach.
+- `benchmark`: A benchmark that contains 18 protocols' text descriptions and corresponding symbolic models.
 - `examples`: The examples used to present the workflow.
-- `src`: the source code of our implementation
-- `static`: static configurations including images and .css file.
-- `templates`: html page of web-based frontend 
+- `src`: The source code of our implementation
+- `static`: Static configurations including images and .css file.
+- `templates`: HTML page of web-based frontend 
 
 
 # Introduction
@@ -65,6 +67,10 @@ The tool is composed of four stages, transitioning from natural language input t
   Generated from:
   Tamarin version 1.8.0
   Maude version 2.7.1
+  ```
+- Before using Tamarin, set the terminal encoding to UTF-8:
+  ```bash
+  export LC_ALL=C.UTF-8
   ```
 
 2. Setup the conda environments, and install the related packages.
