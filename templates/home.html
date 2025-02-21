@@ -21,12 +21,18 @@
     <div class="input-group">
       <span class="input-group-text" id="models_label">Model:</span>
       <select class="form-control" name="models" id="model_sel" aria-describedby="models_label">
-        <option value="text-davinci-003" disabled>GPT (text-davinci-003)</option>
-        <!-- <option value="code-davinci-edit-001" disabled>Codex edit (code-davinci-edit-001)</option> -->
         <option value="gpt-3.5-turbo">GPT Turbo (gpt-3.5-turbo)</option>
         <option value="gpt-3.5-turbo-16k">GPT Turbo 16k (gpt-3.5-turbo-16k)</option>
         <option value="gpt-4">GPT-4</option>
         <option value="gpt-4-turbo">GPT-4 Turbo</option>
+        <option value="o1-mini">o1-mini</option>
+        <option value="gpt-4o">GPT-4o</option>
+        <option value="gpt-4o-mini">GPT-4o-mini</option>
+        <option value="deepseek-v3">deepseek-v3</option>
+        <option value="qwen2.5-coder:latest">qwen2.5-coder:latest</option>
+        <option value="llama3.2:latest">llama3.2:latest</option>
+        <option value="codellama:latest">codellama:latest</option>
+        <option value="qwen2.5:72b"> qwen2.5:72b</option>
         <option value="gemini-pro">Google Gemini 1.0</option>
         <option value="text-bison">PaLM 2 (text-bison)</option>
         <!-- <option value="gemini-pro">Google Gemini 1.0</option>
@@ -49,23 +55,23 @@
         <span class="input-group-text" id="protocol_label">Protocol:</span>
         <select class="form-control" name="prompts" id="protocol_sel" aria-describedby="prompts_label">
           <option value="running_ex">1. running example</option>
-          <option value="nsl">2. NSL</option>
-          <option value="exercise">3. exercise</option>
-          <option value="Denning_Sacco">4. Denning_Sacco</option>
-          <option value="nssk">5. nssk</option>
-          <option value="or">6. Otway_Rees</option>
-          <option value="Yahalom">7. Yahalom</option>
-          <option value="kca">8. Kao_Chow_Authentication_V1</option>
-          <option value="X509_1">9. CCITT X.509</option>
-          <option value="Woo_Lam_Pi_f">10. Woo_Lam_Pi_f</option>
-          <option value="splice">11. splice</option>
-          <option value="sigfox">12. sigfox</option>
-          <option value="Neu_Stu">13. Neu_Stu</option>
-          <option value="ssh">14. ssh</option>
-          <option value="edhoc">15. edhoc</option>
-          <option value="kemtls">16. kemtls</option>
-          <option value="naxos">17. naxos</option>
-          <option value="lake">18. lake</option>
+          <option value="exercise">2. Toy protocol</option>
+          <option value="nspk">3. NSPK</option>
+          <option value="nssk">4. NSSK</option>
+          <option value="sigfox">5. Sigfox</option>
+          <option value="Denning_Sacco">6. Denning-Sacco</option>
+          <option value="or">7. Otway-Rees</option>
+          <option value="Yahalom">8. Yahalom</option>
+          <option value="kca">9. Kao-Chow Authentication V1</option>
+          <option value="X509_1">10. CCITT X.509.1</option>
+          <option value="Woo_Lam_Pi_f">11. Woo and Lam</option>
+          <option value="lake">12. LAK06</option>
+          <option value="splice">13. Splice</option>
+          <option value="Neu_Stu">14. Neuman-Stubblebine</option>
+          <option value="naxos">15. NAXOS</option>
+          <option value="ssh">16. SSH</option>
+          <option value="edhoc">17. EDHOC</option>
+          <option value="kemtls">18. KEMTLS</option>
       </select>
     </div>
 </div>
@@ -73,25 +79,10 @@
   <div class="col-md-3">
     <div class="field-group"><label class="field-label" style="padding-right: 1em;">Temperature:</label>
       <span id="temp_value"></span>
-      <input type="range" class="form-range" step="0.1" value="2" min="0" max="10" id="temperature" name="temperature"
+      <input type="range" class="form-range" step="0.1" value="0.4" min="0" max="1" id="temperature" name="temperature"
         oninput="setLabel(this)">
     </div>
   </div>
-
-
-  <!-- <div class="col-md-12">
-    <div class="widget-tab-contents" id="buttonGroup">
-      <input style="float: right; margin-right: 10pt" class="btn-primary" type="submit" , name="repair" ,
-        onclick="repairReq()" , value="Repair" /> -->
-        
-      <!-- <input style="float: right; margin-right: 10pt" class="btn-primary" type="submit" , name="synthesis" ,
-        onclick="synthesisReq()" , value="synthesis" /> -->
-      <!-- <input style="float: right;margin-right: 10pt" class="btn-primary" type="submit" , name="analysis" ,
-        onclick="analysisReq()" , value="analysis" /> -->
-      <!-- <input style="float: right;margin-right: 10pt" class="btn-primary" type="submit" , name="parse" ,
-        onclick="parseReq()" , value="parse" /> -->
-    <!-- </div>
-  </div> -->
 
 
 
@@ -103,56 +94,83 @@
       <!-- 1.1 sub-area: loaded texts -->
       <div class="my-text" id="loadtext"
         style="position: relative; height: 200px; border-bottom: 0px solid #030303; overflow-y:scroll;background-color:white;">
-        <input style="position: absolute; top: 5pt; right: 0px; margin-right: 7pt" class="btn-primary" type="submit" , name="parse" ,
+        <input style="position: absolute; top: 0pt; right: 0px; margin-right: 7pt" class="btn-primary" type="submit" , name="parse" ,
         onclick="parseReq()" , value="parse" />{{loadText|safe}}
       </div>
-      
-      <!--
-      <div class="editor" id="CodeEditor"
-        style="height: 200px; border: 0px solid #000000; background-color:white; overflow-x: auto; overflow-y: scroll;">
-      </div>
-  
-      <div class="my-checkIR" id="sapic"
-        style="height: 200px;border: 0px solid #070707;  background-color:white; overflow-x: auto; overflow-y: scroll;">
-      </div>
-    -->
+     
+
       <div style="width:60%; float:right;"> <!-- New container for CodeEditor and sapic -->
-        <!-- CodeEditor -->
-        <div class="myCodeEditor" id="CodeEditor_button"
-          style="position: relative; height: 400px; width:48%; border: 0px solid #000000; background-color:white; overflow-x: auto; overflow-y: scroll; float:left;">
-         <div class="editor" id="CodeEditor"></div>
-         <input style="position: absolute; top: 5pt; right: 0px; margin-right: 7pt" class="btn-primary" type="submit" , name="download" ,
-         onclick="analysisReq()" , value="download" />
-        </div>
       
         <!-- sapic -->
-        <div class="my-checkIR" id="sapic" contenteditable="False" 
-          style="position: relative; height: 400px; width:52%; border-left: 2px solid #070707;  background-color:white; overflow-x: auto; overflow-y: scroll; float:left;">
-          <input style="position: absolute; top: 5pt; right: 0px; margin-right: 7pt" class="btn-primary" type="submit" , name="synthesis" ,
-        onclick="synthesisReq()" , value="synthesis" />{{initSapic|safe}}
+        <div class="my-checkIR" id="sapic" 
+          style="position: relative; height: 400px; width:46%; border-left: 2px solid #070707;  background-color:white;float:left;">
+          <div id="logEditor" style="height: 400px; width: 100%;"></div>
+          <input style="position: absolute; top: 0pt; right: 0px; margin-right: 15pt" class="btn-primary" type="submit" , name="analyze" ,
+        onclick=" analysisReq()" , value="analyze" />
+         <input style="position: absolute; top: 30pt; right: 0px; margin-right: 15pt" class="btn-primary" type="submit" , name="rewrite" ,
+        onclick=" rewriteReq()" , value="rewrite" />
         </div>
+
+        <!-- CodeEditor -->
+        <div class="myCodeEditor" id="CodeEditor_button"
+        style="position: relative; height: 400px; width:54%; border-left: 2px solid #070707; border-right: 2px solid #070707; background-color:white;  float:left;">
+        <div id="sapicEditor"style="height: 400px; width: 100%;">
+/* Jan 2025 
+* Frontend of the tool.
+* Note: This is the editable SAPIC+ specification,                    
+* which allows users to modify the generated model.
+* The .spthy file can be downloaded via the button.
+**/
+      </div>
+        <input style="position: absolute; top: 0pt; right: 0px; margin-right: 15pt" class="btn-primary" type="submit" , name="synthesis" ,
+        onclick="synthesisReq()" , value="Compile" />
+      </div>
+
       </div>
       
       <div id="InspectorDiv" class="inspector"></div>
 
+
+      <script src="/ace-builds/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+      <script>
+        var sapicEditor = ace.edit("sapicEditor");
+        sapicEditor.setTheme("ace/theme/dreamweaver");
+        sapicEditor.session.setMode("ace/mode/rust");
+        sapicEditor.session.setTabSize(2);
+        sapicEditor.getSession().removeAllListeners("changeAnnotation");
+        sapicEditor.getSession().setAnnotations([]);
+
+
+        var logEditor = ace.edit("logEditor");
+        logEditor.setTheme("ace/theme/sqlserver");
+        logEditor.session.setMode("ace/mode/julia");
+        logEditor.session.setTabSize(2);
+        logEditor.getSession().removeAllListeners("changeAnnotation");
+        logEditor.getSession().setAnnotations([]);
+
+    </script>
 
     </div>
 
   </div>
   <!-- </form> -->
 
-  <script src="../static/bundle.js"></script>
   <!-- <script src="https://unpkg.com/gojs/release/go-debug.js"></script> -->
   <script src="../static/go-debug.js"></script>
   <script src="https://www.unpkg.com/jquery@3.6.4/dist/jquery.min.js"></script>
   <script src="https://gojs.net/latest/extensions/DataInspector.js"></script>
   <script>
-    function updateEditorContent(newCode) {
-      editor = window.myCodeEditor;
-      editor.dispatch({
-        changes: { from: 0, to: editor.state.doc.length, insert: newCode }
-      });
-    }
+
+    function setLabel(slider) {
+      var value = slider.value; 
+      document.getElementById('temp_value').textContent = value; 
+  }
+
+
+  function updateEditorContent(editor, newContent) {
+    var editor = ace.edit(editor);
+      editor.getSession().setValue(newContent);
+  }
 
     function parseReq(){
 
@@ -162,9 +180,11 @@
       type: `parse`,
       protocol_sel: document.getElementById("protocol_sel").value,
       model_sel: document.getElementById("model_sel").value,
-      prompt_sel: document.getElementById("prompt_mode").value
+      prompt_sel: document.getElementById("prompt_mode").value,
+      temperature: document.getElementById('temp_value').textContent
     };
-    
+
+      
     fetch(`${window.location.href}`,{
       method: "POST",  // 可以是 'GET' 或 'POST'
       credentials: "include",
@@ -175,9 +195,16 @@
     .then(response => response.json())
         .then(data => {
             console.log('Response from Flask:', data);
-            // updateExpr(diagram, data)
-            updateEditorContent(data.parseResp);
+            <!-- updateEditorContent(data.parseResp); -->
             document.getElementById("loadtext").innerHTML = buttonParseHtml + data.loadtext;
+
+
+            console.log(data.parseLogs)
+            var editor = ace.edit("logEditor");
+            editor.getSession().setValue(data.parseLogs);
+
+            updateEditorContent(`sapicEditor`, data.parseResp);
+
         })
         .catch(error => {
             console.error('Error:', error);
@@ -226,11 +253,12 @@
         return dataNode.isGroup;
       });
 
-      const buttonHtml = `<input style="position: absolute; top: 5px; right: 5px; margin-right: 10pt" class="btn-primary" type="submit" , name="synthesis" ,
-        onclick="synthesisReq()" , value="synthesis" />`
-      const editor = window.myCodeEditor;
-      const editorContent = editor.state.doc.toString();
-      console.log(editorContent)
+      const buttonHtml = `<input style="position: absolute; top: 5pt; right: 0px; margin-right: 7pt" class="btn-primary" type="submit" , name="analyze" ,
+        onclick=" analysisReq()" , value="analyze" />`
+
+      var editor = ace.edit("sapicEditor");
+      const editorContent = editor.getValue();
+
       const synthesisReq = {
         type: `synthesis`,
         editorContent: editorContent,
@@ -246,9 +274,11 @@
       })
         .then(response => response.json())
         .then(data => {
-          console.log('Response from Flask:', data);
-          document.getElementById("sapic").innerHTML = buttonHtml + data.sapic;
-          diagram.model = go.Model.fromJson(data.msc)
+          
+          // diagram.model = go.Model.fromJson(data.msc);
+
+          editor.getSession().setValue(data.compile);
+
           // myDiagram.model = go.Model.fromJson(document.getElementById("mySavedModel").value);
         })
         .catch(error => {
@@ -258,27 +288,67 @@
     }
 
     function analysisReq() {
+      var logEditor = ace.edit("logEditor");
+      const editorContent = logEditor.getValue();
 
-      const editorContent = editor.state.doc.toString();
-      var data = {data: editorContent};
-      fetch('/download', {
-          method: 'POST',  
-          headers: {
-              'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(data)
-      })
-      .then(response => response.blob())
-      .then(blob => {
-          var url = window.URL.createObjectURL(blob);
-          var a = document.createElement('a');
-          a.href = url;
-          a.download = "model.spthy";
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
+      var diagram = go.Diagram.fromDiv("diagramMSC");
+      dataNodes = diagram.model.nodeDataArray;
+      var IsGroup = dataNodes.filter(function (dataNode) {
+        return dataNode.isGroup;
       });
+
+
+      var data = {type: `analysis`, logs: editorContent};
+
+      fetch(`${window.location.href}`, {
+        method: "POST",
+        credentials: "include",
+        cache: "no-cache",
+        headers: new Headers({ "content-type": "application/json" }),
+        body: JSON.stringify(data)
+      })
+        .then(response => response.json())
+        .then(data => {
+
+          diagram.model = go.Model.fromJson(data.msc);
+
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error: ' + error.message);
+        });
+
     }
+
+    function rewriteReq() {
+      var logEditor = ace.edit("logEditor");
+      const editorContent = logEditor.getValue();
+
+
+      var data = {type: `rewrite`, logs: editorContent};
+
+      fetch(`${window.location.href}`, {
+        method: "POST",
+        credentials: "include",
+        cache: "no-cache",
+        headers: new Headers({ "content-type": "application/json" }),
+        body: JSON.stringify(data)
+      })
+        .then(response => response.json())
+        .then(data => {
+
+          updateEditorContent(`sapicEditor`, data.rewriteResp);
+
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error: ' + error.message);
+        });
+
+    }
+
+
+
 
     function debug(message) {
       $('#debug').html(message);
@@ -427,15 +497,6 @@
               )
           },
           new go.Binding("location", "", computeActivityLocation).makeTwoWay(backComputeActivityLocation),
-          // $$(go.Shape, "Rectangle",
-          //   {
-          //     name: "SHAPE",
-          //     fill: "white", stroke: "black",
-          //     width: ActivityWidth,
-          //     // allow Activities to be resized down to 1/4 of a time unit
-          //     minSize: new go.Size(ActivityWidth, computeActivityHeight(0.25))
-          //   },
-          //   new go.Binding("height", "duration", computeActivityHeight).makeTwoWay(backComputeActivityHeight)),
           $$(go.Panel, "Auto",
             $$(go.Shape, "Rectangle", // This Shape acts as the border
               {
@@ -580,8 +641,6 @@
     // end MessageLink
 
 
-    // A custom LinkingTool that fixes the "time" (i.e. the Y coordinate)
-    // for both the temporaryLink and the actual newly created Link
     class MessagingTool extends go.LinkingTool {
       constructor() {
         super();
@@ -675,25 +734,20 @@
     // end MessageDraggingTool
 
 
-    // Show the diagram's model in JSON format
-    // function load() {
-    //     myDiagram.model = go.Model.fromJson(document.getElementById("mySavedModel").value);
-    // }
 
     data = {
       "class": "go.GraphLinksModel",
       "nodeDataArray": [
-        { "key": "Fred", "text": "Fred: Patron", "isGroup": true, "loc": "0 0", "duration": 7 },
-        { "key": "Bob", "text": "Bob: Waiter", "isGroup": true, "loc": "100 0", "duration": 7 },
-        { "key": "Hank", "text": "Hank: Cook", "isGroup": true, "loc": "200 0", "duration": 7 },
-        // { "key": "Renee", "text": "Renee: Cashier", "isGroup": true, "loc": "300 0", "duration": 7 },
+        { "key": "Fred", "text": "Fred", "isGroup": true, "loc": "0 0", "duration": 7 },
+        { "key": "Bob", "text": "Bob", "isGroup": true, "loc": "100 0", "duration": 7 },
+        { "key": "Hank", "text": "Hank", "isGroup": true, "loc": "200 0", "duration": 7 },
       ],
       "linkDataArray": [
-        { "from": "Fred", "to": "Bob", "text": "order\norder", "time": 1 },
-        { "from": "Bob", "to": "Hank", "text": "order food", "time": 2 },
-        { "from": "Bob", "to": "Fred", "text": "serve drinks", "time": 3 },
-        { "from": "Hank", "to": "Bob", "text": "finish cooking", "time": 5 },
-        { "from": "Bob", "to": "Fred", "text": "serve food", "time": 6 },
+        { "from": "Fred", "to": "Bob", "text": "message1", "time": 1 },
+        { "from": "Bob", "to": "Hank", "text": "message2", "time": 2 },
+        { "from": "Bob", "to": "Fred", "text": "message3", "time": 3 },
+        { "from": "Hank", "to": "Bob", "text": "message4", "time": 5 },
+        { "from": "Bob", "to": "Fred", "text": "message5", "time": 6 },
       ]
     };
     window.addEventListener('DOMContentLoaded', loadMSC('diagramMSC', data));
@@ -715,8 +769,8 @@
                   $(`#loadtext`).html(BUTTON_HTML + response.html);
                   console.log(response.calculus);
                   updateEditorContent(response.calculus);
-                  let BUTTON_syn = `<input style="position: absolute; top: 5px; right: 5px; margin-right: 10pt" class="btn-primary" type="submit" , name="synthesis" ,
-        onclick="synthesisReq()" , value="synthesis" />`
+                  let BUTTON_syn = `<input style="position: absolute; top: 5px; right: 5px; margin-right: 10pt" class="btn-primary" type="submit" , name="analysis" ,
+        onclick="analysisReq()" , value="Analysis" />`
                   $(`#sapic`).html(BUTTON_syn + response.sapic);
                   
                 }
@@ -726,22 +780,25 @@
   
     document.addEventListener('DOMContentLoaded', function() {
       const highlightContainer = document.querySelector('#sapic');
-      // 事件委托
       highlightContainer.addEventListener('mouseenter', function(event) {
-          // 确保事件来源是我们关心的行元素
           if (event.target.matches('span[id^="True-"]')) {
               const lineNumber = event.target.id.split('-')[1];
-              hl(lineNumber, '#61eb76'); // 改变背景色
+              hl(lineNumber, '#61eb76');
               console.log('Line number: ' + lineNumber);
           }
-      }, true); // 使用事件捕获
+      }, true);
   
       highlightContainer.addEventListener('mouseleave', function(event) {
           if (event.target.matches('span[id^="True-"]')) {
               const lineNumber = event.target.id.split('-')[1];
-              hl(lineNumber, 'transparent'); // 恢复背景色
+              hl(lineNumber, 'transparent');
           }
-      }, true); // 使用事件捕获
+      }, true);
+
+
+      var temperatureSlider = document.getElementById('temperature');
+      setLabel(temperatureSlider);
+
   });
   
   
