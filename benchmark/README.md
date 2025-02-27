@@ -1,175 +1,176 @@
-
+| :-------------------------------- :--------------------------- :---------------- :--------------------------- :---------------|
+|                                                         Proof Results                                                         |
 | Lemma                           | Model-P                    | Steps-P         | Model-R                    | Steps-R         |
 | :-------------------------------| :--------------------------| :---------------| :--------------------------| :---------------|
-| Client_session_key_secrecy      | ✔                          | 9               | ✔                          | 5               |
-| Client_auth                     | ✔                          | 9               | ✔                          | 11              |
-| Client_auth_injective           | ✔                          | 13              | ✔                          | 15              |
-| Client_session_key_honest_setup | ✔                          | 5               | ✔                          | 5               |
+| Client_session_key_secrecy      | [32m✔[0m                          | 9               | [32m✔[0m                          | 5               |
+| Client_auth                     | [32m✔[0m                          | 9               | [32m✔[0m                          | 11              |
+| Client_auth_injective           | [32m✔[0m                          | 13              | [32m✔[0m                          | 15              |
+| Client_session_key_honest_setup | [32m✔[0m                          | 5               | [32m✔[0m                          | 5               |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 1 Time                          | Example-P.spthy            | 0.18s           | Example-R.spthy            | 0.12s           |
-| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-|                                 |                            |                 |                            |                 |
-| executable                      | ✔                          | 7               | ✔                          | 8               |
-| secret_A                        | ✔                          | 21              | ✔                          | 11              |
-| secret_B                        | ✔                          | 50              | ✔                          | 14              |
-| secrecy_PFS_A                   | ✘                          | 8               | ✘                          | 8               |
-| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 2 Time                          | sigfox-P.spthy             | 0.66s           | sigfox-R.spthy             | 0.14s           |
+| 1 Time                          | [1mExample-P.spthy[0m            | 0.18s           | [1mExample-R.spthy[0m            | 0.12s           |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
 |                                 |                            |                 |                            |                 |
-| AUTO_typing                     | ✔                          | 61              | ✔                          | 33              |
-| nonce_secrecy                   | ✘                          | 16              | ✘                          | 16              |
-| injective_agree                 | ✘                          | 16              | ✘                          | 14              |
-| session_key_setup_possible      | ✔                          | 9               | ✔                          | 5               |
+| executable                      | [32m✔[0m                          | 7               | [32m✔[0m                          | 8               |
+| secret_A                        | [32m✔[0m                          | 21              | [32m✔[0m                          | 11              |
+| secret_B                        | [32m✔[0m                          | 50              | [32m✔[0m                          | 14              |
+| secrecy_PFS_A                   | [31m✘[0m                          | 8               | [31m✘[0m                          | 8               |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 3 Time                          | NSPK-P.spthy               | 81.21s          | NSPK-R.spthy               | 2.41s           |
-| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-|                                 |                            |                 |                            |                 |
-| executable                      | ✔                          | 9               | ✔                          | 9               |
-| helpingSecrecy                  | ✔                          | 3               | ✔                          | 2               |
-| noninjectiveagreementTAG        | ✔                          | 3568            | ✔                          | 2082            |
-| noninjectiveagreementREADER     | ✘                          | 13              | ✘                          | 13              |
-| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 4 Time                          | LAK06-P.spthy              | 115.39s         | LAK06-R.spthy              | 6.58s           |
+| 2 Time                          | [1msigfox-P.spthy[0m             | 0.66s           | [1msigfox-R.spthy[0m             | 0.14s           |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
 |                                 |                            |                 |                            |                 |
-| AUTO_typing                     | ✔                          | 65              | ✔                          | 66              |
-| executability                   | ✔                          | 14              | ✔                          | 15              |
-| secrecy                         | ✔                          | 59              | ✔                          | 29              |
-| noninjectiveagreement_B         | ✔                          | 34              | ✔                          | 23              |
-| noninjectiveagreement_A         | ✘                          | 8               | ✘                          | 7               |
-| injectiveagreement_B            | ✔                          | 38              | ✔                          | 27              |
-| injectiveagreement_A            | ✘                          | 8               | ✘                          | 7               |
+| AUTO_typing                     | [32m✔[0m                          | 61              | [32m✔[0m                          | 33              |
+| nonce_secrecy                   | [31m✘[0m                          | 16              | [31m✘[0m                          | 16              |
+| injective_agree                 | [31m✘[0m                          | 16              | [31m✘[0m                          | 14              |
+| session_key_setup_possible      | [32m✔[0m                          | 9               | [32m✔[0m                          | 5               |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 5 Time                          | Neuman-Stubblebine-P.spthy | 26.84s          | Neuman-Stubblebine-R.spthy | 2.65s           |
+| 3 Time                          | [1mNSPK-P.spthy[0m               | 81.21s          | [1mNSPK-R.spthy[0m               | 2.41s           |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
 |                                 |                            |                 |                            |                 |
-| executability                   | ✔                          | 14              | ✔                          | 12              |
-| Secrecy                         | ✔                          | 21              | ✔                          | 34              |
-| injectiveagreement_B            | ✔                          | 81              | ✔                          | 31              |
-| agreement_B                     | ✔                          | 65              | ✔                          | 27              |
-| injectiveagreement_A            | ✔                          | 48              | ✔                          | 53              |
-| agreement_A                     | ✔                          | 24              | ✔                          | 25              |
-| AUTO_typing                     | ✔                          | 71              | ✔                          | 72              |
+| executable                      | [32m✔[0m                          | 9               | [32m✔[0m                          | 9               |
+| helpingSecrecy                  | [32m✔[0m                          | 3               | [32m✔[0m                          | 2               |
+| noninjectiveagreementTAG        | [32m✔[0m                          | 3568            | [32m✔[0m                          | 2082            |
+| noninjectiveagreementREADER     | [31m✘[0m                          | 13              | [31m✘[0m                          | 13              |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 6 Time                          | NSSK-P.spthy               | 18.37s          | NSSK-R.spthy               | 1.40s           |
+| 4 Time                          | [1mLAK06-P.spthy[0m              | 115.39s         | [1mLAK06-R.spthy[0m              | 6.58s           |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
 |                                 |                            |                 |                            |                 |
-| executability                   | ✔                          | 12              | ✔                          | 14              |
-| secrecy                         | ✔                          | 79              | ✔                          | 22              |
-| noninjectiveagreement_B         | ✔                          | 64              | ✔                          | 51              |
-| noninjectiveagreement_A         | ✔                          | 9               | ✔                          | 10              |
-| injectiveagreement_B            | ✔                          | 68              | ✔                          | 55              |
-| injectiveagreement_A            | ✔                          | 13              | ✔                          | 14              |
-| AUTO_typing                     | ✔                          | 48              | ✔                          | 93              |
+| AUTO_typing                     | [32m✔[0m                          | 65              | [32m✔[0m                          | 66              |
+| executability                   | [32m✔[0m                          | 14              | [32m✔[0m                          | 15              |
+| secrecy                         | [32m✔[0m                          | 59              | [32m✔[0m                          | 29              |
+| noninjectiveagreement_B         | [32m✔[0m                          | 34              | [32m✔[0m                          | 23              |
+| noninjectiveagreement_A         | [31m✘[0m                          | 8               | [31m✘[0m                          | 7               |
+| injectiveagreement_B            | [32m✔[0m                          | 38              | [32m✔[0m                          | 27              |
+| injectiveagreement_A            | [31m✘[0m                          | 8               | [31m✘[0m                          | 7               |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 7 Time                          | Yahalom-P.spthy            | 5.43s           | Yahalom-R.spthy            | 1.23s           |
-| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-|                                 |                            |                 |                            |                 |
-| Secrecy                         | ✔                          | 19              | ✔                          | 15              |
-| injectiveagreement_B            | ✘                          | 14              | ✘                          | 14              |
-| agreement_B                     | ✔                          | 16              | ✔                          | 7               |
-| Session_key_honest_setup        | ✔                          | 11              | ✔                          | 12              |
-| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 8 Time                          | CCITT-X509-P.spthy         | 3.51s           | CCITT-X509-R.spthy         | 1.12s           |
+| 5 Time                          | [1mNeuman-Stubblebine-P.spthy[0m | 26.84s          | [1mNeuman-Stubblebine-R.spthy[0m | 2.65s           |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
 |                                 |                            |                 |                            |                 |
-| exec                            | ✔                          | 11              | ✔                          | 11              |
-| execbis                         | ✔                          | 10              | ✔                          | 11              |
-| false_secserv                   | ✘                          | 19              | ✘                          | 30              |
-| auth                            | ✔                          | 63              | ✔                          | 23              |
-| PFS_client                      | ✔                          | 173             | ✔                          | 32              |
+| executability                   | [32m✔[0m                          | 14              | [32m✔[0m                          | 12              |
+| Secrecy                         | [32m✔[0m                          | 21              | [32m✔[0m                          | 34              |
+| injectiveagreement_B            | [32m✔[0m                          | 81              | [32m✔[0m                          | 31              |
+| agreement_B                     | [32m✔[0m                          | 65              | [32m✔[0m                          | 27              |
+| injectiveagreement_A            | [32m✔[0m                          | 48              | [32m✔[0m                          | 53              |
+| agreement_A                     | [32m✔[0m                          | 24              | [32m✔[0m                          | 25              |
+| AUTO_typing                     | [32m✔[0m                          | 71              | [32m✔[0m                          | 72              |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 9 Time                          | KEMTLS-P.spthy             | 21.49s          | KEMTLS-R.spthy             | 31.72s          |
-| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-|                                 |                            |                 |                            |                 |
-| Secrecy                         | ✔                          | 107             | ✔                          | 40              |
-| injectiveagreement_B            | ✔                          | 60              | ✔                          | 50              |
-| agreement_B                     | ✔                          | 14              | ✔                          | 16              |
-| injectiveagreement_A            | ✔                          | 16              | ✔                          | 16              |
-| agreement_A                     | ✔                          | 12              | ✔                          | 10              |
-| injectiveagreement_S            | ✘                          | 14              | ✘                          | 16              |
-| agreement_S                     | ✔                          | 37              | ✔                          | 40              |
-| executability                   | ✔                          | 14              | ✔                          | 15              |
-| AUTO_typing                     | ✔                          | 2460            | ✔                          | 475             |
-| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 10 Time                         | Otway-Rees-P.spthy         | 151.87s         | Otway-Rees-R.spthy         | 9.16s           |
+| 6 Time                          | [1mNSSK-P.spthy[0m               | 18.37s          | [1mNSSK-R.spthy[0m               | 1.40s           |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
 |                                 |                            |                 |                            |                 |
-| executability                   | ✔                          | 8               | ✔                          | 7               |
-| secrecy                         | ✔                          | 24              | ✔                          | 27              |
-| noninjectiveagreement_B         | ✔                          | 8               | ✔                          | 8               |
-| injectiveagreement_B            | ✘                          | 10              | ✘                          | 8               |
-| AUTO_typing                     | ✔                          | 14              | ✔                          | 21              |
+| executability                   | [32m✔[0m                          | 12              | [32m✔[0m                          | 14              |
+| secrecy                         | [32m✔[0m                          | 79              | [32m✔[0m                          | 22              |
+| noninjectiveagreement_B         | [32m✔[0m                          | 64              | [32m✔[0m                          | 51              |
+| noninjectiveagreement_A         | [32m✔[0m                          | 9               | [32m✔[0m                          | 10              |
+| injectiveagreement_B            | [32m✔[0m                          | 68              | [32m✔[0m                          | 55              |
+| injectiveagreement_A            | [32m✔[0m                          | 13              | [32m✔[0m                          | 14              |
+| AUTO_typing                     | [32m✔[0m                          | 48              | [32m✔[0m                          | 93              |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 11 Time                         | Denning-Sacco-P.spthy      | 2.56s           | Denning-Sacco-R.spthy      | 0.43s           |
-| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-|                                 |                            |                 |                            |                 |
-| exists_session                  | ✔                          | 6               | -                          | -               |
-| CompleteResp                    | ✔                          | 4               | -                          | -               |
-| CompleteInit                    | ✔                          | 4               | -                          | -               |
-| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 12 Time                         | Naxos-P.spthy              | 0.78s           | Naxos-R.spthy              | 3.85s           |
+| 7 Time                          | [1mYahalom-P.spthy[0m            | 5.43s           | [1mYahalom-R.spthy[0m            | 1.23s           |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
 |                                 |                            |                 |                            |                 |
-| executability                   | ✔                          | 22              | ✔                          | 21              |
-| Secrecy                         | ✘                          | 16              | ✘                          | 11              |
-| injectiveagreement_B            | ✘                          | 16              | ✘                          | 15              |
-| agreement_B                     | ✘                          | 16              | ✘                          | 15              |
-| injectiveagreement_A            | ✘                          | 28              | ✘                          | 16              |
-| agreement_A                     | ✘                          | 28              | ✘                          | 16              |
-| AUTO_typing                     | ✔                          | 111             | ✔                          | 34              |
+| Secrecy                         | [32m✔[0m                          | 19              | [32m✔[0m                          | 15              |
+| injectiveagreement_B            | [31m✘[0m                          | 14              | [31m✘[0m                          | 14              |
+| agreement_B                     | [32m✔[0m                          | 16              | [32m✔[0m                          | 7               |
+| Session_key_honest_setup        | [32m✔[0m                          | 11              | [32m✔[0m                          | 12              |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 13 Time                         | SPLICE-P.spthy             | 98.93s          | SPLICE-R.spthy             | 6.16s           |
+| 8 Time                          | [1mCCITT-X509-P.spthy[0m         | 3.51s           | [1mCCITT-X509-R.spthy[0m         | 1.12s           |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
 |                                 |                            |                 |                            |                 |
-| successful_run                  | ✔                          | 6               | ✔                          | 6               |
-| sk_secret_a                     | ✘                          | 5               | ✘                          | 5               |
-| sk_secret_b                     | ✘                          | 5               | ✘                          | 5               |
+| exec                            | [32m✔[0m                          | 11              | [32m✔[0m                          | 11              |
+| execbis                         | [32m✔[0m                          | 10              | [32m✔[0m                          | 11              |
+| false_secserv                   | [31m✘[0m                          | 19              | [31m✘[0m                          | 30              |
+| auth                            | [32m✔[0m                          | 63              | [32m✔[0m                          | 23              |
+| PFS_client                      | [32m✔[0m                          | 173             | [32m✔[0m                          | 32              |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 14 Time                         | Toy-P.spthy                | 0.24s           | Toy-R.spthy                | 0.10s           |
-| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-|                                 |                            |                 |                            |                 |
-| secretP                         | ✔                          | 9               | ✔                          | 9               |
-| injPS                           | ✔                          | 6               | ✔                          | 6               |
-| injSP                           | ✔                          | 16              | ✔                          | 14              |
-| secretS                         | ✔                          | 4               | ✔                          | 5               |
-| executableS2                    | ✔                          | 3               | ✔                          | 15              |
-| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 15 Time                         | SSH-P.spthy                | 7.25s           | SSH-R.spthy                | 9.34s           |
+| 9 Time                          | [1mKEMTLS-P.spthy[0m             | 21.49s          | [1mKEMTLS-R.spthy[0m             | 31.72s          |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
 |                                 |                            |                 |                            |                 |
-| AUTO_typing                     | ✔                          | 87              | ✔                          | 28              |
-| executability                   | ✔                          | 8               | ✔                          | 10              |
-| Secrecy                         | ✔                          | 8               | ✔                          | 10              |
-| injectiveagreement_B            | ✘                          | 7               | ✘                          | 8               |
-| agreement_B                     | ✘                          | 7               | ✘                          | 8               |
+| Secrecy                         | [32m✔[0m                          | 107             | [32m✔[0m                          | 40              |
+| injectiveagreement_B            | [32m✔[0m                          | 60              | [32m✔[0m                          | 50              |
+| agreement_B                     | [32m✔[0m                          | 14              | [32m✔[0m                          | 16              |
+| injectiveagreement_A            | [32m✔[0m                          | 16              | [32m✔[0m                          | 16              |
+| agreement_A                     | [32m✔[0m                          | 12              | [32m✔[0m                          | 10              |
+| injectiveagreement_S            | [31m✘[0m                          | 14              | [31m✘[0m                          | 16              |
+| agreement_S                     | [32m✔[0m                          | 37              | [32m✔[0m                          | 40              |
+| executability                   | [32m✔[0m                          | 14              | [32m✔[0m                          | 15              |
+| AUTO_typing                     | [32m✔[0m                          | 2460            | [32m✔[0m                          | 475             |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 16 Time                         | Woo-Lam-P.spthy            | 1.88s           | Woo-Lam-R.spthy            | 0.67s           |
-| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-|                                 |                            |                 |                            |                 |
-| AUTO_typing                     | ✔                          | 20              | ✔                          | 13              |
-| executability                   | ✔                          | 13              | ✔                          | 12              |
-| secrecy                         | ✔                          | 41              | ✔                          | 20              |
-| noninjectiveagreement_B         | ✔                          | 44              | ✔                          | 24              |
-| noninjectiveagreement_A         | ✘                          | 9               | ✘                          | 7               |
-| injectiveagreement_B            | ✔                          | 48              | ✔                          | 28              |
-| injectiveagreement_A            | ✘                          | 9               | ✘                          | 7               |
-| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 17 Time                         | Kao-Chow-P.spthy           | 18.92s          | Kao-Chow-R.spthy           | 1.66s           |
+| 10 Time                         | [1mOtway-Rees-P.spthy[0m         | 151.87s         | [1mOtway-Rees-R.spthy[0m         | 9.16s           |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
 |                                 |                            |                 |                            |                 |
-| secretR                         | ✔                          | 24              | ✔                          | 20              |
-| secretI                         | ✔                          | 19              | ✔                          | 17              |
-| executableR                     | ✔                          | 7               | ✔                          | 7               |
-| executableI                     | ✔                          | 6               | ✔                          | 7               |
-| executableIhonnest              | ✔                          | 8               | ✔                          | 9               |
-| executableRhonnest              | ✔                          | 9               | ✔                          | 9               |
-| false_dishonnestnoauthRI        | ✘                          | 25              | ✘                          | 15              |
-| false_dishonnestnoauthIR        | ✘                          | 13              | ✘                          | 13              |
-| honnestauthRI                   | ✔                          | 16              | ✔                          | 8               |
-| honnestauthIR                   | ✔                          | 11              | ✔                          | 9               |
+| executability                   | [32m✔[0m                          | 8               | [32m✔[0m                          | 7               |
+| secrecy                         | [32m✔[0m                          | 24              | [32m✔[0m                          | 27              |
+| noninjectiveagreement_B         | [32m✔[0m                          | 8               | [32m✔[0m                          | 8               |
+| injectiveagreement_B            | [31m✘[0m                          | 10              | [31m✘[0m                          | 8               |
+| AUTO_typing                     | [32m✔[0m                          | 14              | [32m✔[0m                          | 21              |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
-| 18 Time                         | EDHOC-P.spthy              | 64.36s          | EDHOC-R.spthy              | 13.59s          |
+| 11 Time                         | [1mDenning-Sacco-P.spthy[0m      | 2.56s           | [1mDenning-Sacco-R.spthy[0m      | 0.43s           |
+| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
+|                                 |                            |                 |                            |                 |
+| exists_session                  | [32m✔[0m                          | 6               | -                          | -               |
+| CompleteResp                    | [32m✔[0m                          | 4               | -                          | -               |
+| CompleteInit                    | [32m✔[0m                          | 4               | -                          | -               |
+| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
+| 12 Time                         | [1mNaxos-P.spthy[0m              | 0.78s           | [1mNaxos-R.spthy[0m              | 3.85s           |
+| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
+|                                 |                            |                 |                            |                 |
+| executability                   | [32m✔[0m                          | 22              | [32m✔[0m                          | 21              |
+| Secrecy                         | [31m✘[0m                          | 16              | [31m✘[0m                          | 11              |
+| injectiveagreement_B            | [31m✘[0m                          | 16              | [31m✘[0m                          | 15              |
+| agreement_B                     | [31m✘[0m                          | 16              | [31m✘[0m                          | 15              |
+| injectiveagreement_A            | [31m✘[0m                          | 28              | [31m✘[0m                          | 16              |
+| agreement_A                     | [31m✘[0m                          | 28              | [31m✘[0m                          | 16              |
+| AUTO_typing                     | [32m✔[0m                          | 111             | [32m✔[0m                          | 34              |
+| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
+| 13 Time                         | [1mSPLICE-P.spthy[0m             | 98.93s          | [1mSPLICE-R.spthy[0m             | 6.16s           |
+| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
+|                                 |                            |                 |                            |                 |
+| successful_run                  | [32m✔[0m                          | 6               | [32m✔[0m                          | 6               |
+| sk_secret_a                     | [31m✘[0m                          | 5               | [31m✘[0m                          | 5               |
+| sk_secret_b                     | [31m✘[0m                          | 5               | [31m✘[0m                          | 5               |
+| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
+| 14 Time                         | [1mToy-P.spthy[0m                | 0.24s           | [1mToy-R.spthy[0m                | 0.10s           |
+| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
+|                                 |                            |                 |                            |                 |
+| secretP                         | [32m✔[0m                          | 9               | [32m✔[0m                          | 9               |
+| injPS                           | [32m✔[0m                          | 6               | [32m✔[0m                          | 6               |
+| injSP                           | [32m✔[0m                          | 16              | [32m✔[0m                          | 14              |
+| secretS                         | [32m✔[0m                          | 4               | [32m✔[0m                          | 5               |
+| executableS2                    | [32m✔[0m                          | 3               | [32m✔[0m                          | 15              |
+| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
+| 15 Time                         | [1mSSH-P.spthy[0m                | 7.25s           | [1mSSH-R.spthy[0m                | 9.34s           |
+| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
+|                                 |                            |                 |                            |                 |
+| AUTO_typing                     | [32m✔[0m                          | 87              | [32m✔[0m                          | 28              |
+| executability                   | [32m✔[0m                          | 8               | [32m✔[0m                          | 10              |
+| Secrecy                         | [32m✔[0m                          | 8               | [32m✔[0m                          | 10              |
+| injectiveagreement_B            | [31m✘[0m                          | 7               | [31m✘[0m                          | 8               |
+| agreement_B                     | [31m✘[0m                          | 7               | [31m✘[0m                          | 8               |
+| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
+| 16 Time                         | [1mWoo-Lam-P.spthy[0m            | 1.88s           | [1mWoo-Lam-R.spthy[0m            | 0.67s           |
+| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
+|                                 |                            |                 |                            |                 |
+| AUTO_typing                     | [32m✔[0m                          | 20              | [32m✔[0m                          | 13              |
+| executability                   | [32m✔[0m                          | 13              | [32m✔[0m                          | 12              |
+| secrecy                         | [32m✔[0m                          | 41              | [32m✔[0m                          | 20              |
+| noninjectiveagreement_B         | [32m✔[0m                          | 44              | [32m✔[0m                          | 24              |
+| noninjectiveagreement_A         | [31m✘[0m                          | 9               | [31m✘[0m                          | 7               |
+| injectiveagreement_B            | [32m✔[0m                          | 48              | [32m✔[0m                          | 28              |
+| injectiveagreement_A            | [31m✘[0m                          | 9               | [31m✘[0m                          | 7               |
+| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
+| 17 Time                         | [1mKao-Chow-P.spthy[0m           | 18.92s          | [1mKao-Chow-R.spthy[0m           | 1.66s           |
+| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
+|                                 |                            |                 |                            |                 |
+| secretR                         | [32m✔[0m                          | 24              | [32m✔[0m                          | 20              |
+| secretI                         | [32m✔[0m                          | 19              | [32m✔[0m                          | 17              |
+| executableR                     | [32m✔[0m                          | 7               | [32m✔[0m                          | 7               |
+| executableI                     | [32m✔[0m                          | 6               | [32m✔[0m                          | 7               |
+| executableIhonnest              | [32m✔[0m                          | 8               | [32m✔[0m                          | 9               |
+| executableRhonnest              | [32m✔[0m                          | 9               | [32m✔[0m                          | 9               |
+| false_dishonnestnoauthRI        | [31m✘[0m                          | 25              | [31m✘[0m                          | 15              |
+| false_dishonnestnoauthIR        | [31m✘[0m                          | 13              | [31m✘[0m                          | 13              |
+| honnestauthRI                   | [32m✔[0m                          | 16              | [32m✔[0m                          | 8               |
+| honnestauthIR                   | [32m✔[0m                          | 11              | [32m✔[0m                          | 9               |
+| ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
+| 18 Time                         | [1mEDHOC-P.spthy[0m              | 64.36s          | [1mEDHOC-R.spthy[0m              | 13.59s          |
 | ——————————————————————          | ———————————————            | ——————————————— | ———————————————            | ——————————————— |
 |                                 |                            |                 |                            |                 |
