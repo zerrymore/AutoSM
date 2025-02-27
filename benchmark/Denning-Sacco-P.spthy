@@ -1,0 +1,102 @@
+theory Denning_Sacco_P
+begin
+
+functions: id/1
+builtins: symmetric-encryption
+
+let A(Kas, idA, idB) =
+  out(<idA,idB>);
+  in(cypher1);
+  let msg1 = sdec(cypher1, Kas) in
+  let <=idB, Kab, T, cypher2> = msg1 in
+  event IN_A( cypher1, cypher2 );
+  event CommitA(idA, idB, <Kab, T>);
+  event RunningA(idA, idB, <Kab, T>);
+  event Secret(idA, idB, Kab);
+  out(cypher2); 0
+
+let B(Kbs, idA, idB) =
+  in(cypher2);
+  let msg1 = sdec(cypher2, Kbs) in
+  let <Kab, =idA, T> = msg1 in 
+  event CommitB(idB,idA, <Kab,T>);
+  event Secret(idB, idA, <Kab,T>)
+
+let S(Kas, Kbs, idA, idB) =
+  in(<=idA, =idB>);
+  new Kab;
+  new T;
+  let cypher1 = senc(<idB,Kab,T,senc(<Kab,idA,T>, Kbs)>, Kas) in
+  event OUT_S(cypher1);
+  out(cypher1)
+
+
+let CompromiseLtk(s) =
+  event Compromise(id(s)); out(s)
+
+process:
+!( 
+    new Kas; new Kbs;
+    out(id(Kas)); out(id(Kbs));
+    (
+       CompromiseLtk(Kas) | CompromiseLtk(Kbs) | 
+       (
+         ( !A(Kas, id(Kas), id(Kbs)) ) 
+       | ( !B(Kbs, id(Kas), id(Kbs)) ) 
+       |   !S(Kas, Kbs, id(Kas), id(Kbs))   
+       )
+   )
+)
+
+
+//// Lemmas ////
+lemma AUTO_typing [sources]:
+  all-traces
+  "
+   (All x m #i.
+     (IN_A( m, x ) @ #i) ==>
+     ((Ex #j. (!KU( x ) @ #j) ∧ (#j < #i)) |
+      (Ex #j. (OUT_S( m ) @ #j) & (#j < #i))))"
+
+
+// sanity check: check if honest execution is possible
+lemma executability:
+    exists-trace
+    "Ex A B t #i #j.
+      CommitB(B,A,t)@#i
+      & CommitA(A,B,t)@#j & #j<#i
+      & not(Ex #r1. Compromise(A)@#r1) 
+      & not(Ex #r2. Compromise(B)@#r2)"
+
+      
+// check the secrecy of the newly generated session key
+lemma secrecy:
+    "All A B k #i. 
+      Secret(A,B,k)@i 
+      ==> not (Ex #j. K(k)@j ) 
+      | (Ex #j. Compromise(B)@j) 
+      | (Ex #j. Compromise(A)@j)"
+
+
+// check the authenticity of the transaction from B's point of view
+lemma noninjectiveagreement_B:
+    "All A B t #i.
+      CommitB(B, A, t) @i
+      ==> ((Ex #j. RunningA(A,B,t) @j & j < i)
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
+
+
+// check the authenticity and freshness of the transaction from B's point of view
+// status: false due to multiplicity attack
+lemma injectiveagreement_B:
+    "All A B t #i. CommitB(B,A,t) @i
+      ==> ((Ex #j. RunningA(A,B,t) @j & j < i
+            & not (Ex B2 A2 #i2. CommitB(B2,A2,t) @i2
+                          & not (#i2 = #i)))
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
+
+end
+
+

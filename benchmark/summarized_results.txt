@@ -1,0 +1,548 @@
+summary of summaries:
+
+analyzed: Example-R.spthy
+
+  processing time: 0.12s
+  
+  Client_session_key_secrecy (all-traces): verified (5 steps)
+  Client_auth (all-traces): verified (11 steps)
+  Client_auth_injective (all-traces): verified (15 steps)
+  Client_session_key_honest_setup (exists-trace): verified (5 steps)
+
+summary of summaries:
+
+analyzed: sigfox-R.spthy
+
+  processing time: 0.15s
+  
+  executable (exists-trace): verified (8 steps)
+  secret_A (all-traces): verified (11 steps)
+  secret_B (all-traces): verified (14 steps)
+  secrecy_PFS_A (all-traces): falsified - found trace (8 steps)
+
+summary of summaries:
+
+analyzed: Example-R.spthy
+
+  processing time: 0.12s
+  
+  Client_session_key_secrecy (all-traces): verified (5 steps)
+  Client_auth (all-traces): verified (11 steps)
+  Client_auth_injective (all-traces): verified (15 steps)
+  Client_session_key_honest_setup (exists-trace): verified (5 steps)
+
+summary of summaries:
+
+analyzed: sigfox-R.spthy
+
+  processing time: 0.14s
+  
+  executable (exists-trace): verified (8 steps)
+  secret_A (all-traces): verified (11 steps)
+  secret_B (all-traces): verified (14 steps)
+  secrecy_PFS_A (all-traces): falsified - found trace (8 steps)
+
+summary of summaries:
+
+analyzed: NSPK-P.spthy
+
+  processing time: 81.21s
+  
+  AUTO_typing (all-traces): verified (61 steps)
+  nonce_secrecy (all-traces): falsified - found trace (16 steps)
+  injective_agree (all-traces): falsified - found trace (16 steps)
+  session_key_setup_possible (exists-trace): verified (9 steps)
+
+summary of summaries:
+
+analyzed: LAK06-P.spthy
+
+  processing time: 115.39s
+  
+  executable (exists-trace): verified (9 steps)
+  helpingSecrecy (all-traces): verified (3 steps)
+  noninjectiveagreementTAG (all-traces): verified (3568 steps)
+  noninjectiveagreementREADER (all-traces): falsified - found trace (13 steps)
+
+summary of summaries:
+
+analyzed: Neuman-Stubblebine-P.spthy
+
+  processing time: 7.05s
+  
+  AUTO_typing (all-traces): verified (65 steps)
+  executability (exists-trace): verified (14 steps)
+  secrecy (all-traces): verified (59 steps)
+  noninjectiveagreement_B (all-traces): verified (34 steps)
+  noninjectiveagreement_A (all-traces): falsified - found trace (8 steps)
+  injectiveagreement_B (all-traces): verified (38 steps)
+  injectiveagreement_A (all-traces): falsified - found trace (8 steps)
+
+summary of summaries:
+
+analyzed: NSSK-R.spthy
+
+  processing time: 1.40s
+  
+  executability (exists-trace): verified (12 steps)
+  Secrecy (all-traces): verified (34 steps)
+  injectiveagreement_B (all-traces): verified (31 steps)
+  agreement_B (all-traces): verified (27 steps)
+  injectiveagreement_A (all-traces): verified (53 steps)
+  agreement_A (all-traces): verified (25 steps)
+  AUTO_typing (all-traces): verified (72 steps)
+
+summary of summaries:
+
+analyzed: Yahalom-R.spthy
+
+  processing time: 1.23s
+  
+  executability (exists-trace): verified (14 steps)
+  secrecy (all-traces): verified (22 steps)
+  noninjectiveagreement_B (all-traces): verified (51 steps)
+  noninjectiveagreement_A (all-traces): verified (10 steps)
+  injectiveagreement_B (all-traces): verified (55 steps)
+  injectiveagreement_A (all-traces): verified (14 steps)
+  AUTO_typing (all-traces): verified (93 steps)
+
+summary of summaries:
+
+analyzed: CCITT-X509-R.spthy
+
+  processing time: 1.12s
+  
+  Secrecy (all-traces): verified (15 steps)
+  injectiveagreement_B (all-traces): falsified - found trace (14 steps)
+  agreement_B (all-traces): verified (7 steps)
+  Session_key_honest_setup (exists-trace): verified (12 steps)
+
+summary of summaries:
+
+analyzed: sigfox-P.spthy
+
+  processing time: 0.66s
+  
+  executable (exists-trace): verified (7 steps)
+  secret_A (all-traces): verified (21 steps)
+  secret_B (all-traces): verified (50 steps)
+  secrecy_PFS_A (all-traces): falsified - found trace (8 steps)
+
+summary of summaries:
+
+analyzed: KEMTLS-P.spthy
+
+  processing time: 21.49s
+  
+  exec (exists-trace): verified (11 steps)
+  execbis (exists-trace): verified (10 steps)
+  false_secserv (all-traces): falsified - found trace (19 steps)
+  auth (all-traces): verified (63 steps)
+  PFS_client (all-traces): verified (173 steps)
+
+  
+
+summary of summaries:
+
+analyzed: Otway-Rees-P.spthy
+
+  processing time: 35.07s
+  
+  Secrecy (all-traces): verified (107 steps)
+  injectiveagreement_B (all-traces): verified (60 steps)
+  agreement_B (all-traces): verified (14 steps)
+  injectiveagreement_A (all-traces): verified (16 steps)
+  agreement_A (all-traces): verified (12 steps)
+  injectiveagreement_S (all-traces): falsified - found trace (14 steps)
+  agreement_S (all-traces): verified (29 steps)
+  executability (exists-trace): verified (14 steps)
+  AUTO_typing (all-traces): verified (2881 steps)
+
+summary of summaries:
+
+analyzed: CCITT-X509-P.spthy
+
+  processing time: 3.51s
+  
+  Secrecy (all-traces): verified (19 steps)
+  injectiveagreement_B (all-traces): falsified - found trace (14 steps)
+  agreement_B (all-traces): verified (16 steps)
+  Session_key_honest_setup (exists-trace): verified (11 steps)
+
+summary of summaries:
+
+analyzed: Denning-Sacco-R.spthy
+
+  processing time: 0.43s
+  
+  executability (exists-trace): verified (7 steps)
+  secrecy (all-traces): verified (27 steps)
+  noninjectiveagreement_B (all-traces): verified (8 steps)
+  injectiveagreement_B (all-traces): falsified - found trace (8 steps)
+  AUTO_typing (all-traces): verified (21 steps)
+
+summary of summaries:
+
+analyzed: Yahalom-P.spthy
+
+  processing time: 5.43s
+  
+  AUTO_typing (all-traces): verified (48 steps)
+  executability (exists-trace): verified (12 steps)
+  secrecy (all-traces): verified (79 steps)
+  noninjectiveagreement_B (all-traces): verified (64 steps)
+  noninjectiveagreement_A (all-traces): verified (9 steps)
+  injectiveagreement_B (all-traces): verified (68 steps)
+  injectiveagreement_A (all-traces): verified (13 steps)
+
+summary of summaries:
+
+analyzed: Naxos-R.spthy
+
+  processing time: 3.85s
+
+summary of summaries:
+
+analyzed: LAK06-R.spthy
+
+  processing time: 6.58s
+  
+  executable (exists-trace): verified (9 steps)
+  helpingSecrecy (all-traces): verified (2 steps)
+  noninjectiveagreementTAG (all-traces): verified (2082 steps)
+  noninjectiveagreementREADER (all-traces): falsified - found trace (13 steps)
+
+summary of summaries:
+
+analyzed: SPLICE-P.spthy
+
+  processing time: 98.93s
+  
+  executability (exists-trace): verified (22 steps)
+  Secrecy (all-traces): falsified - found trace (16 steps)
+  injectiveagreement_B (all-traces): falsified - found trace (16 steps)
+  agreement_B (all-traces): falsified - found trace (16 steps)
+  injectiveagreement_A (all-traces): falsified - found trace (28 steps)
+  agreement_A (all-traces): falsified - found trace (28 steps)
+  AUTO_typing (all-traces): verified (111 steps)
+
+summary of summaries:
+
+analyzed: Example-P.spthy
+
+  processing time: 0.18s
+  
+  Client_session_key_secrecy (all-traces): verified (9 steps)
+  Client_auth (all-traces): verified (9 steps)
+  Client_auth_injective (all-traces): verified (13 steps)
+  Client_session_key_honest_setup (exists-trace): verified (5 steps)
+
+summary of summaries:
+
+analyzed: Naxos-P.spthy
+
+  processing time: 0.78s
+  
+  exists_session (exists-trace): verified (6 steps)
+  CompleteResp (exists-trace): verified (4 steps)
+  CompleteInit (exists-trace): verified (4 steps)
+
+summary of summaries:
+
+analyzed: Toy-R.spthy
+
+  processing time: 0.10s
+  
+  successful_run (exists-trace): verified (6 steps)
+  sk_secret_a (all-traces): falsified - found trace (5 steps)
+  sk_secret_b (all-traces): falsified - found trace (5 steps)
+
+summary of summaries:
+
+analyzed: NSPK-R.spthy
+
+  processing time: 2.41s
+  
+  AUTO_typing (all-traces): verified (33 steps)
+  nonce_secrecy (all-traces): falsified - found trace (16 steps)
+  injective_agree (all-traces): falsified - found trace (14 steps)
+  session_key_setup_possible (exists-trace): verified (5 steps)
+
+
+summary of summaries:
+
+analyzed: KEMTLS-R.spthy
+
+  processing time: 31.72s
+    
+  exec (exists-trace): verified (11 steps)
+  execbis (exists-trace): verified (11 steps)
+  false_secserv (all-traces): falsified - found trace (30 steps)
+  auth (all-traces): verified (23 steps)
+  PFS_client (all-traces): verified (32 steps)
+
+
+summary of summaries:
+
+analyzed: Neuman-Stubblebine-P.spthy
+
+  processing time: 26.84s
+  
+  AUTO_typing (all-traces): verified (65 steps)
+  executability (exists-trace): verified (14 steps)
+  secrecy (all-traces): verified (59 steps)
+  noninjectiveagreement_B (all-traces): verified (34 steps)
+  noninjectiveagreement_A (all-traces): falsified - found trace (8 steps)
+  injectiveagreement_B (all-traces): verified (38 steps)
+  injectiveagreement_A (all-traces): falsified - found trace (8 steps)
+
+
+
+summary of summaries:
+
+analyzed: Neuman-Stubblebine-R.spthy
+
+  processing time: 2.65s
+  
+  executability (exists-trace): verified (15 steps)
+  secrecy (all-traces): verified (29 steps)
+  noninjectiveagreement_B (all-traces): verified (23 steps)
+  noninjectiveagreement_A (all-traces): falsified - found trace (7 steps)
+  injectiveagreement_B (all-traces): verified (27 steps)
+  injectiveagreement_A (all-traces): falsified - found trace (7 steps)
+  AUTO_typing (all-traces): verified (66 steps)
+
+
+summary of summaries:
+
+analyzed: Otway-Rees-R.spthy
+
+  processing time: 9.16s
+  
+  Secrecy (all-traces): verified (40 steps)
+  injectiveagreement_B (all-traces): verified (50 steps)
+  agreement_B (all-traces): verified (16 steps)
+  injectiveagreement_A (all-traces): verified (16 steps)
+  agreement_A (all-traces): verified (10 steps)
+  injectiveagreement_S (all-traces): falsified - found trace (16 steps)
+  agreement_S (all-traces): verified (40 steps)
+  executability (exists-trace): verified (15 steps)
+  AUTO_typing (all-traces): verified (475 steps)
+
+
+
+
+summary of summaries:
+
+analyzed: SPLICE-R.spthy
+
+  processing time: 6.16s
+  
+  WARNING: 1 wellformedness check failed!
+           The analysis results might be wrong!
+  
+  executability (exists-trace): verified (21 steps)
+  Secrecy (all-traces): falsified - found trace (11 steps)
+  injectiveagreement_B (all-traces): falsified - found trace (15 steps)
+  agreement_B (all-traces): falsified - found trace (15 steps)
+  injectiveagreement_A (all-traces): falsified - found trace (16 steps)
+  agreement_A (all-traces): falsified - found trace (16 steps)
+  AUTO_typing (all-traces): verified (34 steps)
+
+
+
+  summary of summaries:
+
+summary of summaries:
+
+analyzed: NSSK-P.spthy
+
+  processing time: 18.37s
+  
+  AUTO_typing (all-traces): verified (71 steps)
+  executability (exists-trace): verified (14 steps)
+  Secrecy (all-traces): verified (21 steps)
+  injectiveagreement_B (all-traces): verified (81 steps)
+  agreement_B (all-traces): verified (65 steps)
+  injectiveagreement_A (all-traces): verified (48 steps)
+  agreement_A (all-traces): verified (24 steps)
+  
+
+summary of summaries:
+
+analyzed: SSH-P.spthy
+
+  processing time: 7.02s
+  
+  secretP (all-traces): verified (9 steps)
+  injPS (all-traces): verified (6 steps)
+  injSP (all-traces): verified (16 steps)
+  secretS (all-traces): verified (4 steps)
+  executableS2 (exists-trace): verified (3 steps)
+
+
+summary of summaries:
+
+analyzed: SSH-R.spthy
+
+  processing time: 9.34s
+  
+  secretP (all-traces): verified (9 steps)
+  injPS (all-traces): verified (6 steps)
+  injSP (all-traces): verified (14 steps)
+  secretS (all-traces): verified (5 steps)
+  executableS2 (exists-trace): verified (15 steps)
+
+
+summary of summaries:
+
+analyzed: SSH-P.spthy
+
+  processing time: 7.25s
+  
+  secretP (all-traces): verified (9 steps)
+  injPS (all-traces): verified (6 steps)
+  injSP (all-traces): verified (16 steps)
+  secretS (all-traces): verified (4 steps)
+  executableS2 (exists-trace): verified (3 steps)
+
+
+summary of summaries:
+
+analyzed: Woo-Lam-P.spthy
+
+  processing time: 1.88s
+  
+  AUTO_typing (all-traces): verified (87 steps)
+  executability (exists-trace): verified (8 steps)
+  Secrecy (all-traces): verified (8 steps)
+  injectiveagreement_B (all-traces): falsified - found trace (7 steps)
+  agreement_B (all-traces): falsified - found trace (7 steps)
+
+
+
+  summary of summaries:
+
+analyzed: Woo-Lam-R.spthy
+
+  processing time: 0.67s
+  
+  executability (exists-trace): verified (10 steps)
+  Secrecy (all-traces): verified (10 steps)
+  injectiveagreement_B (all-traces): falsified - found trace (8 steps)
+  agreement_B (all-traces): falsified - found trace (8 steps)
+  AUTO_typing (all-traces): verified (28 steps)
+
+
+
+summary of summaries:
+
+analyzed: Toy-P.spthy
+
+  processing time: 0.24s
+  
+  successful_run (exists-trace): verified (6 steps)
+  sk_secret_a (all-traces): falsified - found trace (5 steps)
+  sk_secret_b (all-traces): falsified - found trace (5 steps)
+
+
+summary of summaries:
+
+analyzed: Kao-Chow-P.spthy
+
+  processing time: 18.92s
+  
+  AUTO_typing (all-traces): verified (20 steps)
+  executability (exists-trace): verified (13 steps)
+  secrecy (all-traces): verified (41 steps)
+  noninjectiveagreement_B (all-traces): verified (44 steps)
+  noninjectiveagreement_A (all-traces): falsified - found trace (9 steps)
+  injectiveagreement_B (all-traces): verified (48 steps)
+  injectiveagreement_A (all-traces): falsified - found trace (9 steps)
+
+
+
+  summary of summaries:
+
+analyzed: Kao-Chow-R.spthy
+
+  processing time: 1.66s
+  
+  executability (exists-trace): verified (12 steps)
+  secrecy (all-traces): verified (20 steps)
+  noninjectiveagreement_B (all-traces): verified (24 steps)
+  noninjectiveagreement_A (all-traces): falsified - found trace (7 steps)
+  injectiveagreement_B (all-traces): verified (28 steps)
+  injectiveagreement_A (all-traces): falsified - found trace (7 steps)
+  AUTO_typing (all-traces): verified (13 steps)
+
+
+
+summary of summaries:
+
+analyzed: EDHOC-P.spthy
+
+  processing time: 64.36s
+  
+  secretR (all-traces): verified (24 steps)
+  secretI (all-traces): verified (19 steps)
+  executableR (exists-trace): verified (7 steps)
+  executableI (exists-trace): verified (6 steps)
+  executableIhonnest (exists-trace): verified (8 steps)
+  executableRhonnest (exists-trace): verified (9 steps)
+  false_dishonnestnoauthRI (all-traces): falsified - found trace (25 steps)
+  false_dishonnestnoauthIR (all-traces): falsified - found trace (13 steps)
+  honnestauthRI (all-traces): verified (16 steps)
+  honnestauthIR (all-traces): verified (11 steps)
+
+
+
+
+summary of summaries:
+
+analyzed: EDHOC-R.spthy
+
+  processing time: 13.59s
+  
+  secretR (all-traces): verified (20 steps)
+  secretI (all-traces): verified (17 steps)
+  executableR (exists-trace): verified (7 steps)
+  executableI (exists-trace): verified (7 steps)
+  executableIhonnest (exists-trace): verified (9 steps)
+  executableRhonnest (exists-trace): verified (9 steps)
+  false_dishonnestnoauthRI (all-traces): falsified - found trace (15 steps)
+  false_dishonnestnoauthIR (all-traces): falsified - found trace (13 steps)
+  honnestauthRI (all-traces): verified (8 steps)
+  honnestauthIR (all-traces): verified (9 steps)
+
+
+
+summary of summaries:
+
+analyzed: Otway-Rees-P.spthy
+
+  processing time: 151.87s
+  
+  AUTO_typing (all-traces): verified (2460 steps)
+  Secrecy (all-traces): verified (107 steps)
+  injectiveagreement_B (all-traces): verified (60 steps)
+  agreement_B (all-traces): verified (14 steps)
+  injectiveagreement_A (all-traces): verified (16 steps)
+  agreement_A (all-traces): verified (12 steps)
+  injectiveagreement_S (all-traces): falsified - found trace (14 steps)
+  agreement_S (all-traces): verified (37 steps)
+  executability (exists-trace): verified (14 steps)
+
+
+
+  summary of summaries:
+
+analyzed: Denning-Sacco-P.spthy
+
+  processing time: 2.56s
+  
+  AUTO_typing (all-traces): verified (14 steps)
+  executability (exists-trace): verified (8 steps)
+  secrecy (all-traces): verified (24 steps)
+  noninjectiveagreement_B (all-traces): verified (8 steps)
+  injectiveagreement_B (all-traces): falsified - found trace (10 steps)

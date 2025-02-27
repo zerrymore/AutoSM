@@ -1,0 +1,89 @@
+
+theory CCITT_X509_P
+begin
+
+builtins: asymmetric-encryption, signing
+
+functions: h/1
+
+let Alice(skA, pkA, pkB) =        
+    event Role_A(skA);
+    new ta;
+    new na; 
+    new xa;
+    new Ya; 
+    let m = <ta,na,pkB,xa,aenc(Ya,pkB)> in
+    let ha = h(m) in
+    let msg = <pkA, m, sign(ha, skA)> in
+    event Running_A(pkA, pkB, <'A','B', xa, Ya>);
+    event SecretA(pkA, pkB, Ya);
+    event Out_A_1(msg);
+    out(msg)
+
+
+let Bob(skB, pkB, pkA)=      
+    event Role_B(skB);
+    in(cipher);
+    let < =pkA, m, sig> = cipher in
+    let <ta, na, =pkB, xa, cipher> = m in 
+    let Ya = adec(cipher, skB) in
+    let ha = h(m) in
+    if verify(sig, ha, pkA) = true then
+    (
+        event Commit_B(pkA, pkB, <'A','B',xa, Ya>);
+        event Secret(pkA, pkB, Ya) ) 
+
+
+let Compromise(s) =
+    event Reveal(pk(s)); out(s)
+
+    
+process:
+!(
+  new skA; out(pk(skA)); event HonestA(pk(skA));
+  !(
+    new skB; out(pk(skB)); event HonestB(pk(skB));
+    (   Compromise(skA) | Compromise(skB) |
+        (!Alice(skA, pk(skA), pk(skB)) | !Bob(skB, pk(skB), pk(skA)))
+    )
+  )
+)
+
+lemma Secrecy:
+  	"not(Ex A B m #i .
+    	Secret(A, B, m)@ #i
+      & (Ex #r. K(m) @ #r)
+      & not(Ex #r. Reveal(B) @ #r)
+      & not(Ex #r. Reveal(A) @ #r))"
+
+			
+// check the authenticity and freshness of the transaction from B's point of view
+lemma injectiveagreement_B:
+		"All A B t #i.
+    	Commit_B(A,B,t) @i
+     	==> (Ex #j. Running_A(A,B,t)@j & j < i
+      	& not (Ex A2 B2 #i2. Commit_B(A2,B2,t) @i2
+          & not (#i2 = #i)))
+      | (Ex #r. Reveal(A)@r)
+      | (Ex #r. Reveal(B)@r)"
+
+// check the authenticity of the transaction from B's point of view
+lemma agreement_B:
+		"All A B t #i.
+			Commit_B(A,B,t) @i
+    	==> (Ex #j. Running_A(A,B,t) @j  & j < i)
+      | (Ex #r. Reveal(A)@r)
+      | (Ex #r. Reveal(B)@r)"
+
+
+// sanity check: check if honest execution is possible
+lemma Session_key_honest_setup:
+		exists-trace
+  	"Ex A B t #i #j.
+    		Running_A(A, B, t) @ #i
+    		& Commit_B(A, B, t)@ #j
+      	& not(Ex #r. Reveal(B) @ r)
+      	& not(Ex #s. Reveal(A) @ s)"
+
+
+end

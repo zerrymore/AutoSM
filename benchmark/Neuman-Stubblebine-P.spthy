@@ -1,0 +1,172 @@
+theory Neuman_Stubblebine_P
+begin
+
+functions: id/1
+functions: senc/2, sdec/2[destructor]
+equations: sdec(senc(m,k),k)=m
+let Alice(Kas, idA, idB) =
+  new Na;
+  out(<idA,Na>);
+  //   S -> A: {B, Na, Kab, Tb}Kas, {A, Kab, Tb}Kbs, Nb
+  in(<cypher1, cypher2, Nb>);
+  let mess1 = sdec(cypher1, Kas) in
+  let <'2', =idB, =Na, Kab, Tb> = mess1 in
+  event IN_A_2( cypher1, Tb);
+  event CommitA(idA, idB, <Na, Nb, Tb>);
+  event RunningA(idA,idB,<Kab,Na,Nb>);
+  event Secret(idA,idB, Kab);
+  event OUT_A(senc(<'4', Nb>, Kab));
+//   A -> B: {A, Kab, Tb}Kbs, {Nb}Kab
+  out(<cypher2, senc(<'4', Nb>, Kab)>);
+
+  // subsequent communication
+  new Ma;
+  // event RunningA(idA,idB,<Kab,Na,Ma>);
+  out(<cypher2, Ma>);
+  in(<cypher6, Mb>);
+  let <'5', =Ma> = sdec(cypher6, Kab) in
+  let cypher7 = senc(<'6', Mb>, Kab)  in
+  // event CommitA(idA, idB, <Ma,Mb>);
+  out(cypher7)
+
+
+let Bob(Kbs, idA, idB) =
+  in(<=idA,Na>);
+  new Nb;
+  new Tb;
+  event RunningB(idB, idA, <Na, Nb, Tb>);
+  event OUT_B_1(senc(<'1', idA,Na,Tb>, Kbs));
+//   B -> S: B, Nb, {A, Na, Tb}Kbs
+  out(<idB, Nb, senc(<'1', idA, Na, Tb>, Kbs)>);
+  in(<cypher3, cypher4>);
+  let mess2 = sdec(cypher3, Kbs) in
+  let <'3', =idA, Kab, =Tb> = mess2 in
+  let <'4',=Nb> = sdec(cypher4, Kab) in 
+  event IN_B(cypher4, Nb);
+  event CommitB(idB,idA,<Kab,Na,Nb>);
+  event Secret(idB,idA,Kab);
+  
+  in(<=cypher3, Ma>);
+  // event CommitB(idB,idA,<Kab,Na,Ma>);
+  new Mb;
+  // event RunningB(idB, idA, <Ma,Mb>);
+  let cypher6 = senc(<'5', Ma>, Kab) in
+  out(<cypher6, Mb>);
+  in(cypher7);
+  let <'6', =Mb> = sdec(cypher7, Kab) in
+  0
+
+
+let Server(Kas, Kbs, idA, idB) =
+//   B -> S: B, Nb, {A, Na, Tb}Kbs
+  in(<=idB, Nb, cypher5>);
+  let mess3 = sdec(cypher5, Kbs) in
+  let <'1', =idA, Na, Tb> = mess3 in
+  event IN_S_1(cypher5, <Na, Tb>);
+  new Kab;
+  event Server(idA,idB,<Kab,Na,Nb>);
+//   S -> A: {B, Na, Kab, Tb}Kas, {A, Kab, Tb}Kbs, Nb
+  let subpart1 = senc(<'2', idB, Na, Kab,Tb>, Kas) in 
+  event OUT_S_2(subpart1);
+  let subpart2 = senc(<'3', idA,Kab,Tb>, Kbs) in
+  out(<subpart1, subpart2, Nb>)
+
+
+
+let CompromiseLtk(s) =
+  event Compromise(id(s)); out(s)
+
+process:
+!( 
+    new Kas; new Kbs;
+    out(id(Kas)); out(id(Kbs));
+    (
+       CompromiseLtk(Kas) | CompromiseLtk(Kbs) | 
+       (
+         ( !Alice(Kas, id(Kas), id(Kbs)) ) 
+       | ( !Bob(Kbs, id(Kas), id(Kbs)) ) 
+       |   !Server(Kas, Kbs, id(Kas), id(Kbs))   
+       )
+   )
+)
+  
+
+lemma AUTO_typing[sources]:
+  all-traces
+  "
+    (All x m #i.
+      (IN_S_1( m, x ) @ #i) ==>
+      ((Ex #j. (!KU( x ) @ #j) & (#j < #i)) |
+       (Ex #j. (OUT_B_1( m ) @ #j) & (#j < #i)))) 
+      "
+      
+
+
+lemma executability:
+exists-trace
+"Ex A B kab na nb tb #i #j #k.
+    CommitB(B,A,<kab,na,nb>)@i 
+    & CommitA(A,B,<na,tb>)@j & #j<#i
+    & Server(A,B,<kab,na,nb>)@k & #k < #j
+    & not(Ex #r1. Compromise(A)@#r1) 
+    & not(Ex #r2. Compromise(B)@#r2)"
+
+
+
+
+// check the secrecy of the newly generated session key
+lemma secrecy:
+"All A B k #i. 
+  Secret(A,B,k)@i
+  ==> not (Ex #j. K(k)@j ) 
+    | (Ex #j. Compromise(B)@j)  
+    | (Ex #j. Compromise(A)@j)  "
+
+
+
+// check the authenticity of the transaction from B's point of view
+lemma noninjectiveagreement_B:
+"All A B t #i.
+    CommitB(B, A, t) @i
+    ==> ((Ex #j. RunningA(A,B,t) @j
+        & j < i)
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
+
+
+// check the authenticity of the transaction from A's point of view
+lemma noninjectiveagreement_A:
+"All A B t #i.
+    CommitA(A, B, t) @i
+    ==> ((Ex #j. RunningB(B,A,t) @j
+        & j < i)
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
+
+
+
+
+// check the authenticity and freshness of the transaction from B's point of view
+lemma injectiveagreement_B:
+"All A B t #i. CommitB(B,A,t) @i
+  ==> ((Ex #j. RunningA(A,B,t) @j
+      & j < i
+      & not (Ex A2 B2 #i2. CommitB(B2,A2,t) @i2
+              & not (#i2 = #i)))
+    | (Ex #r. Compromise(A)@r) 
+    | (Ex #r. Compromise(B)@r))"
+
+
+
+// check the authenticity and freshness of the transaction from A's point of view
+lemma injectiveagreement_A:
+"All A B t #i. CommitA(A,B,t)@i
+==> ((Ex #j. RunningB(B,A,t) @j
+    & j < i
+    & not (Ex A2 B2 #i2. CommitA(A2,B2,t) @i2
+                        & not (#i2 = #i)))
+  | (Ex #r. Compromise(A)@r) 
+  | (Ex #r. Compromise(B)@r))"
+      
+
+end

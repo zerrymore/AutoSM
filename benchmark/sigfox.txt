@@ -1,0 +1,24 @@
+/*
+ * Source: ACSAC 2017
+ * Title: Automated Analysis of Secure Internet of Things Protocols
+ * Link: https://dl.acm.org/doi/10.1145/3134600.3134624
+ * Authors:  Jun Young Kim,  Ralph Holz,  Wen Hu
+ * Note: The text is excerpted from Section 3.1, page 5 in the original paper.
+ *       The original description contains some explaination about the `fact` 
+ *       and MSRs in Tamarin, which are excluded here.
+ */
+
+Both the public keys of client and Server can be known by each. The secrect key is private, only known by himself.
+The SigFox server (A) pushes an asymmetric-encrypted notification (na) with its signature to devices (B).
+The server uses the public key of B (pkB) and generates a fresh data item na. It then encrypts the data and the server's public key 
+(pkA) using the the public key of client, pkB to generate the message aenc(<pkA, na>, pkB). 
+Then A signs the message using its own private key ltkA. A sends the message along with its signature (<mess, sig>) to the device B. 
+B receives the asymmetrically encrypted message with a signature, then perform signature 
+verification on received message.
+
+
+Public ID A uses the public key of B (pkB) and generates a fresh data item na. 
+It then encrypts the data and A's ID using the the public key of B (pkB) to generate the message 1 (aenc(<A, na>, pkB)). 
+A signs the message using its own private key ltkA.
+B receives the asymmetrically encrypted message with the signature.
+Then B performs signature verication asymmetric decryption using B's private key (ltkB).

@@ -1,0 +1,42 @@
+/* Source: GIAC paper
+ * Link: https://www.giac.org/paper/gcih/81/man-in-the-middle-attack-initiator-otway-rees-key-exchange-protocol/100561
+ * Title: Otway-Rees Key Exchange Protocol Specification 
+ * Note: We have rearranged the content order on page 6 of the original paper.
+ *       Specifically, we have moved Table 2, which illustrates the messages in each step,
+ *       to the description section.
+ */
+
+The Otway-Rees Protocol makes it possible to distribute a session key kab created 
+by the trusted server S to two principals A and B. This key will encrypt the information 
+transmitted between these two principals. Sharing this key and the cryptographic 
+algorithms creates a VPN-type communication tunnel between the two principals. 
+
+The message in the form {m}K symbolizes that message m has been encrypted 
+with K using a symmetrical cryptographic algorithm. 
+Before starting the protocol, each of the principals has certain initial knowledge. 
+Keys Kas and Kbs are permanent keys given to A and B respectively, as personal keys. 
+They must share these with the server to communicate with it. 
+With these permanent keys, the principals are able to obtain a session key from the server.
+
+The cryptography protocol may be described in more detailed fashion as follows: 
+
+1. A --> B: I, A, B, {Na, I, A, B}Kas
+A sends B the protocol session number, his identity, the identity of the principal with 
+whom he wishes to communicate, and a message encrypted with the key Kas. 
+
+2. B --> S: I, A, B, {Na, I, A, B}Kas, {Nb, I, A, B}Kbs 
+B receives A’s message and adds his own message encrypted with the key Kbs before 
+sending it to the trusted server S. 
+
+3. S --> A: I, {Na, kab}Kas, {Nb, kab}Kbs
+S receives the message and is able to retrieve the session number, the random number 
+from A, Na , using his shared key Kas, the random number from B, Nb with the other 
+shared key Kbs, and generates the session key kab. With this information, he is able to 
+generate message 3 and sends it to B. 
+
+4. B --> A: I, {Na , kab}Kas
+The principal in question receives message 3, removes the last encrypted part with his 
+shared key, decrypts this sub-message with his key Kbs, retrieves the session key kab, 
+and sends the remaining part of the message to A. In this way, A is also able to 
+retrieve the session key kab, based on the last part of message 4, by using his shared 
+key Kas, and the two principals are able to start communicating. 

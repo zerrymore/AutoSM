@@ -1,0 +1,126 @@
+theory Woo_Lam_P
+begin
+
+functions: id/1
+builtins: symmetric-encryption
+
+let A(Kas, idA, idB) =
+  in(Nb);
+  let message1 = senc(<'1', Nb>, Kas) in
+  event OUT_A_1( message1 );
+  event Running_A(idA, idB, <'A', 'B', Nb>);
+  event Secret(idA,idB, Kas);
+  out(message1)
+
+let B(Kbs, idA, idB) =
+  new Nb;
+  event Running_B(idA, idB, <'A', 'B', Nb>);
+  out(Nb);
+  in(cypher2);
+    // (4)  B -> S: {A,{Nb}Kas}Kbs
+  let message2 = senc(<'2', idA, cypher2>, Kbs) in
+  event OUT_B_2( message2 );
+  event Secret(idA,idB, Kbs);
+  out(message2);
+  in(cypher3);
+  let message3 = sdec(cypher3, Kbs) in 
+  let <'3', =Nb> = message3 in 
+  event Commit_B(idA, idB, <'A', 'B', Nb>);
+  0
+
+let S(Kas, Kbs, idA, idB) =
+  in(cypher4);
+  let message2 = sdec(cypher4, Kbs) in
+  let <'2', =idA, cypher5> = message2 in
+  let <'1', Nb> = sdec(cypher5, Kas) in
+  event IN_S_1(cypher5, Nb);
+  // (5)  S -> B: {Nb}Kbs
+  let message3 = senc(<'3',Nb>, Kbs) in
+  out(message3); 0
+
+
+let CompromiseLtk(s) =
+  event Reveal(id(s)); out(s)
+
+  
+// process:
+// !(   
+//   new Kas; out(id(Kas)); event HonestA(id(Kas));
+//   new Kbs; out(id(Kbs)); event HonestB(id(Kbs));
+//   (
+//     CompromiseLtk(Kas) | CompromiseLtk(Kbs) 
+//     ||
+//      (!A(Kas, id(Kas), id(Kbs)) 
+//      | !B(Kbs, id(Kas), id(Kbs)) 
+//      | !S(Kas, Kbs, id(Kas), id(Kbs)))
+//   )
+// )
+
+process:
+!(   
+  new Kas; out(id(Kas)); event HonestA(id(Kas));
+  !(
+		new Kbs; out(id(Kbs)); event HonestB(id(Kbs));
+		(
+    CompromiseLtk(Kas) | CompromiseLtk(Kbs) 
+    ||
+     (!A(Kas, id(Kas), id(Kbs)) 
+     | !B(Kbs, id(Kas), id(Kbs)) 
+     | !S(Kas, Kbs, id(Kas), id(Kbs)))
+  )
+	)
+)
+
+
+
+//// Lemmas ////
+lemma AUTO_typing [sources]:
+  all-traces
+  "(All x m #i.
+      (IN_S_1( m, x ) @ #i) ==>
+      ((Ex #j. (!KU( x ) @ #j) & (#j < #i))
+      | (Ex #j. (OUT_B_2( m ) @ #j) & (#j < #i)))) &
+   (All x m #i.
+      IN_S_1( m, x ) @ #i 
+      ==>((Ex #j. (!KU( x ) @ #j) & (#j < #i))
+      | (Ex #j. (OUT_A_1( m ) @ #j) & (#j < #i))))"
+
+
+lemma executability:
+    exists-trace
+    "Ex A B t #i #j #k.
+        Commit_B(A,B,t)@#i
+        & Running_A(A,B,t)@#j & #j<#i
+        & Running_B(A,B,t)@#k & #k<#j
+        & not(Ex #r1. Reveal(A)@#r1)
+        & not(Ex #r2. Reveal(B)@#r2)"
+
+
+// check the secrecy of a secret x protected by the long-term key of A and B
+lemma Secrecy:
+    "not(Ex A B m #i .
+        Secret(A, B, m)@ #i
+        & (Ex #r. K(m) @ #r)
+        & not(Ex #r. Reveal(B) @ #r)
+        & not(Ex #r. Reveal(A) @ #r))"
+
+// check the authenticity and freshness of the transaction from B's point of view
+lemma injectiveagreement_B:
+    "All A B t #i.
+      Commit_B(A,B,t) @i
+      ==> (Ex #j. Running_A(A,B,t) @j & j < i 
+          & not (Ex A2 B2 #i2. Commit_B(A2,B2,t) @i2 & not (#i2 = #i)))
+      | (Ex #r. Reveal(A)@r)
+      | (Ex #r. Reveal(B)@r)"
+
+
+// check the authenticity of the transaction from B's point of view
+lemma agreement_B:
+    "All A B t #i.
+      Commit_B(A,B,t) @i 
+      ==> (Ex #j. Running_A(A,B,t)@j & j < i)
+      | (Ex #r. Reveal(A)@r)
+      | (Ex #r. Reveal(B)@r)"
+
+
+end

@@ -1,0 +1,132 @@
+theory SSH_R
+
+begin
+
+builtins: dest-pairing, diffie-hellman, dest-symmetric-encryption, dest-signing
+
+functions: hash/1, kdfPtoS(bitstring):skey, kdfStoP(bitstring):skey
+
+
+restriction Equality:
+    "All #i t1 t2. Eq(t1, t2)@i ==> t1 = t2"
+
+
+restriction singlelongtermkeyperuser:
+    "All A #i #j. KeyGen(A) @ i & KeyGen(A) @ j ==> #i = #j"
+
+rule keyGen:
+    [ Fr(~k) ]
+    --[KeyGen($A)]->
+    [ !Ltk($A, ~k), !Pk($A, pk(~k)), Out(pk(~k))]
+
+
+rule InitP:
+    [ !Ltk($P, skP), Fr(~a) ]
+    --[]->
+    [ Out('g'^~a), State_P_1(~a, $P, skP) ]
+
+    
+rule P_SessionKeyCompute:
+    let 
+      gA = 'g'^a
+      pkP = pk(skP)
+      msg = <sig, pkS, B>
+      k = B^a
+      h = hash(<pkS, gA, B>)
+      kPS = kdfPtoS(<k,h>) 
+      kSP = kdfStoP(<k,h>)
+    in
+    [ State_P_1(a, P, skP), !Pk($S, pkS), In(msg) ]
+  --[ Eq(verify(sig,<'server_sign', h>, pkS), true)
+    , SessionKey(P, k)
+    , AcceptP(gA, B, pkS, pkP)
+    , KeyP(k) ]->
+    [ State_P_2(a, P, $S, skP, k, h, B)
+    , Out(senc(<'user_auth',pkP>, kPS)) ]
+
+
+rule P_auth:
+    let 
+      pkP = pk(skP)
+      gA = 'g'^a
+      kPS = kdfPtoS(<k,h>) 
+      kSP = kdfStoP(<k,h>)
+      userauth_answer = senc('userauth_pk_ok', kSP)
+      answer = senc(<'user_answer',h,sign(h, skP)>,kPS)
+    in 
+    [ State_P_2(a, P, S, skP, k, h, B)
+    , In(userauth_answer)
+    , !Pk(S, pkS)  ]
+  --[ AcceptP2(gA,B,pkS,pkP)]->
+    [ Out(answer)]
+
+
+rule S_SessionKey:
+    let 
+      pkS = pk(~skS) 
+      gB = 'g'^~b
+      h=hash(<pkS,gA,gB>)
+      k=gA^~b
+      sig=sign(<'server_sign', h>, ~skS)
+    in
+    [ In(gA)
+    , Fr(~b)
+    , !Ltk($S, ~skS)
+    , !Pk($P, pkP) ]
+  --[ AcceptS(gA, gB, pkS, pkP)
+    , SessionKey($S, k) ]->
+    [ State_S_1(~b, $S, $P, ~skS, k, h, gA), 
+    Out(<sig, pkS, gB>) ]
+                    
+
+rule S_UserAuth:
+    let 
+      kPS = kdfPtoS(<k,h>) 
+      kSP = kdfStoP(<k,h>)
+      userauth = senc(<'user_auth', pkP>, kPS)
+      resp = senc('userauth_pk_ok',kSP)
+    in
+    [ State_S_1(b, S, P, skS, k, h, gA)
+    , !Pk(P, pkP)
+    , In(userauth)  ]
+  -->
+    [ State_S_2(b, S, P, skS, k, h, gA)
+    , Out(resp) ]
+
+
+rule S_Answer:
+    let 
+      gB = 'g'^b
+      pkS = pk(skS)
+      kPS = kdfPtoS(<k,h>) 
+      kSP = kdfStoP(<k,h>)
+      signans = senc(<'user_answer', h, sig2>, kPS)
+    in
+    [ State_S_2(b, S, P, skS, k, h, gA), !Pk(P, pkP), In(signans)  ]
+  --[ AcceptS2(gA,gB,pkS,pkP), KeyS2(k),
+      Eq(verify(sig2,h,pkP), true) ]->
+    []
+
+
+
+lemma secretP[reuse]: //secrecy of the key
+  "(not (Ex k #i #j. (KeyP(k)@i & KU(k)@j)))"
+
+
+lemma injPS[reuse]: // if P accepts, some S also accepted in the first step (but no authentication of P at this stage)
+ "All a b skS skP #i. AcceptP(a,b,skS,skP)@i ==>
+    (Ex skP2 #j. #j<#i & AcceptS(a,b,skS,skP2)@j)"
+
+lemma injSP[reuse,use_induction]: // injectivity of final acceptance
+ "All a b skS skP #i. AcceptS2(a,b,skS,skP)@i ==>
+    (Ex #j. j<i & (AcceptP2(a,b,skS,skP)@j))
+"
+lemma secretS[reuse]: //secrecy of the key
+  "(not (Ex k #i #j. (KeyS2(k)@i & KU(k)@j)))"
+
+
+lemma executableS2: // sanity check
+exists-trace
+ "(Ex skS skP k h #i. AcceptS2(k,h,skS,skP)@i)"
+
+end

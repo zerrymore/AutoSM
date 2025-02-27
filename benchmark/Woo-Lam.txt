@@ -1,0 +1,26 @@
+/*
+ * Source: International Workshop on Security In Information Systems.
+ * Author: Siraj Shaikh and Vicky Bush
+ * Link: https://www.scitepress.org/PublishedPapers/2005/25570/25570.pdf
+ * Title: Analysing the Woo-Lam Protocol Using CSP and Rank Functions
+ */
+
+Woo and Lam introduce a protocol that provides one-way authentication of the 
+initiator of the protocol, A, to a responder, B. The protocol uses symmetric-key cryp
+tography and a trusted third-party server, with whom A and B share long-term sym
+metric keys. 
+
+(1)  A -> B: A
+(2)  B -> A: Nb
+(3)  A -> B: {Nb}Kas
+(4)  B -> S: {A,{Nb}Kas}Kbs
+(5)  S -> B: {Nb}Kbs
+
+The keys Kasand Kbsrepresent the long-term keys that A and B share with the trusted server S. 
+The protocol goal is to authenticate A to B by using a fresh and unpredictable nonce, Nb, produced by B. 
+A starts the protocol by sending it’s identity to B. B replies by sending a freshly 
+generated nonce Nb. A encrypts Nb with key Kas and sends it back to B. B concatenates 
+A’s reply with the identity of A, encrypts it with key Kbs and sends it to the server S.
+S sends out Nb back to B encrypted under KBS. B compares the nonce it receives from S 
+with the one it sent out to A. If they match, then B is guaranteed that the initiator of the 
+protocol is in fact the principal claimed in the first step of the protocol.  

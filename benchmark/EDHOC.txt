@@ -1,0 +1,455 @@
+/* Protocol: EDHOC
+ * Source: https://datatracker.ietf.org/doc/html/draft-ietf-lake-edhoc-02
+ * Title: Ephemeral Diffie-Hellman Over COSE (EDHOC)
+ * Authors: G. Selander, J. Mattsson, F. Palombini
+ * Note: This is not a good input for this protocol. It's not self-contained and complete enough to
+ *       to derivate the symbolic model given in EDHOC-P.spthy.
+ */
+
+4.  EDHOC Authenticated with Asymmetric Keys
+
+4.1.  Overview
+
+   This section specifies authentication method = 0, 1, 2, and 3, see
+   Section 8.2.  EDHOC supports authentication with signature or static
+   Diffie-Hellman keys in the form of raw public keys (RPK) and public
+   key certificates with the requirements that:
+
+   o  Only the Responder SHALL have access to the Responder's private
+      authentication key,
+
+   o  Only the Initiator SHALL have access to the Initiator's private
+      authentication key,
+
+   o  The Initiator is able to retrieve the Responder's public
+      authentication key using ID_CRED_R,
+
+   o  The Responder is able to retrieve the Initiator's public
+      authentication key using ID_CRED_I,
+
+   where ID_CRED_I and ID_CRED_R are the identifiers of the public
+   authentication keys.  Their encoding is specified in Section 4.2.
+
+   Initiator                                                   Responder
+   |               METHOD_CORR, SUITES_I, G_X, C_I, AD_1               |
+   +------------------------------------------------------------------>|
+   |                             message_1                             |
+   |                                                                   |
+   |   C_I, G_Y, C_R, Enc(K_2e; ID_CRED_R, Signature_or_MAC_2, AD_2)   |
+   |<------------------------------------------------------------------+
+   |                             message_2                             |
+   |                                                                   |
+   |       C_R, AEAD(K_3ae; ID_CRED_I, Signature_or_MAC_3, AD_3)       |
+   +------------------------------------------------------------------>|
+   |                             message_3                             |
+
+      Figure 4: Overview of EDHOC with asymmetric key authentication.
+
+4.2.  Encoding of Public Authentication Key Identifiers
+
+   The identifiers ID_CRED_I and ID_CRED_R are COSE header_maps, i.e.
+   CBOR maps containing COSE Common Header Parameters, see Section 3.1
+   of [RFC8152].  ID_CRED_I and ID_CRED_R need to contain parameters
+   that can identify a public authentication key.  In the following
+   paragraph we give some examples of possible COSE header parameters
+   used.
+
+4.4.  EDHOC Message 1
+
+4.4.1.  Formatting of Message 1
+
+   message_1 SHALL be a CBOR Sequence (see Appendix A.1) as defined
+   below
+message_1 = (
+     METHOD_CORR : int,
+     SUITES_I : [ selected : suite, supported : 2* suite ] / suite,
+     G_X : bstr,
+     C_I : bstr_identifier,
+     ? AD_1 : bstr,
+   )
+
+   suite = int
+
+   where:
+
+   o  METHOD_CORR = 4 * method + corr, where method = 0, 1, 2, or 3 (see
+      Section 8.2) and the correlation parameter corr is chosen based on
+      the transport and determines which connection identifiers that are
+      omitted (see Section 3.1).
+
+   o  SUITES_I - cipher suites which the Initiator supports in order of
+      (decreasing) preference.  The list of supported cipher suites can
+      be truncated at the end, as is detailed in the processing steps
+      below.  One of the supported cipher suites is selected.  If a
+      single supported cipher suite is conveyed then that cipher suite
+      is selected and the selected cipher suite is encoded as an int
+      instead of an array.
+
+   o  G_X - the ephemeral public key of the Initiator
+
+   o  C_I - variable length connection identifier, encoded as a
+      bstr_identifier (see Section 4.3).
+
+   o  AD_1 - bstr containing unprotected opaque auxiliary data
+
+4.4.2.  Initiator Processing of Message 1
+
+   The Initiator SHALL compose message_1 as follows:
+
+   o  The supported cipher suites and the order of preference MUST NOT
+      be changed based on previous error messages.  However, the list
+      SUITES_I sent to the Responder MAY be truncated such that cipher
+      suites which are the least preferred are omitted.  The amount of
+      truncation MAY be changed between sessions, e.g. based on previous
+      error messages (see next bullet), but all cipher suites which are
+      more preferred than the least preferred cipher suite in the list
+      MUST be included in the list.
+
+   o  Determine the cipher suite to use with the Responder in message_1.
+      If the Initiator previously received from the Responder an error
+      message to a message_1 with diagnostic payload identifying a
+      cipher suite that the Initiator supports, then the Initiator SHALL
+      use that cipher suite.  Otherwise the first supported (i.e. the
+      most preferred) cipher suite in SUITES_I MUST be used.
+
+   o  Generate an ephemeral ECDH key pair as specified in Section 5 of
+      [SP-800-56A] using the curve in the selected cipher suite and
+      format it as a COSE_Key.  Let G_X be the 'x' parameter of the
+      COSE_Key.
+
+   o  Choose a connection identifier C_I and store it for the length of
+      the protocol.
+
+   o  Encode message_1 as a sequence of CBOR encoded data items as
+      specified in Section 4.4.1
+
+4.4.3.  Responder Processing of Message 1
+
+   The Responder SHALL process message_1 as follows:
+
+   o  Decode message_1 (see Appendix A.1).
+
+   o  Verify that the selected cipher suite is supported and that no
+      prior cipher suites in SUITES_I are supported.
+
+   o  Pass AD_1 to the security application.
+
+   If any verification step fails, the Initiator MUST send an EDHOC
+   error message back, formatted as defined in Section 5, and the
+   protocol MUST be discontinued.  If the Responder does not support the
+   selected cipher suite, then SUITES_R MUST include one or more
+   supported cipher suites.  If the Responder does not support the
+   selected cipher suite, but supports another cipher suite in SUITES_I,
+   then SUITES_R MUST include the first supported cipher suite in
+   SUITES_I.
+
+4.5.  EDHOC Message 2
+
+4.5.1.  Formatting of Message 2
+
+   message_2 and data_2 SHALL be CBOR Sequences (see Appendix A.1) as
+   defined below
+
+   message_2 = (
+     data_2,
+     CIPHERTEXT_2 : bstr,
+   )
+   data_2 = (
+     ? C_I : bstr_identifier,
+     G_Y : bstr,
+     C_R : bstr_identifier,
+   )
+
+   where:
+
+   o  G_Y - the ephemeral public key of the Responder
+
+   o  C_R - variable length connection identifier, encoded as a
+      bstr_identifier (see Section 4.3).
+
+4.5.2.  Responder Processing of Message 2
+
+   The Responder SHALL compose message_2 as follows:
+
+   o  If corr (METHOD_CORR mod 4) equals 1 or 3, C_I is omitted,
+      otherwise C_I is not omitted.
+
+   o  Generate an ephemeral ECDH key pair as specified in Section 5 of
+      [SP-800-56A] using the curve in the selected cipher suite and
+      format it as a COSE_Key.  Let G_Y be the 'x' parameter of the
+      COSE_Key.
+
+   o  Choose a connection identifier C_R and store it for the length of
+      the protocol.
+
+   o  Compute the transcript hash TH_2 = H(message_1, data_2) where H()
+      is the hash function in the selected cipher suite.  The transcript
+      hash TH_2 is a CBOR encoded bstr and the input to the hash
+      function is a CBOR Sequence.
+
+   o  Compute an inner COSE_Encrypt0 as defined in Section 5.3 of
+      [RFC8152], with the EDHOC AEAD algorithm in the selected cipher
+      suite, K_2m, IV_2m, and the following parameters:
+
+      *  protected = << ID_CRED_R >>
+
+         +  ID_CRED_R - identifier to facilitate retrieval of CRED_R,
+            see Section 4.2
+
+      *  external_aad = << TH_2, CRED_R, ? AD_2 >>
+
+         +  CRED_R - bstr containing the credential of the Responder,
+            see Section 4.2.
+
+         +  AD_2 = bstr containing opaque unprotected auxiliary data
+   
+      *  plaintext = h''
+
+      COSE constructs the input to the AEAD [RFC5116] as follows:
+
+      *  Key K = EDHOC-KDF( PRK_3e2m, TH_2, "K_2m", length )
+
+      *  Nonce N = EDHOC-KDF( PRK_3e2m, TH_2, "IV_2m", length )
+
+      *  Plaintext P = 0x (the empty string)
+
+      *  Associated data A =
+
+         [ "Encrypt0", << ID_CRED_R >>, << TH_2, CRED_R, ? AD_2 >> ]
+
+      MAC_2 is the 'ciphertext' of the inner COSE_Encrypt0.
+
+   o  If the Reponder authenticates with a static Diffie-Hellman key
+      (method equals 1 or 3), then Signature_or_MAC_2 is MAC_2.  If the
+      Reponder authenticates with a signature key (method equals 0 or
+      2), then Signature_or_MAC_2 is the 'signature' of a COSE_Sign1
+      object as defined in Section 4.4 of [RFC8152] using the signature
+      algorithm in the selected cipher suite, the private authentication
+      key of the Responder, and the following parameters:
+
+      *  protected = << ID_CRED_R >>
+
+      *  external_aad = << TH_2, CRED_R, ? AD_2 >>
+
+      *  payload = MAC_2
+
+      COSE constructs the input to the Signature Algorithm as:
+
+      *  The key is the private authentication key of the Responder.
+
+      *  The message M to be signed =
+
+         [ "Signature1", << ID_CRED_R >>, << TH_2, CRED_R, ? AD_2 >>,
+         MAC_2 ]
+
+   o  CIPHERTEXT_2 is the ciphertext resulting from XOR encrypting a
+      plaintext with the following common parameters:
+
+      *  plaintext = ( ID_CRED_R / bstr_identifier, Signature_or_MAC_2,
+         ? AD_2 )
+
+         +  Note that if ID_CRED_R contains a single 'kid' parameter,
+            i.e., ID_CRED_R = { 4 : kid_R }, only the byte string kid_R
+
+            is conveyed in the plaintext encoded as a bstr_identifier,
+            see Section 4.2 and Section 4.3.
+
+      *  CIPHERTEXT_2 = plaintext XOR K_2e
+
+      *  K_2e = EDHOC-KDF( PRK_2e, TH_2, "K_2e", length ), where length
+         is the length of the plaintext.
+
+   o  Encode message_2 as a sequence of CBOR encoded data items as
+      specified in Section 4.5.1.
+
+4.5.3.  Initiator Processing of Message 2
+
+   The Initiator SHALL process message_2 as follows:
+
+   o  Decode message_2 (see Appendix A.1).
+
+   o  Retrieve the protocol state using the connection identifier C_I
+      and/or other external information such as the CoAP Token and the
+      5-tuple.
+
+   o  Decrypt CIPHERTEXT_2.  The decryption process depends on the
+      method, see Section 4.5.2.
+
+   o  Verify that the identity of the Responder is an allowed identity
+      for this connection, see Section 3.2.
+
+   o  Verify Signature_or_MAC_2 using the algorithm in the selected
+      cipher suite.  The verification process depends on the method, see
+      Section 4.5.2.
+
+   o  Pass AD_2 to the security application.
+
+   If any verification step fails, the Responder MUST send an EDHOC
+   error message back, formatted as defined in Section 5, and the
+   protocol MUST be discontinued.
+
+4.6.  EDHOC Message 3
+
+4.6.1.  Formatting of Message 3
+
+   message_3 and data_3 SHALL be CBOR Sequences (see Appendix A.1) as
+   defined below
+
+   message_3 = (
+     data_3,
+     CIPHERTEXT_3 : bstr,
+   )
+
+   data_3 = (
+     ? C_R : bstr_identifier,
+   )
+
+4.6.2.  Initiator Processing of Message 3
+
+   The Initiator SHALL compose message_3 as follows:
+
+   o  If corr (METHOD_CORR mod 4) equals 2 or 3, C_R is omitted,
+      otherwise C_R is not omitted.
+
+   o  Compute the transcript hash TH_3 = H(TH_2 , CIPHERTEXT_2, data_3)
+      where H() is the hash function in the the selected cipher suite.
+      The transcript hash TH_3 is a CBOR encoded bstr and the input to
+      the hash function is a CBOR Sequence.
+
+   o  Compute an inner COSE_Encrypt0 as defined in Section 5.3 of
+      [RFC8152], with the EDHOC AEAD algorithm in the selected cipher
+      suite, K_3m, IV_3m, and the following parameters:
+
+      *  protected = << ID_CRED_I >>
+
+         +  ID_CRED_I - identifier to facilitate retrieval of CRED_I,
+            see Section 4.2
+
+      *  external_aad = << TH_3, CRED_I, ? AD_3 >>
+
+         +  CRED_I - bstr containing the credential of the Initiator,
+            see Section 4.2.
+
+         +  AD_3 = bstr containing opaque protected auxiliary data
+
+      *  plaintext = h''
+
+      COSE constructs the input to the AEAD [RFC5116] as follows:
+
+      *  Key K = EDHOC-KDF( PRK_4x3m, TH_3, "K_3m", length )
+
+      *  Nonce N = EDHOC-KDF( PRK_4x3m, TH_3, "IV_3m", length )
+
+      *  Plaintext P = 0x (the empty string)
+
+      *  Associated data A =
+
+         [ "Encrypt0", << ID_CRED_I >>, << TH_3, CRED_I, ? AD_3 >> ]
+
+      MAC_3 is the 'ciphertext' of the inner COSE_Encrypt0.
+
+
+   o  If the Initiator authenticates with a static Diffie-Hellman key
+      (method equals 2 or 3), then Signature_or_MAC_3 is MAC_3.  If the
+      Initiator authenticates with a signature key (method equals 0 or
+      1), then Signature_or_MAC_3 is the 'signature' of a COSE_Sign1
+      object as defined in Section 4.4 of [RFC8152] using the signature
+      algorithm in the selected cipher suite, the private authentication
+      key of the Initiator, and the following parameters:
+
+      *  protected = << ID_CRED_I >>
+
+      *  external_aad = << TH_3, CRED_I, ? AD_3 >>
+
+      *  payload = MAC_3
+
+      COSE constructs the input to the Signature Algorithm as:
+
+      *  The key is the private authentication key of the Initiator.
+
+      *  The message M to be signed =
+
+         [ "Signature1", << ID_CRED_I >>, << TH_3, CRED_I, ? AD_3 >>,
+         MAC_3 ]
+
+   o  Compute an outer COSE_Encrypt0 as defined in Section 5.3 of
+      [RFC8152], with the EDHOC AEAD algorithm in the selected cipher
+      suite, K_3ae, IV_3ae, and the following parameters.  The protected
+      header SHALL be empty.
+
+      *  external_aad = TH_3
+
+      *  plaintext = ( ID_CRED_I / bstr_identifier, Signature_or_MAC_3,
+         ? AD_3 )
+
+         +  Note that if ID_CRED_I contains a single 'kid' parameter,
+            i.e., ID_CRED_I = { 4 : kid_I }, only the byte string kid_I
+            is conveyed in the plaintext encoded as a bstr_identifier,
+            see Section 4.2 and Section 4.3.
+
+      COSE constructs the input to the AEAD [RFC5116] as follows:
+
+      *  Key K = EDHOC-KDF( PRK_3e2m, TH_3, "K_3ae", length )
+
+      *  Nonce N = EDHOC-KDF( PRK_3e2m, TH_3, "IV_3ae", length )
+
+      *  Plaintext P = ( ID_CRED_I / bstr_identifier,
+         Signature_or_MAC_3, ? AD_3 )
+
+      *  Associated data A = [ "Encrypt0", h'', TH_3 ]
+      CIPHERTEXT_3 is the 'ciphertext' of the outer COSE_Encrypt0.
+
+   o  Encode message_3 as a sequence of CBOR encoded data items as
+      specified in Section 4.6.1.
+
+   Pass the connection identifiers (C_I, C_R) and the application
+   algorithms in the selected cipher suite to the application.  The
+   application can now derive application keys using the EDHOC-Exporter
+   interface.
+
+   After sending message_3, the Initiator is assured that no other party
+   than the Responder can compute the key PRK_4x3m (implicit key
+   authentication).  The Initiator does however not know that the
+   Responder has actually computed the key PRK_4x3m.  While the
+   Initiator can securely send protected application data, the Initiator
+   SHOULD NOT store the keying material PRK_4x3m and TH_4 until the
+   Initiator is assured that the Responder has actually computed the key
+   PRK_4x3m (explicit key confirmation).  Explicit key confirmation is
+   e.g. assured when the Initiator has verified an OSCORE message from
+   the Responder.
+
+4.6.3.  Responder Processing of Message 3
+
+   The Responder SHALL process message_3 as follows:
+
+   o  Decode message_3 (see Appendix A.1).
+
+   o  Retrieve the protocol state using the connection identifier C_R
+      and/or other external information such as the CoAP Token and the
+      5-tuple.
+
+   o  Decrypt and verify the outer COSE_Encrypt0 as defined in
+      Section 5.3 of [RFC8152], with the EDHOC AEAD algorithm in the
+      selected cipher suite, K_3ae, and IV_3ae.
+
+   o  Verify that the identity of the Initiator is an allowed identity
+      for this connection, see Section 3.2.
+
+   o  Verify Signature_or_MAC_3 using the algorithm in the selected
+      cipher suite.  The verification process depends on the method, see
+      Section 4.6.2.
+
+   o  Pass AD_3, the connection identifiers (C_I, C_R), and the
+      application algorithms in the selected cipher suite to the
+      security application.  The application can now derive application
+      keys using the EDHOC-Exporter interface.
+
+   If any verification step fails, the Responder MUST send an EDHOC
+   error message back, formatted as defined in Section 5, and the
+   protocol MUST be discontinued.
+
+   After verifying message_3, the Responder is assured that the
+   Initiator has calculated the key PRK_4x3m (explicit key confirmation)
+   and that no other party than the Responder can compute the key.  The
+   Responder can securely send protected application data and store the
+   keying material PRK_4x3m and TH_4.

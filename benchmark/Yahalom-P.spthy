@@ -1,0 +1,161 @@
+theory Yahalom_P
+begin
+
+functions: id/1
+functions: senc/2, sdec/2[destructor]
+equations: sdec(senc(m,k),k)=m
+let Alice(Kas, idA, idB) =
+  new Na;
+  out(<idA,Na>);
+  in(<cypher1, cypher2>);
+  let mess1 = sdec(cypher1, Kas) in
+  let <'2', =idB, Kab, =Na, Nb> = mess1 in
+  event IN_A_2( cypher1, Nb);
+  event CommitA(idA,idB,<Na,Nb>);
+  event RunningA(idA,idB,<Kab,Na,Nb>);
+  event Secret(idA,idB, Kab);
+  event OUT_A(senc(<'4', Nb>, Kab));
+  out(<cypher2, senc(<'4', Nb>, Kab)>); 0
+
+let Bob(Kbs, idA, idB) =
+  in(<=idA,Na>);
+  new Nb;
+  event RunningB(idB, idA, <Na,Nb>);
+  event OUT_B_1( senc(<'1', idA,Na,Nb>, Kbs) );
+  out(senc(<'1', idA,Na,Nb>, Kbs));
+  in(<cypher3, cypher4>);
+  let mess2 = sdec(cypher3, Kbs) in
+  let <'3', =idA, Kab> = mess2 in
+  let <'4',=Nb> = sdec(cypher4, Kab) in 
+  event IN_B(cypher4, Nb);
+  event CommitB(idB,idA,<Kab,Na,Nb>);
+  event Secret(idB,idA,Kab)
+
+let Server(Kas, Kbs, idA, idB) =
+  in(cypher5);
+  let mess3 = sdec(cypher5, Kbs) in
+  let <'1', =idA, Na, Nb> = mess3 in
+  event IN_S_1( cypher5, <Na, Nb>);
+  new Kab;
+  event Server(idA,idB,<Kab,Na,Nb>);
+  let subpart1 = senc(<'2', idB,Kab,Na,Nb>, Kas) in 
+  event OUT_S_2(subpart1);
+  let subpart2 = senc(<'3', idA,Kab>, Kbs) in
+  out(<subpart1, subpart2>)
+
+
+
+let CompromiseLtk(s) =
+  event Compromise(id(s)); out(s)
+
+process:
+!( 
+    new Kas; new Kbs;
+    out(id(Kas)); out(id(Kbs));
+    (
+       CompromiseLtk(Kas) | CompromiseLtk(Kbs) | 
+       (
+         ( !Alice(Kas, id(Kas), id(Kbs)) ) 
+       | ( !Bob(Kbs, id(Kas), id(Kbs)) ) 
+       |   !Server(Kas, Kbs, id(Kas), id(Kbs))   
+       )
+   )
+)
+  
+
+lemma AUTO_typing[sources]:
+  all-traces
+  "
+    (All x m #i.
+      (IN_S_1( m, x ) @ #i) ==>
+      ((Ex #j. (!KU( x ) @ #j) & (#j < #i)) |
+       (Ex #j. (OUT_B_1( m ) @ #j) & (#j < #i)))) &
+   (All x m #i.
+     (IN_A_2( m, x ) @ #i) ==>
+     ((Ex #j. (!KU( x ) @ #j) & (#j < #i)) |
+      (Ex #j. (OUT_S_2( m ) @ #j) & (#j < #i))))"
+      
+
+lemma executability:
+exists-trace
+"Ex A B kab na nb #i #j #k.
+    CommitB(B,A,<kab,na,nb>)@i 
+    & CommitA(A,B,<na,nb>)@j & #j<#i
+    & Server(A,B,<kab,na,nb>)@k & #k < #j
+    & not(Ex #r1. Compromise(A)@#r1) 
+    & not(Ex #r2. Compromise(B)@#r2)"
+
+
+
+
+// check the secrecy of the newly generated session key
+lemma secrecy:
+    "All A B k #i. 
+        Secret(A,B,k)@i 
+        ==> not (Ex #j. K(k)@j ) 
+        |  (Ex #j. Compromise(B)@j)  
+        |  (Ex #j. Compromise(A)@j)"
+
+
+
+
+// check the authenticity of the transaction from B's point of view
+lemma noninjectiveagreement_B:
+    "All A B t #i.
+        CommitB(B, A, t) @i
+        ==> ((Ex #j. RunningA(A,B, t) @j & j < i)
+        | (Ex #r. Compromise(A)@r) 
+        | (Ex #r. Compromise(B)@r))"
+
+
+// check the authenticity of the transaction from A's point of view
+lemma noninjectiveagreement_A:
+    "All A B t #i.
+        CommitA(A, B, t) @i
+        ==> ((Ex #j. RunningB(B,A,t) @j & j < i)
+        | (Ex #r. Compromise(A)@r) 
+        | (Ex #r. Compromise(B)@r))"
+
+
+// check the authenticity and freshness of the transaction from B's point of view
+lemma injectiveagreement_B:
+    "All A B t #i. CommitB(B,A,t) @i
+        ==> ((Ex #j. RunningA(A,B,t) @j & j < i
+          & not (Ex A2 B2 #i2. CommitB(B2,A2,t) @i2
+                            & not (#i2 = #i)))
+        | (Ex #r. Compromise(A)@r) 
+        | (Ex #r. Compromise(B)@r))"
+
+
+
+// check the authenticity and freshness of the transaction from A's point of view
+lemma injectiveagreement_A:
+    "All A B t #i. CommitA(A,B,t)@i
+      ==> ((Ex #j. RunningB(B,A,t) @j & j < i
+        & not (Ex A2 B2 #i2. CommitA(A2,B2,t) @i2
+                            & not (#i2 = #i)))
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
+      
+
+end
+
+
+
+
+// ==============================================================================
+// summary of summaries:
+
+// analyzed: o.spthy
+
+//   processing time: 2143.80s
+  
+//   AUTO_typing (all-traces): verified (124 steps)
+//   executability (exists-trace): verified (23 steps)
+//   secrecy (all-traces): verified (7685 steps)
+//   noninjectiveagreement_B (all-traces): verified (2605 steps)
+//   noninjectiveagreement_A (all-traces): verified (18 steps)
+//   injectiveagreement_B (all-traces): verified (2877 steps)
+//   injectiveagreement_A (all-traces): verified (34 steps)
+
+// ==============================================================================

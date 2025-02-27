@@ -1,0 +1,12 @@
+The CCITT X.509 version 1 protocol is a security mechanism designed to ensure secure 
+communication between two principals, often referred to as Alice (A) and Bob (B), within a network. 
+Both Ta, Na, Xa and Ya are fresh nonce. Tha public key of both roles are known publicly.
+
+Alice initiates communication by sending a message to Bob that includes her identity (A), 
+a timestamp (Ta) to mark the message's time, a nonce (Na) for ensuring the message's freshness, 
+Bob's identity (B), some data (Xa), and user-specific data (Ya) encrypted with Bob's public key (PK(B)) for confidentiality. 
+
+This entire package, except the encrypted part {Ya}PK(B), is then signed with Alice's private key (SK(A)) to ensure authenticity.
+The signed part includes a hash of the entire message (including {Ya}PK(B)) to verify the integrity and origin of the message.
+For simplification, the message which is sent from A to B is  `<A, Ta, Na, B, Xa, {Ya}PK(B), hash_part, {hash_part}SK(A)>`
+where `<...>` operator denotes concatation of string, {}PK denotes asymmetric.

@@ -1,0 +1,32 @@
+/* Protocol: Denning-Sacco
+ * Source: International Conference on Rewriting Techniques and Applications (RTA'11)
+ * Title: FAST: An E cient Decision Procedure for Deduction and Static Equivalence
+ * Authors: Bruno Conchinha,David Basin, Carlos Caleiro
+ * Note: This protocol originates from [2]. But the protocol description is excerpted from [3], Section 4.3.
+ *       Besides we find an error in the alice and Bob notation in [2], that has been corrected here.
+ */
+
+
+The Denning-Sacco symmetric key protocol is used to establish session keys in a network
+with a single server and multiple agents. 
+Each agent shares a (secret) symmetric key withthe server, 
+but there are no shared keys between agents. 
+In Alice&Bob notation, the protocolis as follows.
+
+1. A --> S: A,B
+2. S --> A: {B,Kab,T,{Kab,A,T}Ksb}Ksa
+3. A --> B: {Kab,A,T}Ksb
+
+Here, A and B are two participants, and S is the server. 
+A requests from the server a session key to communicate with B. 
+The server generates a new session key, Kab, and sends it to A, 
+encrypted with the (symmetric) key shared between A and S. 
+This message also contains a timestamp T, 
+used to determine the validity of the new session key, 
+and the ticket {Kab,A,T}Ksb.
+
+A then forwards this ticket to B, 
+who can decrypt it using the key Ksb shared between B and S, 
+to obtain the new session key Kab, 
+the name A of the intended communication partner, 
+and the time T of the request.

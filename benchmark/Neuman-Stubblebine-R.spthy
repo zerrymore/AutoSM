@@ -1,0 +1,254 @@
+theory Neuman_Stubblebine_R
+begin
+
+
+
+// 1.  	A	->	B	:  	A, Na
+// 2.  	B	->	S	:  	B, {A, Na, Tb}Kbs, Nb
+// 3.  	S	->	A	:  	{B, Na, Kab, Tb}Kas, {A, Kab, Tb}Kbs, Nb
+// 4.  	A	->	B	:  	{A, Kab, Tb}Kbs, {Nb}Kab
+// 5.  	A	->	B	:  	Ma, {A, Kab, Tb}Kbs
+// 6.  	B	->	A	:  	Mb, {Ma}Kab
+// 7.  	A	->	B	:  	{Mb}Kab
+
+builtins: symmetric-encryption
+
+
+//// General rules ////
+
+// A and B already share a long-term symmetric key with S
+rule Init:
+    [ Fr(~kxs)]
+  --[ KeyGen($X)]->
+    [ !LongtermKey(~kxs,$X) ]
+
+
+restriction singleLTK:
+    "All A #i #j. KeyGen(A) @ i & KeyGen(A) @ j ==> #i = #j"
+
+
+rule Reveal_Longterm_Key[color=#FF033E]:
+    [ !LongtermKey(~sk,$A)]
+  --[ Compromise($A)]->
+    [ Out(~sk) ]
+
+
+
+//// Protocol rules ////
+//  1.    A  ->  B  :    A, Na
+rule A_1[color=#b5f5f7]:
+    [ Fr(~na)
+    , !LongtermKey(kas, $A)]
+  -->
+    [ Out(<$A, ~na>)
+    , StateA1($A, $B, ~na)]
+
+
+// 2.  	B	->	S	:  	B, {A, Na, Tb}Kbs, Nb
+rule B_1[color=#ffdea6]:
+    let 
+      msg = senc{'1', A, na, ~tb}kbs 
+    in
+    [ In(<A, na>)
+    , !LongtermKey(kbs,B)
+    , Fr(~nb)
+		, Fr(~tb) ]
+  --[ RunningB(B, A, <na, ~nb, ~tb>) ]->
+    [ Out(<B, msg, ~nb>)
+    , StateB1(B, A, na, ~nb, ~tb) ]
+
+
+// 3.  	S	->	A	:  	{B, Na, Kab, Tb}Kas, {A, Kab, Tb}Kbs, Nb
+rule S_1[color=#FF7E00]:
+		let cA = senc{'2', B, na, ~kab,tb}kas
+				cB = senc{'3',A, ~kab,tb}kbs
+		in
+    [ Fr(~kab)
+    , In(<B, senc{'1', A, na, tb}kbs, nb>)
+    , !LongtermKey(kbs, B)
+    , !LongtermKey(kas, A) ]
+  --[ Server(A, B,<~kab,na,nb>)
+	  , Secret(A, B, ~kab) ]->
+    [ Out(<cA, cB, nb>) ]
+
+
+// 4.  	A	->	B	:  	{A, Kab, Tb}Kbs, {Nb}Kab
+rule A_2[color=#b5f5f7]:
+		let 
+			cA = senc{'2', B, na, kab, tb}kas 
+			cypher = <cA, cB, nb>
+			msg1 = <cB, senc{'4', nb}kab>
+			// msg2 = <~ma, cB>
+		in
+    [ StateA1(A, B, na)
+    , !LongtermKey(kas, A)
+    , In(cypher)
+		, Fr(~ma) ]
+  --[ CommitA(A, B,<na, nb, tb>)
+    , RunningA(A, B,<kab, na, nb>)
+    , Running(A, B, <kab, na, nb>)
+    , Secret(A, B, kab) ]->
+    [ !StateAMutual(A, B, kab, na, nb, tb, cB)
+		, Out(msg1)]
+
+
+rule B_2[color=#ffdea6]:
+		let
+			cB = senc{'3',A, kab, tb}kbs
+			cypher = <cB, senc{'4', nb}kab>
+		in
+    [ StateB1(B, A, na, nb, tb)
+    , !LongtermKey(kbs, B)
+    , In(cypher) ]
+  --[ Secret(A, B, kab)
+    , CommitB(B, A, <kab, na, nb>)
+    , Commit(A, B, <kab, na, nb>) ]->
+    [ !StateBMutual(B, A, kab, na, nb, tb, cB) ]
+
+#ifdef mutual
+
+// 5.  	A	->	B	:  	Ma, {A, Kab, Tb}Kbs
+rule A_3[color=#b5f5f7]:
+		let msg2 = <~ma, cB> in
+		[ Fr(~ma)
+		, !StateAMutual(A, B, kab, na, nb, tb, cB) ]
+	--[]->
+		[ StateA_M1(~ma, A, B, kab, na, nb, tb)
+		, Out(msg2) ]
+
+
+// 6.  	B	->	A	:  	Mb, {Ma}Kab
+rule B_3[color=#ffdea6]:
+		let msg3 = <~mb, cA> in
+		[ In(<ma, cB>)
+		, Fr(~mb)
+		, !StateBMutual(B, A, kab, na, nb, tb, cB) ]
+	--[ 
+      Running(A, B, <kab, na, nb>)
+    ]->
+		[ StateB_M1(~mb, B, ma, A, kab, na, nb, tb)
+		, Out(<~mb, senc{'56', ma}kab>) ]
+
+
+// 7.  	A	->	B	:  	{Mb}Kab
+rule A_4[color=#b5f5f7]:
+		let cypher = senc{'56', mb}kab in
+		[ In(<mb, senc{'56', ma}kab>)
+		, StateA_M1(ma, A, B, kab, na, nb, tb) ]
+	--[ 
+      Commit(A, B, <kab, na, nb>)
+    // , Running(A, B, <kab, ma, mb>) 
+    , Encode(A, B, <na, nb, cypher>) 
+    , Running(A, B, <kab, na, nb>) 
+    ]->
+		[ Out(cypher) ]
+
+rule B_5[color=#ffdea6]:
+		[ In(senc{'56', mb}kab)
+		, StateB_M1(mb, B, ma, A, kab, na, nb, tb) ]
+	--[ 
+      // Commit(A, B, <kab, ma, mb>) 
+      Commit(A, B, <kab, na, nb>)
+    , GetReceipt(B, A, <na, nb, senc{'56', mb}kab>)
+    ]->
+		[ ]
+
+
+lemma mutualAuthentication:
+    "All A B t #i.
+      Commit(A, B, t) @i
+      ==> ((Ex #j. Running(A,B,t) @j
+          & j < i)
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
+
+
+// From [HLL+95]. This attack concerns the repeated authentication part, assuming Kab has been recorded in a previous legitimate run of the protocol.
+// i.5.  	I(A)	->	B	:  	Ma, { A, Kab, Tb }Kbs
+// i.6.  	B	->	I(A)	:  	Mb, {Ma}Kab
+// ii.5.  	I(A)	->	B	:  	Mb, {A, Kab, Tb}Kbs
+// ii.6.  	B	->	I(A)	:  	Mb', {Mb}Kab
+// i.7.  	I(A)	->	B	:  	{Mb}Kab
+lemma HLLAttack:
+    "All A B t #i.
+      GetReceipt(B, A, t) @i
+      ==> ((Ex #j. Encode(A,B,t) @j
+          & j < i)
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
+#endif
+
+// ====================
+// ====== Lemmas ======
+// ====================
+
+lemma executability:
+    exists-trace
+    "Ex A B kab na nb tb#i #j #k.
+      CommitB(B,A,<kab,na,nb>)@i 
+      & CommitA(A,B,<na,nb,tb>)@j & #j<#i
+      & Server(A,B,<kab,na,nb>)@k & #k < #j
+      & not(Ex #r1. Compromise(A)@#r1) 
+      & not(Ex #r2. Compromise(B)@#r2)
+      & (All A B t1 t2 #i #j. RunningB(A, B, t1)@i & RunningB(A, B, t2)@j ==> t1 = t2)
+      & (All A B t1 t2 #i #j. Server(A, B, t1)@i & Server(A, B, t2)@j ==> t1 = t2)"
+
+
+
+
+// check the secrecy of the newly generated session key
+lemma secrecy:
+    "All A B k #i. 
+      Secret(A,B,k)@i 
+      ==> not (Ex #j. K(k)@j ) 
+      |  (Ex #j. Compromise(B)@j)  
+      |  (Ex #j. Compromise(A)@j)  "
+
+
+
+
+// check the authenticity of the transaction from B's point of view
+lemma noninjectiveagreement_B:
+    "All A B t #i.
+      CommitB(B, A, t) @i
+      ==> ((Ex #j. RunningA(A,B, t) @j
+          & j < i)
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
+
+
+// check the authenticity of the transaction from A's point of view
+lemma noninjectiveagreement_A:
+    "All A B t #i.
+      CommitA(A, B, t) @i
+      ==> ((Ex #j. RunningB(B,A,t) @j
+          & j < i)
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
+
+
+
+
+// check the authenticity and freshness of the transaction from B's point of view
+lemma injectiveagreement_B:
+    "All A B t #i. CommitB(B,A,t) @i
+      ==> ((Ex #j. RunningA(A,B,t) @j & j < i
+          & not (Ex A2 B2 #i2. CommitB(B2,A2,t) @i2
+                            & not (#i2 = #i)))
+			| (Ex #r. Compromise(A)@r) 
+			| (Ex #r. Compromise(B)@r))"
+
+
+
+// check the authenticity and freshness of the transaction from A's point of view
+lemma injectiveagreement_A:
+    "All A B t #i. CommitA(A,B,t)@i
+      ==> ((Ex #j. RunningB(B,A,t) @j & j < i
+          & not (Ex A2 B2 #i2. CommitA(A2,B2,t) @i2
+                            & not (#i2 = #i)))
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
+
+
+end
+

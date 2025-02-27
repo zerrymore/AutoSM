@@ -1,0 +1,58 @@
+/*
+ * Source: THE DIRECTORY – AUTHENTICATION FRAMEWORK and Security Defects in CCITT Recommendation X .509
+ * Link: https://1f8a81b9b0707b63-19211.webchannel-proxy.scarabresearch.com/rec/T-REC-X.509-198811-S/en
+ * Title: CCITT X.509 (11/1988)  
+ * Authors: ITU
+ * Notes: We focus on One-way authentication, which is located in
+          page 18. The original document (section 9.2) offers three options of the message format.
+          Here we only consider the last case which the most complex. 
+          To make it self-contained, we move the notation (Table 1) here, 
+          and add some explainations that excerpted from paper "Security Defects in CCITT Recommendation X.509"
+          by  I'Anson and Mitchell.
+ */
+
+| NOTATION      | MEANING                                                                                          |
+|---------------|--------------------------------------------------------------------------------------------------|
+| Xp            | Public key of a user X.                                                                          |
+| Xs            | Secret key of X.                                                                                 |
+| Xp[Info]      | Encipherment of some information, Info, using the public key of X.                               |
+| Xs[Info]      | Encipherment of Info using the secret key of X.                                                  |
+| X{Info}       | The signing of Info by user X. Information (Info) is signed by appending to it an enciphered summary of the information. The summary is produced by means of a one-way hash function, while the enciphering is carried out using the secret key of the signer. Thus X{Info} = Info, Xs[h(Info)]. |
+| A --> B       | A list of certificates needed to allow a particular user to obtain the public key of another, is known as a certification path. Each item in the list is a certificate of the certification authority of the next item in the list. A certification path from A to B (denoted A --> B). |
+
+Information (info) is signed by appending to it an enciphered summary of the information. 
+The summary is produced by means of a one-way hash function, 
+while the enciphering is carried out using the secret key of the signer. Thus X{Info} = Info,Xs[h(Info)].
+
+Section 7.5, page 12:
+A list of certificates needed to allow a particular user to obtain the public key of another,
+is known as a certification path. 
+Each item in the list is a certificate of the certification authority of the next item in the list.
+A certification path from A to B (denoted A --> B):
+
+(1) A generates rA, a non-repeating number, which is used to detect replay attacks and to prevent forgery. 
+(2) A sends the following message to B: 
+  B --> A, A{tA, rA, B, sgnData, Bp[encData]}. 
+  where tA, rA are time stamps and random numbers, 
+  B is the name of B, sgnData is a collection of non-confidential parameters (e.g. authentication checks for accompanying data), 
+  encData is a collection of confidential parameters (e .g. secret keys), 
+  Bp[x] denotes the encryption of data x using the public key of B and 
+  A{y} denotes data y with a signed version of y appended, i.e., A{y} = y, Xs[h(y)]. 
+  Inclusion of sgnData and encData within the token is intended to provide origin authentication, 
+  integrity and non-repudiation services for these parameters.
+
+(3) B carries out the following actions: 
+  (a) obtains Ap from B -> A, checking that A's certificate has not expired; 
+  (b) verifies the signature, and thus the integrity of the signed information; 
+  (c) checks that B itself is the intended recipient; 
+  (d) checks that the timestamp is "current"; 
+  (e) optionally, checks that rA has not been replayed. This could, for example, be achieved by having rA 
+      include a sequential part that is checked by a local implementation for its value uniqueness. 
+
+rA is valid until the expire date indicated by tA, rA is always accompanied by a sequential part, which indicates 
+that A will not repeat the token during the timerange tA and therefore that checking of the value of rA itself is not 
+required. 
+
+In any case it is reasonable for party B to store the sequential part together with timestamp tA in the clear and 
+together with the hashed part of the token during timerange tA. 
+

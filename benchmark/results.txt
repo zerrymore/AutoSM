@@ -1,0 +1,22 @@
+summary of summaries:
+
+analyzed: Example-R.spthy
+
+  processing time: 0.12s
+  
+  Client_session_key_secrecy (all-traces): verified (5 steps)
+  Client_auth (all-traces): verified (11 steps)
+  Client_auth_injective (all-traces): verified (15 steps)
+  Client_session_key_honest_setup (exists-trace): verified (5 steps)
+
+summary of summaries:
+
+analyzed: sigfox-R.spthy
+
+  processing time: 0.14s
+  
+  executable (exists-trace): verified (8 steps)
+  secret_A (all-traces): verified (11 steps)
+  secret_B (all-traces): verified (14 steps)
+  secrecy_PFS_A (all-traces): falsified - found trace (8 steps)
+

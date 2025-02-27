@@ -1,0 +1,43 @@
+/* Protocol: SPLICE/AS
+ * Source: IEICE Transactions on Information and Systems
+ * Title: Design and Implementation of an Authentication System in WIDE Internet Environment
+ * Authors: SuguruYamaguchi, Kiyohiko Okayama, and Hideo Miyahara
+ * Note: The protocol description is excerpted from Section 3.1, "Requesting a Server," 
+ *       which corresponds to Figure 3. The figure illustrates the message format exchanged between the parties, 
+ *       and this information has been integrated into the corresponding descriptive sentence.       
+ */
+
+When a user accesses servers, the user must. send her/his authenticator 
+to the server to prove her/his identity. The protocol for establishing 
+the authenticated connection between a client and a sever is shown in Figure 3.
+
+C --> AS: C, S, id
+First, the client program, which is invoked by the user to access the server, 
+sends a message (2a) to the authentication server to get a public key for the server. 
+
+AS --> C: AS, {AS, C, id, PKs}SKas
+The authentication server picks the server’s public key up from its database, 
+and sends it to the client in the message (2b). 
+The message (2b) is encrypted in order to prevent message modifications by intruders. 
+
+C --> S: C, S, {C, timestamp, life, {id}PKs}SKc
+Then, the client sends the message (2c) to the server. 
+We call this message as the authenticator. 
+The message includes a time stamp and a field for life time of the message to detect replay attacks. 
+The message identifier (id) is selected randomly.
+
+
+When the server receives the message, the following procedure is invoked; 
+(i) if the server does not have the client’s public key PKc, the server 
+gets the key from the authentication server through using the 
+same protocol as the client, 
+(ii) the server decrypts the message using the client’s public key, 
+(iii) picks the sender’s name C in the encrypted block, and 
+(iv) compares it with the sender’s name written in the top of the message. 
+If both names are same, then the server can trust that the message sender is C.
+
+S --> C: S, C, {S, id+1}PKc
+After that, it returns the message (2f) to the client. 
+The client also decrypts the message, and get the value id + 1. 
+If the value is right (the value is surely id + 1), 
+the client trusts that the message was returned by the server. 

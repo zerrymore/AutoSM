@@ -1,0 +1,218 @@
+theory KEMTLS_R
+
+/* Model Author: Charlie Jacomme
+ * Protocol:    KEMTLS
+   proposed in CCS20, Post-quantum TLS without handshake signatures
+   Peter Schwabe, Douglas Stebila, Thom Wiggers.
+
+   A proposal of a new TLS based on Key Encapsulation Mechanisms.
+   We assume that KEMs manipulate uniformly sampled keys.
+
+   Proverif : everything in a second.
+
+   Tamarin : everything in 1 minutes on 64 core server
+      (The DDH model is then more precise)
+*/
+
+begin
+
+builtins : dest-pairing, dest-symmetric-encryption
+
+functions: kempk/1, kemenc/2, kemdec/2[destructor], hkdfext/2, hkdfexp/3, htrans/1, cert/1[private],getcert/1[destructor], hmac/2
+
+equations: kemdec( kemenc(m,kempk(sk)) ,sk) = m, getcert(cert(m))=m
+
+
+// out('TCPSYN');
+rule P_init:
+    [ ]-->[ State_P_0(), Out('TCPSYN')]
+
+
+rule P_ClientHello:
+    let pke = kempk(~ske)
+        ES = hkdfext('empty','empty')
+        dES = hkdfexp(ES,'derived','null')
+    in
+    [ State_P_0(), In('TCPCK'), 
+      Fr(~ske), Fr(~rc) ]
+    -->
+    [ State_P_1(~ske, ~rc),
+      Out(<'CLIENTHello',pke,~rc>) ]
+
+
+rule P_ClientKem:
+    let 
+      pke = kempk(ske)
+      ES = hkdfext('empty','empty')
+      dES = hkdfexp(ES,'derived','null')
+      CHSH = htrans(<pke,rc,cte,rs>)
+      sse = kemdec(cte,ske)
+      HS = hkdfext(dES,sse)
+      CHTS = hkdfexp(HS, 'chsts', CHSH)
+      SHTS = hkdfexp(HS,'shsts',CHSH)
+      dHS = hkdfexp(HS, 'derived', 'null')
+        
+      servercert = senc(<'ServerCert',certpk>, SHTS)
+      pks = getcert(certpk)
+      cts = kemenc(~sss,pks)
+    in  
+    [ In(<'SERVERHello',cte,rs>)
+    , In(servercert)
+    , Fr(~sss)
+    , State_P_1(ske, rc) ]
+    --[ Test() ]->
+    [ State_P_2(ske, rc, cte, rs, dES, pks, ~sss),
+      Out(senc(<'ClientKem',cts>,CHTS)) ]
+
+
+
+rule P_ClientFinished:
+    let 
+      pke = kempk(ske)
+      cts = kemenc(sss,pks)
+      
+      AHS = hkdfext(dES,sss)
+      CHCKC = htrans(<pke,rc,cte,rs,pks,cts>)
+      CAHTS = hkdfexp(AHS,'cahstr',CHCKC)
+      SAHTS = hkdfexp(AHS,'sahstr',CHCKC)
+
+      dAHS = hkdfexp(AHS,'derived',CHCKC)
+      MS = hkdfext(dAHS,'empty')
+      fkc = hkdfexp(MS,'cfinished','null')
+      fks = hkdfexp(MS,'sfinished','null') 
+      
+      CF = hmac(fkc,CHCKC)
+    in
+    [ State_P_2(ske, rc, cte, rs, dES, pks, sss) ]
+  -->
+    [ Out(senc(<'ClientFinished',CF>,CAHTS))
+    , State_P_3(ske, rc, cte, rs, pks, cts, CF, AHS, SAHTS, fks, CHCKC) ]
+
+
+rule P_GetServerIN:
+    let pke = kempk(ske)
+        CHCF = htrans(<pke,rc,cte,rs,pks,cts,CF>)
+        CATS = hkdfexp(AHS,'captr',CHCF)
+        SATS = hkdfexp(AHS,'saptr',CHCF)
+
+        serverfin = senc(<'ServerFinished',SF>, SAHTS)
+        SF  = hmac(fks,CHCKC)
+    in
+    [ In(serverfin)
+    , State_P_3(ske, rc, cte, rs, pks, cts, CF, AHS, SAHTS, fks, CHCKC) ]
+  --[ ClientKey(CATS)
+    , AcceptP() ]->
+    [ State_P_4() ]
+
+
+rule keyGen:
+    let pkS = kempk(~skS) in
+    [ Fr(~skS)]-->[ !Sk(~skS), !Pk(pkS) ]
+
+
+rule Reveal:
+    [ !Sk(skS)]--[ Compromise() ]->[ Out(skS) ]
+
+
+rule S_TCPSYN:
+    [ !Sk(sks), In('TCPSYN') ]
+    -->
+    [ State_S_0(sks), Out('TCPACK') ]
+
+
+rule S_SERVERHello:
+    let 
+      pkS = kempk(~skS)
+      ES = hkdfext('empty', 'empty')
+      dES = hkdfexp(ES, 'derived','null')
+      cte = kemenc(~sse, pke) 
+    in
+    [ Fr(~sse)
+    , Fr(~rs)
+    , State_S_0(~skS)
+    , In(<'CLIENTHello', pke, rc>) ]
+    --[]->
+    [ Out(<'SERVERHello',cte, ~rs>)
+    , State_S_1(~sse, ~rs, ~skS, pke, rc, cte, dES) ]
+
+
+rule S_ServerCert:
+    let 
+      pkS = kempk(skS)
+      CHSH = htrans(<pke,rc,cte,rs>)
+      HS = hkdfext(dES,sse)
+      CHTS = hkdfexp(HS, 'chsts', CHSH)
+      SHTS = hkdfexp(HS,'shsts',CHSH)
+      dHS = hkdfexp(HS, 'derived', 'null')
+    in
+    [ State_S_1(sse, rs, skS, pke, rc, cte, dES) ]
+    -->
+    [ Out(senc(<'ServerCert',cert(pkS)>, SHTS)), 
+      State_S_2(sse, rs, skS, pke, rc) ]
+
+
+rule S_clientkem:
+    let 
+      pkS = kempk(skS)
+      ES = hkdfext('empty', 'empty')
+      dES = hkdfexp(ES, 'derived','null')
+      HS = hkdfext(dES,sse)
+      CHTS = hkdfexp(HS, 'chsts', CHSH)
+      cte = kemenc(sse, pke) 
+
+      clientkem = senc(<'ClientKem',cts>, CHTS)
+      sss = kemdec(cts, skS)
+      AHS = hkdfext(dES,sss)
+      CHCKC = htrans(<pke,rc,cte,rs,pkS,cts>)
+      CAHTS = hkdfexp(AHS,'cahstr',CHCKC)
+      SAHTS = hkdfexp(AHS,'sahstr',CHCKC)
+
+      dAHS = hkdfexp(AHS,'derived',CHCKC)
+      MS = hkdfext(dAHS,'empty')
+      fkc = hkdfexp(MS,'cfinished','null')
+      fks = hkdfexp(MS,'sfinished','null')
+    in
+    [ In(clientkem)
+    , !Sk(skS)
+    , State_S_2(sse, rs, skS, pke, rc) ]
+  --[ ServerKey(SAHTS) ]->
+    [ State_S_3(sse, rs, skS, pke, rc, cts, CAHTS, fkc, fks, AHS, CHCKC, SAHTS) ]
+
+
+rule S_ServerFinished:
+    let 
+      pkS = kempk(skS)
+      clientfin = senc(<'ClientFinished',CF>, CAHTS)
+      CF = hmac(fkc,CHCKC)
+        
+      SF = hmac(fks,CHCKC)
+      CHCF = htrans(<pke,rc,cte,rs,pkS,cts,CF>)
+      CATS = hkdfexp(AHS,'captr',CHCF)
+      SATS = hkdfexp(AHS,'saptr',CHCF)
+    in
+    [ In(clientfin)
+    , State_S_3(sse, rs, skS, pke, rc, cts, CAHTS, fkc, fks, AHS, CHCKC, SAHTS) ]
+  --[ AcceptS() ]->
+    [ Out(senc(<'ServerFinished',SF>,SAHTS))]
+
+
+lemma exec:
+  exists-trace
+  "Ex #t. AcceptP()@t"
+
+lemma execbis:
+  exists-trace
+  "Ex #t. AcceptS()@t"
+
+lemma false_secserv: // should be false (non mutual authentication)
+  "not(Ex #t1 #t2 sk. ServerKey(sk)@t1 & KU(sk)@t2 )"
+
+lemma auth: // should be true
+   "All #t. AcceptP()@t ==> (Ex #s. AcceptS()@s & s<t) | (Ex #s2. Compromise()@s2)"
+
+
+lemma PFS_client : // should be true
+  "All #t1 #t2 sk. ClientKey(sk)@t1 & KU(sk)@t2 ==> Ex #t3. Compromise()@t3 & t3<t1"
+
+
+end
