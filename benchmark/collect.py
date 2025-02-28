@@ -1,6 +1,6 @@
 import re
 
-from prettytable import PrettyTable
+from prettytable import PrettyTable, TableStyle
 
 
 import os
@@ -170,6 +170,7 @@ def data_to_table(data):
     # table.add_divider()
     table.add_row(split_row)
     table.add_row(["", "", "", "", ""])
+    table.set_style(TableStyle.MARKDOWN)
     
   return table
 

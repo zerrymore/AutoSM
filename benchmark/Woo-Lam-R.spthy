@@ -77,7 +77,7 @@ rule S_to_B:
     [ Out(senc(<'3', nb>, ~kbs)) ]
 
 
-// 5..   	S 	-> 	B 	:   	{A, B, Nb}shared(B, S)   Receive
+// 5..      S    ->    B    :      {A, B, Nb}shared(B, S)   Receive
 rule B_from_S:
     [ In(senc(<'3', ~nb>,~kbs))
     , StateB2(a, $B, ~kbs, ~nb, msg)

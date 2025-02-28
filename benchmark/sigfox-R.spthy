@@ -1,11 +1,11 @@
 theory sigfox_PKC begin
 /*
- * Protocol:	sigfox implementation
- * Modeler: 	Jun Young Kim 
+ * Protocol:  sigfox implementation
+ * Modeler:   Jun Young Kim 
  * Described in: 
- * Date: 	 
+ * Date:    
  *
- * Status: 	 Working
+ * Status:    Working
  */
 
 builtins: asymmetric-encryption,signing 
@@ -14,79 +14,79 @@ builtins: asymmetric-encryption,signing
 
 // Public key infrastructure 
 rule Register_pk: 
-		[ Fr(~ltkA) ]
-	--> 
-		[ !Ltk($A, ~ltkA)
-		, !Pk($A, pk(~ltkA))
-		, Out(pk(~ltkA)) ]
+    [ Fr(~ltkA) ]
+  --> 
+    [ !Ltk($A, ~ltkA)
+    , !Pk($A, pk(~ltkA))
+    , Out(pk(~ltkA)) ]
 
 // Compromising an agent's long-term key 
 rule Reveal_ltk: 
-		[ !Ltk(A, ltkA) ]
-	--[ Reveal(A) ]->
-		[ Out(ltkA) ]
+    [ !Ltk(A, ltkA) ]
+  --[ Reveal(A) ]->
+    [ Out(ltkA) ]
 
 
 // Role A sends first message 
 rule Send_key: 
-		let 
-			msg = aenc(<A, ~na>, pkB)
-			sig = sign(msg,ltkA) 
-		in
-		[ Fr(~na)
-		, !Ltk(A, ltkA)
-		, !Pk(B, pkB) ]
-	--[ Send(A, msg)
-		, Secret(~na)
-		, Role('A')
-		, Honest(A)
-		, Honest(B)]-> 
-		[ St_A_1(A, ltkA, pkB, B, ~na)
-		, Out(<msg, sig>) ]
+    let 
+      msg = aenc(<A, ~na>, pkB)
+      sig = sign(msg,ltkA) 
+    in
+    [ Fr(~na)
+    , !Ltk(A, ltkA)
+    , !Pk(B, pkB) ]
+  --[ Send(A, msg)
+    , Secret(~na)
+    , Role('A')
+    , Honest(A)
+    , Honest(B)]-> 
+    [ St_A_1(A, ltkA, pkB, B, ~na)
+    , Out(<msg, sig>) ]
 
 
 // Role B receives first message 
 rule Receive_key: 
-		let
-		  pkB = pk(ltkB)
-			msg = aenc(<A, na>, pkB) 
-		in
-		[ !Ltk(B,ltkB)
-		, !Pk(A, pkA), In(<msg, sig>)]
-	--[ Eq(verify(sig,msg,pkA),true)
-		, Recv(B, msg)
-		, Secret(na)
-		, Honest(B)
-		, Honest(A)
-		, Role('B')]->
-		[]
+    let
+      pkB = pk(ltkB)
+      msg = aenc(<A, na>, pkB) 
+    in
+    [ !Ltk(B,ltkB)
+    , !Pk(A, pkA), In(<msg, sig>)]
+  --[ Eq(verify(sig,msg,pkA),true)
+    , Recv(B, msg)
+    , Secret(na)
+    , Honest(B)
+    , Honest(A)
+    , Role('B')]->
+    []
 
 
 lemma executable: 
-		exists-trace 
-		"Ex A B m #i #j.
-				Send(A,m)@i & Recv(B,m) @j"
+    exists-trace 
+    "Ex A B m #i #j.
+        Send(A,m)@i & Recv(B,m) @j"
 
 lemma secret_A: 
-		"All n #i. 
-			Secret(n) @i & Role('A') @i 
-			==> (not (Ex #j. K(n)@j)) 
-			| (Ex B #j. Reveal(B)@j & Honest(B)@i)"
-	
+    "All n #i. 
+      Secret(n) @i & Role('A') @i 
+      ==> (not (Ex #j. K(n)@j)) 
+      | (Ex B #j. Reveal(B)@j & Honest(B)@i)"
+  
 lemma secret_B:
-		"All n #i.
-			Secret(n) @i & Role('B') @i 
-			==> (not (Ex #j. K(n)@j)) 
-			| (Ex B #j. Reveal(B)@j & Honest(B)@i)"
-	
+    "All n #i.
+      Secret(n) @i & Role('B') @i 
+      ==> (not (Ex #j. K(n)@j)) 
+      | (Ex B #j. Reveal(B)@j & Honest(B)@i)"
+  
 lemma secrecy_PFS_A: 
-		// exists-trace 
-		"All x #i. Secret(x) @i & Role('A') @i 
-			==> not (Ex #j. K(x)@j) 
-			| (Ex B #r. Reveal(B)@r & Honest(B) @i & (r < i))"
+    // exists-trace 
+    "All x #i. Secret(x) @i & Role('A') @i 
+      ==> not (Ex #j. K(x)@j) 
+      | (Ex B #r. Reveal(B)@r & Honest(B) @i & (r < i))"
 
 restriction Equality:
-		"All x y #i. Eq(x,y) @i ==> x = y"	
+    "All x y #i. Eq(x,y) @i ==> x = y"  
 
 
 end

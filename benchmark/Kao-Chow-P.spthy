@@ -77,8 +77,7 @@ lemma AUTO_typing [sources]:
     "(All x m #i.
       (IN_A_1( m, x ) @ #i) 
         ==> (Ex #j. (!KU( x ) @ #j) & #j < #i)
-        | (Ex #j. (OUT_B_1( m ) @ #j) & #j < #i))
-      &
+        | (Ex #j. (OUT_B_1( m ) @ #j) & #j < #i)) &
       (All x m #i.
         (IN_B_Na( m, x ) @ #i) 
         ==> (Ex #j. (!KU( x ) @ #j) & #j < #i)
@@ -97,53 +96,53 @@ lemma executability:
 
 
 lemma secrecy:
-	"All A B k #i. 
-			Secret(A,B,k)@i 
-			==> not (Ex #j. K(k)@j ) 
-			|  (Ex #j. Compromise(B)@j)  
-			|  (Ex #j. Compromise(A)@j)"
-	
-	
+  "All A B k #i. 
+      Secret(A,B,k)@i 
+      ==> not (Ex #j. K(k)@j ) 
+      |  (Ex #j. Compromise(B)@j)  
+      |  (Ex #j. Compromise(A)@j)"
+  
+  
 // check the authenticity of the transaction from B's point of view
 lemma noninjectiveagreement_B:
-		"All A B t #i.
-			CommitB(B, A, t) @i
-			==> ((Ex #j. RunningA(A,B, t) @j
-					& j < i)
-			| (Ex #r. Compromise(A)@r) 
-			| (Ex #r. Compromise(B)@r))"
+    "All A B t #i.
+      CommitB(B, A, t) @i
+      ==> ((Ex #j. RunningA(A,B, t) @j
+          & j < i)
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
 
 
 // check the authenticity of the transaction from A's point of view
 lemma noninjectiveagreement_A:
-		"All A B t #i.
-			CommitA(A, B, t) @i
-			==> ((Ex #j. RunningB(B,A,t) @j
-					& j < i)
-			| (Ex #r. Compromise(A)@r) 
-			| (Ex #r. Compromise(B)@r))"
+    "All A B t #i.
+      CommitA(A, B, t) @i
+      ==> ((Ex #j. RunningB(B,A,t) @j
+          & j < i)
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
 
 
 
 // check the authenticity and freshness of the transaction from B's point of view
 lemma injectiveagreement_B:
-		"All A B t #i. CommitB(B,A,t) @i
-			==> ((Ex #j. RunningA(A,B,t) @j & j < i
-					& not (Ex A2 B2 #i2. CommitB(B2,A2,t) @i2
-														& not (#i2 = #i)))
-					| (Ex #r. Compromise(A)@r) 
-					| (Ex #r. Compromise(B)@r))"
+    "All A B t #i. CommitB(B,A,t) @i
+      ==> ((Ex #j. RunningA(A,B,t) @j & j < i
+          & not (Ex A2 B2 #i2. CommitB(B2,A2,t) @i2
+                            & not (#i2 = #i)))
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
 
 
 
 // check the authenticity and freshness of the transaction from A's point of view
 lemma injectiveagreement_A:
-		"All A B t #i. CommitA(A,B,t)@i
-			==> ((Ex #j. RunningB(B,A,t) @j & j < i
-					& not (Ex A2 B2 #i2. CommitA(A2,B2,t) @i2
-														& not (#i2 = #i)))
-			| (Ex #r. Compromise(A)@r) 
-			| (Ex #r. Compromise(B)@r))"
+    "All A B t #i. CommitA(A,B,t)@i
+      ==> ((Ex #j. RunningB(B,A,t) @j & j < i
+          & not (Ex A2 B2 #i2. CommitA(A2,B2,t) @i2
+                            & not (#i2 = #i)))
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
 
 end
 

@@ -35,13 +35,13 @@ rule keyGen:
 rule I_init:
     let gA = 'g'^~a in
     [ !Ltk(~skI), Fr(~a) ]
-    --[ Honnest(pk(~skI), 'Init') ]->
+  --[ Honnest(pk(~skI), 'Init') ]->
     [ State_I_0(~a, ~skI), Out(<'m2', gA, 'C_I', 'AD'>) ]
 
 
 rule I_cypher_2:
     let 
-			TH_2 = hash(<'m2',gA,'C_I','AD','C_I',gB,rC_R>)
+      TH_2 = hash(<'m2',gA,'C_I','AD','C_I',gB,rC_R>)
       PRK_2e = hkdfextract('null', gB^~a)
       K_2e = hkdfexpand(PRK_2e, <TH_2,'TagK_2e'>)
       PRK_3e2m = PRK_2e
@@ -50,61 +50,62 @@ rule I_cypher_2:
       MAC_2 = senc(<TH_2,pkR,rAD_2>,K_2m)
 
       TH_3 = hash(<TH_2,cypher_2,rC_R>)
-	    PRK_4x3m = PRK_3e2m
+      PRK_4x3m = PRK_3e2m
 
       K_3m = hkdfexpand(PRK_4x3m, <TH_3,'TagK_3m'>) 
       MAC_3 = senc(<TH_3,pk(skI),'AD_3'>,K_3m)
       Signed3 = sign(<pk(skI),TH_3,'AD_3',MAC_3>, skI)
       K_3ae = hkdfexpand(PRK_3e2m, <TH_3,'TagK_3ae'>)
     in
-    [ In(<'C_I',gB,rC_R,cypher_2>),
-      State_I_0(~a, skI) ]
-  --[ Eq(verify(signed,<pkR,TH_2,rAD_2,MAC_2>, pkR), true),
-      AcceptI(pk(skI),pkR,PRK_3e2m,PRK_4x3m) ]->
-    [ Out(<rC_R,senc(< pk(skI), Signed3, 'AD_3'>, K_3ae ),'AD_3'>)]
+    [ In(<'C_I',gB,rC_R,cypher_2>)
+    , State_I_0(~a, skI) ]
+  --[ Eq(verify(signed,<pkR,TH_2,rAD_2,MAC_2>, pkR), true)
+    , AcceptI(pk(skI),pkR,PRK_3e2m,PRK_4x3m) ]->
+    [ Out(<rC_R,senc(< pk(skI), Signed3, 'AD_3'>, K_3ae ),'AD_3'>) ]
 
 
 rule R_init:
     let 
-			gB = 'g'^~b
-			TH_2 = hash(<mcorr,gA,rC_I,rAD,rC_I,gB,'C_R'>)
-			PRK_2e = hkdfextract('null', gA^~b)
-			K_2e = hkdfexpand(PRK_2e, <TH_2,'TagK_2e'>)
+      gB = 'g'^~b
+      TH_2 = hash(<mcorr,gA,rC_I,rAD,rC_I,gB,'C_R'>)
+      PRK_2e = hkdfextract('null', gA^~b)
+      K_2e = hkdfexpand(PRK_2e, <TH_2,'TagK_2e'>)
 
-			PRK_3e2m = PRK_2e
-			K_2m = hkdfexpand(PRK_3e2m, <TH_2,'TagK_2m'>)
-			MAC_2 = senc(<TH_2,pk(~skR),'AD_2'>,K_2m)
-			Signed2 = sign(<pk(~skR),TH_2,'AD_2',MAC_2>, ~skR)
-			cypher_2 = senc( <pk(~skR),Signed2,'AD_2' >, K_2e)
+      PRK_3e2m = PRK_2e
+      K_2m = hkdfexpand(PRK_3e2m, <TH_2,'TagK_2m'>)
+      MAC_2 = senc(<TH_2,pk(~skR),'AD_2'>,K_2m)
+      Signed2 = sign(<pk(~skR),TH_2,'AD_2',MAC_2>, ~skR)
+      cypher_2 = senc( <pk(~skR),Signed2,'AD_2' >, K_2e)
     in
-    [ !Ltk(~skR), Fr(~b), In(<mcorr,gA,rC_I,rAD>) ]
-    --[ Honnest(pk(~skR), 'Resp'),
-        Neq(mcorr, 'm1'),
-        DerivedR(pk(~skR),PRK_3e2m) ]->
+    [ !Ltk(~skR), Fr(~b)
+    , In(<mcorr,gA,rC_I,rAD>) ]
+  --[ Honnest(pk(~skR), 'Resp')
+    , Neq(mcorr, 'm1')
+    , DerivedR(pk(~skR),PRK_3e2m) ]->
     [ State_R_1(~b, ~skR, gA, cypher_2, mcorr),
       Out(<rC_I,gB,'C_R',cypher_2>) ]
 
 
 rule R_Accept:
     let 
-			gB = 'g'^~b
-			TH_2 = hash(<mcorr,gA,rC_I,rAD,rC_I,gB,'C_R'>)
-			PRK_2e = hkdfextract('null', gA^~b)
-			K_2e = hkdfexpand(PRK_2e, <TH_2,'TagK_2e'>)
+      gB = 'g'^~b
+      TH_2 = hash(<mcorr,gA,rC_I,rAD,rC_I,gB,'C_R'>)
+      PRK_2e = hkdfextract('null', gA^~b)
+      K_2e = hkdfexpand(PRK_2e, <TH_2,'TagK_2e'>)
 
-			PRK_3e2m = PRK_2e
+      PRK_3e2m = PRK_2e
 
-			TH_3 = hash(<TH_2,cypher_2,'C_R'>)
-			PRK_4x3m = PRK_3e2m
-			K_3ae = hkdfexpand(PRK_3e2m, <TH_3,'TagK_3ae'>)
-			cypher_3 = senc(<pkI,Signed3,rAD_3>, K_3ae)
-			K_3m = hkdfexpand(PRK_4x3m, <TH_3,'TagK_3m'>)
-			MAC_3 = senc(<TH_3,pkI,rAD_3>,K_3m)
+      TH_3 = hash(<TH_2,cypher_2,'C_R'>)
+      PRK_4x3m = PRK_3e2m
+      K_3ae = hkdfexpand(PRK_3e2m, <TH_3,'TagK_3ae'>)
+      cypher_3 = senc(<pkI,Signed3,rAD_3>, K_3ae)
+      K_3m = hkdfexpand(PRK_4x3m, <TH_3,'TagK_3m'>)
+      MAC_3 = senc(<TH_3,pkI,rAD_3>,K_3m)
     in
-    [ In(<'C_R', cypher_3, rAD_3>),
-      State_R_1(~b, skR, gA, cypher_2, mcorr)  ]
-    --[ Eq(verify(Signed3, <pkI,TH_3,rAD_3,MAC_3 >, pkI), true),
-        AcceptR(pkI, pk(skR),PRK_4x3m) ]->
+    [ In(<'C_R', cypher_3, rAD_3>)
+    , State_R_1(~b, skR, gA, cypher_2, mcorr)  ]
+  --[ Eq(verify(Signed3, <pkI,TH_3,rAD_3,MAC_3 >, pkI), true)
+    , AcceptR(pkI, pk(skR),PRK_4x3m) ]->
     []
 
 

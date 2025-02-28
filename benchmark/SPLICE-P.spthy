@@ -47,7 +47,7 @@ let AS(skAS, pkC, idC, pkS, idS) =
 let Server(skS, idC, idAS, pkAS) = 
     let pkS = pk(skS) in
     let idS = id(skS) in
-    // 3.   	C 	-> 	S 	:   	C, S, {C, T, L, {N2}pk(S)}sk(C)
+    // 3.     C   ->   S   :     C, S, {C, T, L, {N2}pk(S)}sk(C)
     in(<=idC, =idS, t, l, key, msg>);
     let <'4', n2> = adec(key, skS) in
     event IN_S_4(key, n2);

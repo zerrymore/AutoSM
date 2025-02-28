@@ -3,13 +3,13 @@ begin
 
 
 
-// 1.  	A	->	B	:  	A, Na
-// 2.  	B	->	S	:  	B, {A, Na, Tb}Kbs, Nb
-// 3.  	S	->	A	:  	{B, Na, Kab, Tb}Kas, {A, Kab, Tb}Kbs, Nb
-// 4.  	A	->	B	:  	{A, Kab, Tb}Kbs, {Nb}Kab
-// 5.  	A	->	B	:  	Ma, {A, Kab, Tb}Kbs
-// 6.  	B	->	A	:  	Mb, {Ma}Kab
-// 7.  	A	->	B	:  	{Mb}Kab
+// 1.    A  ->  B  :    A, Na
+// 2.    B  ->  S  :    B, {A, Na, Tb}Kbs, Nb
+// 3.    S  ->  A  :    {B, Na, Kab, Tb}Kas, {A, Kab, Tb}Kbs, Nb
+// 4.    A  ->  B  :    {A, Kab, Tb}Kbs, {Nb}Kab
+// 5.    A  ->  B  :    Ma, {A, Kab, Tb}Kbs
+// 6.    B  ->  A  :    Mb, {Ma}Kab
+// 7.    A  ->  B  :    {Mb}Kab
 
 builtins: symmetric-encryption
 
@@ -44,7 +44,7 @@ rule A_1[color=#b5f5f7]:
     , StateA1($A, $B, ~na)]
 
 
-// 2.  	B	->	S	:  	B, {A, Na, Tb}Kbs, Nb
+// 2.    B  ->  S  :    B, {A, Na, Tb}Kbs, Nb
 rule B_1[color=#ffdea6]:
     let 
       msg = senc{'1', A, na, ~tb}kbs 
@@ -52,51 +52,51 @@ rule B_1[color=#ffdea6]:
     [ In(<A, na>)
     , !LongtermKey(kbs,B)
     , Fr(~nb)
-		, Fr(~tb) ]
+    , Fr(~tb) ]
   --[ RunningB(B, A, <na, ~nb, ~tb>) ]->
     [ Out(<B, msg, ~nb>)
     , StateB1(B, A, na, ~nb, ~tb) ]
 
 
-// 3.  	S	->	A	:  	{B, Na, Kab, Tb}Kas, {A, Kab, Tb}Kbs, Nb
+// 3.    S  ->  A  :    {B, Na, Kab, Tb}Kas, {A, Kab, Tb}Kbs, Nb
 rule S_1[color=#FF7E00]:
-		let cA = senc{'2', B, na, ~kab,tb}kas
-				cB = senc{'3',A, ~kab,tb}kbs
-		in
+    let cA = senc{'2', B, na, ~kab,tb}kas
+        cB = senc{'3',A, ~kab,tb}kbs
+    in
     [ Fr(~kab)
     , In(<B, senc{'1', A, na, tb}kbs, nb>)
     , !LongtermKey(kbs, B)
     , !LongtermKey(kas, A) ]
   --[ Server(A, B,<~kab,na,nb>)
-	  , Secret(A, B, ~kab) ]->
+    , Secret(A, B, ~kab) ]->
     [ Out(<cA, cB, nb>) ]
 
 
-// 4.  	A	->	B	:  	{A, Kab, Tb}Kbs, {Nb}Kab
+// 4.    A  ->  B  :    {A, Kab, Tb}Kbs, {Nb}Kab
 rule A_2[color=#b5f5f7]:
-		let 
-			cA = senc{'2', B, na, kab, tb}kas 
-			cypher = <cA, cB, nb>
-			msg1 = <cB, senc{'4', nb}kab>
-			// msg2 = <~ma, cB>
-		in
+    let 
+      cA = senc{'2', B, na, kab, tb}kas 
+      cypher = <cA, cB, nb>
+      msg1 = <cB, senc{'4', nb}kab>
+      // msg2 = <~ma, cB>
+    in
     [ StateA1(A, B, na)
     , !LongtermKey(kas, A)
     , In(cypher)
-		, Fr(~ma) ]
+    , Fr(~ma) ]
   --[ CommitA(A, B,<na, nb, tb>)
     , RunningA(A, B,<kab, na, nb>)
     , Running(A, B, <kab, na, nb>)
     , Secret(A, B, kab) ]->
     [ !StateAMutual(A, B, kab, na, nb, tb, cB)
-		, Out(msg1)]
+    , Out(msg1)]
 
 
 rule B_2[color=#ffdea6]:
-		let
-			cB = senc{'3',A, kab, tb}kbs
-			cypher = <cB, senc{'4', nb}kab>
-		in
+    let
+      cB = senc{'3',A, kab, tb}kbs
+      cypher = <cB, senc{'4', nb}kab>
+    in
     [ StateB1(B, A, na, nb, tb)
     , !LongtermKey(kbs, B)
     , In(cypher) ]
@@ -107,51 +107,51 @@ rule B_2[color=#ffdea6]:
 
 #ifdef mutual
 
-// 5.  	A	->	B	:  	Ma, {A, Kab, Tb}Kbs
+// 5.    A  ->  B  :    Ma, {A, Kab, Tb}Kbs
 rule A_3[color=#b5f5f7]:
-		let msg2 = <~ma, cB> in
-		[ Fr(~ma)
-		, !StateAMutual(A, B, kab, na, nb, tb, cB) ]
-	--[]->
-		[ StateA_M1(~ma, A, B, kab, na, nb, tb)
-		, Out(msg2) ]
+    let msg2 = <~ma, cB> in
+    [ Fr(~ma)
+    , !StateAMutual(A, B, kab, na, nb, tb, cB) ]
+  --[]->
+    [ StateA_M1(~ma, A, B, kab, na, nb, tb)
+    , Out(msg2) ]
 
 
-// 6.  	B	->	A	:  	Mb, {Ma}Kab
+// 6.    B  ->  A  :    Mb, {Ma}Kab
 rule B_3[color=#ffdea6]:
-		let msg3 = <~mb, cA> in
-		[ In(<ma, cB>)
-		, Fr(~mb)
-		, !StateBMutual(B, A, kab, na, nb, tb, cB) ]
-	--[ 
+    let msg3 = <~mb, cA> in
+    [ In(<ma, cB>)
+    , Fr(~mb)
+    , !StateBMutual(B, A, kab, na, nb, tb, cB) ]
+  --[ 
       Running(A, B, <kab, na, nb>)
     ]->
-		[ StateB_M1(~mb, B, ma, A, kab, na, nb, tb)
-		, Out(<~mb, senc{'56', ma}kab>) ]
+    [ StateB_M1(~mb, B, ma, A, kab, na, nb, tb)
+    , Out(<~mb, senc{'56', ma}kab>) ]
 
 
-// 7.  	A	->	B	:  	{Mb}Kab
+// 7.    A  ->  B  :    {Mb}Kab
 rule A_4[color=#b5f5f7]:
-		let cypher = senc{'56', mb}kab in
-		[ In(<mb, senc{'56', ma}kab>)
-		, StateA_M1(ma, A, B, kab, na, nb, tb) ]
-	--[ 
+    let cypher = senc{'56', mb}kab in
+    [ In(<mb, senc{'56', ma}kab>)
+    , StateA_M1(ma, A, B, kab, na, nb, tb) ]
+  --[ 
       Commit(A, B, <kab, na, nb>)
     // , Running(A, B, <kab, ma, mb>) 
     , Encode(A, B, <na, nb, cypher>) 
     , Running(A, B, <kab, na, nb>) 
     ]->
-		[ Out(cypher) ]
+    [ Out(cypher) ]
 
 rule B_5[color=#ffdea6]:
-		[ In(senc{'56', mb}kab)
-		, StateB_M1(mb, B, ma, A, kab, na, nb, tb) ]
-	--[ 
+    [ In(senc{'56', mb}kab)
+    , StateB_M1(mb, B, ma, A, kab, na, nb, tb) ]
+  --[ 
       // Commit(A, B, <kab, ma, mb>) 
       Commit(A, B, <kab, na, nb>)
     , GetReceipt(B, A, <na, nb, senc{'56', mb}kab>)
     ]->
-		[ ]
+    [ ]
 
 
 lemma mutualAuthentication:
@@ -164,11 +164,11 @@ lemma mutualAuthentication:
 
 
 // From [HLL+95]. This attack concerns the repeated authentication part, assuming Kab has been recorded in a previous legitimate run of the protocol.
-// i.5.  	I(A)	->	B	:  	Ma, { A, Kab, Tb }Kbs
-// i.6.  	B	->	I(A)	:  	Mb, {Ma}Kab
-// ii.5.  	I(A)	->	B	:  	Mb, {A, Kab, Tb}Kbs
-// ii.6.  	B	->	I(A)	:  	Mb', {Mb}Kab
-// i.7.  	I(A)	->	B	:  	{Mb}Kab
+// i.5.    I(A)  ->  B  :    Ma, { A, Kab, Tb }Kbs
+// i.6.    B  ->  I(A)  :    Mb, {Ma}Kab
+// ii.5.    I(A)  ->  B  :    Mb, {A, Kab, Tb}Kbs
+// ii.6.    B  ->  I(A)  :    Mb', {Mb}Kab
+// i.7.    I(A)  ->  B  :    {Mb}Kab
 lemma HLLAttack:
     "All A B t #i.
       GetReceipt(B, A, t) @i
@@ -235,8 +235,8 @@ lemma injectiveagreement_B:
       ==> ((Ex #j. RunningA(A,B,t) @j & j < i
           & not (Ex A2 B2 #i2. CommitB(B2,A2,t) @i2
                             & not (#i2 = #i)))
-			| (Ex #r. Compromise(A)@r) 
-			| (Ex #r. Compromise(B)@r))"
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
 
 
 

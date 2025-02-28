@@ -36,7 +36,7 @@ let I2(~skI:skey) =
    let MAC_2 = senc(<TH_2,pkR,rAD_2>,K_2m) in
    if verify(signed,< pkR,TH_2,rAD_2,MAC_2>,pkR) = true then
       let TH_3 = hash(<TH_2,cypher_2,rC_R>) in
-	   let PRK_4x3m = PRK_3e2m in
+    	let PRK_4x3m = PRK_3e2m in
       event AcceptI(pk(~skI),pkR,PRK_3e2m,PRK_4x3m);
       let K_3m:skey = hkdfexpand(PRK_4x3m, <TH_3,'TagK_3m'>) in
       let MAC_3 = senc(<TH_3,pk(~skI),'AD_3'>,K_3m) in

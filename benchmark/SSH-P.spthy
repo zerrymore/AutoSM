@@ -24,23 +24,23 @@ let P(pkS,~skP,pkP) =
     in(<sig,opks,B>);
     if pkS=opks then
         (
-	let h=hash(<pkS,gA,B>) in
-	let k=B^~a in
-	if verify(sig,<'server_sign',h>,pkS)=true then
-	   (
-	   event AcceptP(gA,B,pkS,pkP);
-	   event KeyP(k);
-	   let kPS:skey=kdfPtoS(<k,h>) in
-	   let kSP:skey=kdfStoP(<k,h>) in
-	   out(senc(<'user_auth',pkP>,kPS));
-	   in(userauth_answer);
-	   if sdec(userauth_answer,kSP)='userauth_pk_ok' then
-	        (
-	   	event AcceptP2(gA,B,pkS,pkP);
-		out(senc(<'user_answer',h,sign(h,~skP)>,kPS))
-		    )
-	    )
-	 )
+    let h=hash(<pkS,gA,B>) in
+    let k=B^~a in
+    if verify(sig,<'server_sign',h>,pkS)=true then
+       (
+       event AcceptP(gA,B,pkS,pkP);
+       event KeyP(k);
+       let kPS:skey=kdfPtoS(<k,h>) in
+       let kSP:skey=kdfStoP(<k,h>) in
+       out(senc(<'user_auth',pkP>,kPS));
+       in(userauth_answer);
+       if sdec(userauth_answer,kSP)='userauth_pk_ok' then
+            (
+           event AcceptP2(gA,B,pkS,pkP);
+        out(senc(<'user_answer',h,sign(h,~skP)>,kPS))
+            )
+        )
+     )
 
 let S(~skS,pkS,pkP) =
     in(gA);
@@ -56,23 +56,23 @@ let S(~skS,pkS,pkP) =
     in(userauth);
     let mess=sdec(userauth,kPS) in
     let <'user_auth',=pkP> = mess in
-	  out(senc('userauth_pk_ok',kSP));
-	  in(signans);
-	  let mess2=sdec(signans,kPS) in
-	  let <'user_answer',=h,sig2> = mess2 in
-	  if verify(sig2,h,pkP)=true then
-	      (
-	      event AcceptS2(gA,gB,pkS,pkP);
-	      event KeyS2(k)
-	      )
+      out(senc('userauth_pk_ok',kSP));
+      in(signans);
+      let mess2=sdec(signans,kPS) in
+      let <'user_answer',=h,sig2> = mess2 in
+      if verify(sig2,h,pkP)=true then
+          (
+          event AcceptS2(gA,gB,pkS,pkP);
+          event KeyS2(k)
+          )
 
 process:
  !(new ~skS; out(pk(~skS));
        !(new ~skP; out(pk(~skP));
            !(
-	    P(pk(~skS),~skP,pk(~skP))  | S(~skS,pk(~skS),pk(~skP))
-	    )
-	)
+        P(pk(~skS),~skP,pk(~skP))  | S(~skS,pk(~skS),pk(~skP))
+        )
+    )
   )
 
 

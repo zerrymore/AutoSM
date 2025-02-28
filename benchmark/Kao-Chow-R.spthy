@@ -15,7 +15,7 @@ builtins: symmetric-encryption
 
 rule Init:
     [ Fr(~kxs)] 
-	--[KeyGen($X)]->
+  --[KeyGen($X)]->
     [ !LongtermKey(~kxs,$X) ]
 
 rule Reveal_Longterm_Key:
@@ -42,8 +42,8 @@ rule A_to_S:
 // Message 2, S --> B: {A, B, Na, Kab}Kas, {A, B, Na, Kab}Kbs.
 rule S_to_A:
     let
-			cypher1 = senc(<'2', A, B, na, ~kab>, ~kas)
-			cypher2 = senc(<'3', A, B, na, ~kab>, ~kbs)
+      cypher1 = senc(<'2', A, B, na, ~kab>, ~kas)
+      cypher2 = senc(<'3', A, B, na, ~kab>, ~kbs)
       msg = <cypher1, cypher2>
     in
     [ In(<'1', A, B, na>)
@@ -59,36 +59,36 @@ rule S_to_A:
 // Message 3, B --> A: {A, B, Na, Kab}Kas, {Na}Kab, Nb
 rule B_to_A_1:
     let 
-			cypher2 = senc(<'3', A, B, na, kab>, ~kbs)
-			msg = <cypher1, senc(<'4', na>, kab), ~nb>
+      cypher2 = senc(<'3', A, B, na, kab>, ~kbs)
+      msg = <cypher1, senc(<'4', na>, kab), ~nb>
     in
     [ In(<cypher1, cypher2>)
-		, Fr(~nb)
-		, !LongtermKey(~kbs, B) ]
+    , Fr(~nb)
+    , !LongtermKey(~kbs, B) ]
   --[ Secret(A, B, kab)
-		,	RunningB(B, A, <na, ~nb, kab>) ]->
+    ,  RunningB(B, A, <na, ~nb, kab>) ]->
     [ Out(msg)
     , StateB1(A, B, ~kbs, na, ~nb, kab) ]
 
 // Message 4, A --> B : {Nb}Kab 
 rule A_to_B_1:
-		let 
-			cypher1 = senc(<'2', A, B, na, kab>, kas)
-			msg = <cypher1, senc(<'4', na>, kab), nb>
-			cypher = senc(<'5', nb>, kab)
-		in
-		[ StateA1(A, B, kas, na)
-		, In(msg) ]
-	--[ RunningA(A, B, <na, nb, kab>)
-		, CommitA(A, B, <na, nb, kab>) ]->
-		[ Out(cypher) ]
+    let 
+      cypher1 = senc(<'2', A, B, na, kab>, kas)
+      msg = <cypher1, senc(<'4', na>, kab), nb>
+      cypher = senc(<'5', nb>, kab)
+    in
+    [ StateA1(A, B, kas, na)
+    , In(msg) ]
+  --[ RunningA(A, B, <na, nb, kab>)
+    , CommitA(A, B, <na, nb, kab>) ]->
+    [ Out(cypher) ]
 
 
 rule B_from_A:
-		[ StateB1(A, B, kbs, na, nb, kab)
-		, In(senc(<'5', nb>, kab)) ]
-	--[ CommitB(B, A, <na, nb, kab>) ]->
-		[]
+    [ StateB1(A, B, kbs, na, nb, kab)
+    , In(senc(<'5', nb>, kab)) ]
+  --[ CommitB(B, A, <na, nb, kab>) ]->
+    []
 
 
 
@@ -103,52 +103,52 @@ lemma executability:
 
 
 lemma secrecy:
-	"All A B k #i. 
-			Secret(A,B,k)@i 
-			==> not (Ex #j. K(k)@j ) 
-			|  (Ex #j. Compromise(B)@j)  
-			|  (Ex #j. Compromise(A)@j)"
-	
-	
+  "All A B k #i. 
+      Secret(A,B,k)@i 
+      ==> not (Ex #j. K(k)@j ) 
+      |  (Ex #j. Compromise(B)@j)  
+      |  (Ex #j. Compromise(A)@j)"
+  
+  
 // check the authenticity of the transaction from B's point of view
 lemma noninjectiveagreement_B:
-		"All A B t #i.
-			CommitB(B, A, t) @i
-			==> ((Ex #j. RunningA(A,B, t) @j
-					& j < i)
-			| (Ex #r. Compromise(A)@r) 
-			| (Ex #r. Compromise(B)@r))"
+    "All A B t #i.
+      CommitB(B, A, t) @i
+      ==> ((Ex #j. RunningA(A,B, t) @j
+          & j < i)
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
 
 
 // check the authenticity of the transaction from A's point of view
 lemma noninjectiveagreement_A:
-		"All A B t #i.
-			CommitA(A, B, t) @i
-			==> ((Ex #j. RunningB(B,A,t) @j
-					& j < i)
-			| (Ex #r. Compromise(A)@r) 
-			| (Ex #r. Compromise(B)@r))"
+    "All A B t #i.
+      CommitA(A, B, t) @i
+      ==> ((Ex #j. RunningB(B,A,t) @j
+          & j < i)
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
 
 
 
 
 // check the authenticity and freshness of the transaction from B's point of view
 lemma injectiveagreement_B:
-		"All A B t #i. CommitB(B,A,t) @i
-			==> ((Ex #j. RunningA(A,B,t) @j & j < i
-					& not (Ex A2 B2 #i2. CommitB(B2,A2,t) @i2
-														& not (#i2 = #i)))
-					| (Ex #r. Compromise(A)@r) 
-					| (Ex #r. Compromise(B)@r))"
+    "All A B t #i. CommitB(B,A,t) @i
+      ==> ((Ex #j. RunningA(A,B,t) @j & j < i
+          & not (Ex A2 B2 #i2. CommitB(B2,A2,t) @i2
+                            & not (#i2 = #i)))
+          | (Ex #r. Compromise(A)@r) 
+          | (Ex #r. Compromise(B)@r))"
 
 
 
 // check the authenticity and freshness of the transaction from A's point of view
 lemma injectiveagreement_A:
-		"All A B t #i. CommitA(A,B,t)@i
-			==> ((Ex #j. RunningB(B,A,t) @j & j < i
-					& not (Ex A2 B2 #i2. CommitA(A2,B2,t) @i2
-														& not (#i2 = #i)))
-			| (Ex #r. Compromise(A)@r) 
-			| (Ex #r. Compromise(B)@r))"
+    "All A B t #i. CommitA(A,B,t)@i
+      ==> ((Ex #j. RunningB(B,A,t) @j & j < i
+          & not (Ex A2 B2 #i2. CommitA(A2,B2,t) @i2
+                            & not (#i2 = #i)))
+      | (Ex #r. Compromise(A)@r) 
+      | (Ex #r. Compromise(B)@r))"
 end

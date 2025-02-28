@@ -50,40 +50,40 @@ process:
 )
 
 lemma Secrecy:
-  	"not(Ex A B m #i .
-    	Secret(A, B, m)@ #i
+    "not(Ex A B m #i .
+      Secret(A, B, m)@ #i
       & (Ex #r. K(m) @ #r)
       & not(Ex #r. Reveal(B) @ #r)
       & not(Ex #r. Reveal(A) @ #r))"
 
-			
+      
 // check the authenticity and freshness of the transaction from B's point of view
 lemma injectiveagreement_B:
-		"All A B t #i.
-    	Commit_B(A,B,t) @i
-     	==> (Ex #j. Running_A(A,B,t)@j & j < i
-      	& not (Ex A2 B2 #i2. Commit_B(A2,B2,t) @i2
+    "All A B t #i.
+      Commit_B(A,B,t) @i
+      ==> (Ex #j. Running_A(A,B,t)@j & j < i
+        & not (Ex A2 B2 #i2. Commit_B(A2,B2,t) @i2
           & not (#i2 = #i)))
       | (Ex #r. Reveal(A)@r)
       | (Ex #r. Reveal(B)@r)"
 
 // check the authenticity of the transaction from B's point of view
 lemma agreement_B:
-		"All A B t #i.
-			Commit_B(A,B,t) @i
-    	==> (Ex #j. Running_A(A,B,t) @j  & j < i)
+    "All A B t #i.
+      Commit_B(A,B,t) @i
+      ==> (Ex #j. Running_A(A,B,t) @j  & j < i)
       | (Ex #r. Reveal(A)@r)
       | (Ex #r. Reveal(B)@r)"
 
 
 // sanity check: check if honest execution is possible
 lemma Session_key_honest_setup:
-		exists-trace
-  	"Ex A B t #i #j.
-    		Running_A(A, B, t) @ #i
-    		& Commit_B(A, B, t)@ #j
-      	& not(Ex #r. Reveal(B) @ r)
-      	& not(Ex #s. Reveal(A) @ s)"
+    exists-trace
+    "Ex A B t #i #j.
+        Running_A(A, B, t) @ #i
+        & Commit_B(A, B, t)@ #j
+        & not(Ex #r. Reveal(B) @ r)
+        & not(Ex #s. Reveal(A) @ s)"
 
 
 end
