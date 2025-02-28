@@ -1,3 +1,21 @@
+## Benchmark
+---
+
+This benchmark consists of 18 protocols. For each protocol, there are three associated files:  
+- `protocol_name.txt`: Contains the protocol description.  
+- `protocol_name-P.spthy`: Represents the Sapic+ model.  
+- `protocol_name-R.spthy`: Represents the Tamarin model.  
+
+When you run the model using Tamarin, it generates a summary of the results. This summary includes details such as processing time, lemmas, and whether the results are verified or falsified. All the summaries are compiled in the `summarized_results.txt` file.  
+
+To generate a table from the summaries, simply run the following command:
+
+```bash
+python collect.py summarized_results.txt
+```
+
+This will create a table summarizing the results of each protocol, including the relevant time, lemma statuses, and the verification results. We provide an example below. To reproduce the complete table, run all the models and store the results in a file following the format provided in `summarized_results.txt`.
+
 ```
 +--------------------+---------------------------------+-------------+------+---------------+------+
 | Protocol           | Lemma                           | Sapic Model        | Tamarin Model        |
