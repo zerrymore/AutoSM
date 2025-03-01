@@ -1,5 +1,5 @@
-LLM-Aided Automatic Modelling for Security Protocol Verification
-===
+# LLM-Aided Automatic Modelling for Security Protocol Verification
+
 
 This repository corresponds to the artifact of our `ICSE 2025` and consists of three main components:
 
@@ -11,7 +11,7 @@ This repository corresponds to the artifact of our `ICSE 2025` and consists of t
 First, we provide an overview of the directory structure of this repository. Then, we explain how to use the tool, followed by an example demonstrating how user interaction is involved. Finally, we provide a detailed description of the benchmark introduced in this work.
 
 
-# Directories structure
+## Directories structure
 ```
 📂 AutoSM
 ├── 📂 ace-builds
@@ -31,7 +31,7 @@ First, we provide an overview of the directory structure of this repository. The
 - `templates`: HTML page of web-based frontend 
 
 
-# Introduction
+## Introduction
 
 This tool can generate formal symbolic model for a protocol automatically from unstructed natural language, equipped with LLMs' powered ability for semantic parsing. Comparing with existing text-to-code tasks, we pay more attention on the trustworthiness
 of the general translation process, i.e., the output of the tool should be consistent with the unstructed natural language description semantically. We try to make as much control as possible for the overall process (at least, provide some evidence of the trustworthiness for a non-expert user), though "black-box" LLM is introduced. 
@@ -43,9 +43,9 @@ The tool is composed of four stages, transitioning from natural language input t
 3. Rewriter, which transforms the lambda expressions into Sapic+ [1] specification.
 4. Compiler, which is designed and implemented by Cheval et al., taking the well-formed Sapic+ process as input and compiles it into models accepted by the protocol verifiers (Tamarin, DeepSec, and ProVerif) directly.
 
-# How to use the tool?
+## How to use the tool?
 
-## Setup
+### Setup
 
 1. Install Tamarin-prover
 - Follow the [Tamarin manual](https://tamarin-prover.com/manual/master/book/002_installation.html).
@@ -70,7 +70,7 @@ The tool is composed of four stages, transitioning from natural language input t
   ```
 - Before using Tamarin, set the terminal encoding to UTF-8:
   ```bash
-  export LC_ALL=C.UTF-8
+  $ export LC_ALL=C.UTF-8
   ```
 
 2. Setup the conda environments, and install the related packages.
@@ -80,7 +80,7 @@ The tool is composed of four stages, transitioning from natural language input t
     $ pip install -r requirements.txt
     ```
 
-## Configuration
+### Configuration
 
 - Configure openai API key in file `src/conf/config.json`,
     ```json
@@ -98,7 +98,7 @@ The tool is composed of four stages, transitioning from natural language input t
 - (Optional) Add ```--debug``` flag to enable debugging mode.
 - Then open web-based tool at http://127.0.0.1:5000
 
-## User example
+### User example
 
 Here we take protocol `CCITT X509.1` as example to show how user can use the tool generate symbolic model semi-automatically.
 
@@ -111,7 +111,7 @@ Here we take protocol `CCITT X509.1` as example to show how user can use the too
 4. Rewrite to the Sapic+ specification.
 
 
-# How we construct the Benchmark?
+## How we construct the Benchmark?
 
 Here, we provide more details about the benchmark introduced in this work. The benchmark consists of a set of three tuples ($N$, $\mathcal{P}$, $\mathcal{R}$), where $N$ represents the protocol description, $\mathcal{P}$ is the Sapic+ model, and $\mathcal{R}$ is the Tamarin model. We begin with $\mathcal{R}$, which is available in the Tamarin GitHub repository. To derive their corresponding $\mathit{N}$, we read the related documentation, such as RFCs, and extract and reformulate the core parts relevant to the model. As a result, some of the $N$ in our benchmark may not be identical to the original paper. For each given model $\mathcal{R}$, a set of safety properties $\Phi$ have been verified on $\mathcal{R}$. We manually build the Sapic+ model $\mathcal{P}$, ensuring that every property $\varphi \in \Phi$ which have been verified on $\mathcal{R}$ still holds on $\mathcal{P}$.
 
@@ -140,30 +140,9 @@ We use a table to document the sources of our protocol descriptions and how we r
 
 
 
-## User tutorial
+### User tutorial
 
 Here gives an overivew for the general workflow of the tool. We use a NSPK example to illustrate how user can interact with the tool and how tool can generate formal specificaions and check the results automatically.
-
-<!-- ## Reference
-
-[1] Cheval, Vincent, Charlie Jacomme, Steve Kremer, and Robert Künnemann. 2022. ''SAPIC+: Protocol Verifiers of the World, Unite!'' In 31st USENIX Security Symposium (USENIX Security 22), 3935–52.
-[2] Wikipedia. "Needham–Schroeder protocol." https://en.wikipedia.org/wiki/Needham%E2%80%93Schroeder_protocol
-[3] Global Information Assurance Certification Paper.
-[4] Schwabe, Peter, Douglas Stebila, and Thom Wiggers. "Post-quantum TLS without handshake signatures." Proceedings of the 2020 ACM SIGSAC Conference on Computer and Communications Security. 2020.
-[5] Tamarin Prover Manual. https://tamarin-prover.com/manual/.
-[6] Ylonen, Tatu. "RFC 4253: The secure shell (SSH) transport layer protocol." (2006).
-[7] Göran Selander, John Preuß Mattsson, and Francesca Palombini. "Ephemeral           Diffie-Hellman Over COSE (EDHOC)." Internet-Draft draft-ietf-lake-edhoc-02, Internet Engineering Task Force, May 6, 2021.
-[8] Benjamin Kiesl. "Tamarin Toy Protocol." https://github.com/benjaminkiesl/tamarin_toy_protocol
-[9] Wikipedia. "Yahalom (protocol)" https://en.wikipedia.org/wiki/Yahalom_(protocol)
-[10] Kao, I-Lung, and Randy Chow. "An efficient and secure authentication protocol using uncertified keys." ACM SIGOPS Operating Systems Review 29.3 (1995): 14-21.
-[11] Kim, Jun Young, et al. "Automated analysis of secure internet of things protocols." Proceedings of the 33rd Annual Computer Security Applications Conference. 2017.
-[12] Wikipedia. "Neuman–Stubblebine protocol" https://en.wikipedia.org/wiki/Neuman%E2%80%93Stubblebine_protocol
-[13] Shaikh, Siraj, and Vicky Bush. "Analysing the Woo-Lam protocol using CSP and rank functions." Journal of Research and Practice in Information Technology 38.1 (2006): 19-29.
-[14] CCITT Recommendation X.509, The Directory - Authentication Framework, CCITT, December 1988.
-[15] I'Anson, Collin, and Chris Mitchell. "Security defects in CCITT recommendation X. 509: the directory authentication framework." ACM SIGCOMM Computer Communication Review 20.2 (1990): 30-34.
-[16] Conchinha, Bruno, David A. Basin, and Carlos Caleiro. "FAST: an efficient decision procedure for deduction and static equivalence." 22nd International Conference on Rewriting Techniques and Applications (RTA'11)(2011). Schloss-Dagstuhl-Leibniz Zentrum für Informatik, 2011.
-[17] Denning, Dorothy E., and Giovanni Maria Sacco. "Timestamps in key distribution protocols." Communications of the ACM 24.8 (1981): 533-536.
-[18]  -->
 
 
 ### References
