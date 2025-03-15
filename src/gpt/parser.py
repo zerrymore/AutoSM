@@ -1,16 +1,20 @@
-from gpt.gptcore import BaseChatClass
 import re
-from gpt.prompt import get_incontext_learning_contents
 from gpt.prompt_all import *
 from gpt.utils import (
-    fix_missing_closing_brackets,
+    fix_brackets,
     deconstruct_expr,
+    is_loop_expression,
     remove_comments_from_sapic,
     extract_line_commment_from_spec
 )
 import logging
 from lark import Token, Tree
-from gpt.analysizer import RoleParser, TopParser
+from gpt.bnf import pretty_stmts
+from lark import Lark
+
+from gpt.bnf import ROLE_BNF, TOP_BNF
+RoleParser = Lark(ROLE_BNF, parser='lalr', start='start', propagate_positions=True)
+TopParser = Lark(TOP_BNF, parser='lalr', start='start', propagate_positions=True)
 
 
 def parse_with_fallback(parser, spec):
@@ -31,7 +35,7 @@ def collect_subtrees(tree_node, name: str):
     return subtrees
 
 
-def collect_func_declarations(local_processes:str, top_process:str) -> list:
+def collect_funcs(local_processes:str, top_process:str) -> list:
     """collect function declaration from top process and local processes.
 
     Returns:
@@ -59,9 +63,8 @@ def collect_func_declarations(local_processes:str, top_process:str) -> list:
     return functions
 
 
-from gpt.bnf import pretty_stmts
         
-def format_local_processes_with_indents(local_processes:str) -> str:
+def indent_local_processes(local_processes:str) -> str:
     
     comments = extract_line_commment_from_spec(local_processes)
             
@@ -85,8 +88,6 @@ def format_local_processes_with_indents(local_processes:str) -> str:
         j += 1
     new_spec = "\n".join(stmt_l)
     return new_spec
-    # except:
-    #     return ""
     
     
     
@@ -153,95 +154,32 @@ def extract_intermediate_vars(root: Tree):
     return set().union(*intermediate_vars)
 
 
-def extract_from_comments(comment_string):
+def extract_from_comments(comment_string:str) -> str:
     matches = re.findall(r"/\*(.*?)\*/", comment_string, re.DOTALL)
-    return matches[0].strip()
+    fcalls = []
+    lines = matches[0].strip().split("\n")
+    for line in lines:
+        fcall_pattern = r"^\w+\((.*)\)\s*(?:\/\/.*)?$"
+        match = re.match(fcall_pattern, line)
+        if match:
+            expr = line.split("//")[0].strip()
+            fcalls.append(expr)
+    return "\n".join(fcalls)
 
-
-def record_reading_process(chunks: list, Lambda: list, output_folder):
-    log = ""
-    for i, _ in enumerate(chunks):
-        log += f"\n\U0001f4d6:{chunks[i]}" + f"\n\U0001f916:/*\n{Lambda[i]}\n*/\n"
-    try:
-        with open(output_folder, "w") as f:
-            f.write(log)
-    except:
-        pass
-
-
-def hire_llm_read_doc(
-    File: str,
-    llm_model,
-    temperature,
-    n_choices,
-    maxTokens,
-    recording_folder,
-    prompt_list=[],
-    useOpenKey=True,
-):
-    if prompt_list:
-        chatveri = BaseChatClass(
-            prompt_list, useOpenKey=useOpenKey, continuous_talking=True
-        )
-    else:
-        chatveri = BaseChatClass(
-            get_incontext_learning_contents("SeqReader"),
-            useOpenKey=useOpenKey,
-            continuous_talking=True,
-        )
-    # chatveri.show_conversation(chatveri.conversation_list)
-    chunks = File.split("\n\n")
-    Lambda = []
-    logging.info(f"\U0001f914: Ok, I'm reading the document you give me...\n")
-    for i, chunk in enumerate(chunks):
-        chunks[i] += "\n/* >>The lambda calculus << */"
-
-        if i > 0:
-            chunks[i - 1] = chunks[i - 1].replace(
-                "/* >>The lambda calculus << */", f"/*\n{Lambda[-1]}\n*/"
-            )
-        if i == 0:
-            content = chunks[i]
-        else:
-            content = chunks[i - 1] + "\n" + chunks[i]
-        question = content
-        logging.info(f"\U0001f4d6:{question}")
-
-        full_reply_content_list, tokens_usage = chatveri.get_respone(
-            question,
-            model=llm_model,
-            maxTokens=maxTokens,
-            temperature_arg=temperature,
-            n_choices=n_choices,
-        )
-        output = full_reply_content_list[0]
-
-        lam_expr = extract_from_comments(output)
-        Lambda += [lam_expr]
-
-    texts = File.split("\n\n")
-    Lambda_spec = "\n".join(Lambda)
-
-    try:
-        with open("./lambda.txt", "w") as f:
-            f.write(Lambda_spec)
-    except:
-        pass
-
-    record_reading_process(texts, Lambda, recording_folder)
-
-    return Lambda_spec
 
 
 def T_transform(Lambda_spec: str) -> str:
+    """
+    Take pure expressions as input, then output the particial process.
+    """
     try:
         ##== Filter out all the deconstrction expressions,  ==##
         ##== only allowing construction and I/O expressions ==##
 
         corr_Lambda_spec = "\n".join(
-            fix_missing_closing_brackets(line)
+            fix_brackets(line)
             for line in Lambda_spec.split("\n")
-            if not deconstruct_expr(line)
+            if (not deconstruct_expr(line)) and (not is_loop_expression(line))
         )
 
         with open("./filter_expr.txt", "w") as f:
@@ -257,102 +195,6 @@ def T_transform(Lambda_spec: str) -> str:
     return Role_spec
 
 
-def repair_role_spec(
-    repair_question: str, llm_model, temperature, n_choices, maxTokens, useOpenKey
-) -> str:
-    chatveri = BaseChatClass(
-        get_incontext_learning_contents("repair"), useOpenKey=useOpenKey
-    )
-    repaired, tokens_usage = chatveri.get_respone(
-        repair_question,
-        model=llm_model,
-        maxTokens=maxTokens,
-        temperature_arg=temperature,
-        n_choices=n_choices,
-    )
-    return repaired, tokens_usage
-
-
-def eliminate_comments_from_top_spec(spec: str) -> str:
-    """elimiate comments from top specs,
-    ensures that it starts with the KEYWORD: process
-    """
-    spec = re.sub(r"//.*?$", "", spec, flags=re.MULTILINE)
-    spec = re.sub(r"\n\s*\n", "\n", spec)
-    spec = spec[0].lower() + spec[1:]
-
-    # ensures that it starts with the KEYWORD: process
-    KEYWORD = "process:"
-    assert spec.startswith(KEYWORD)
-    return spec
-
-
-def determin_initial_role_vars(
-    doc: str,
-    spec: str,
-    llm_model,
-    temperature,
-    n_choices,
-    maxTokens,
-    useOpenKey=True,
-    hint="",
-) -> str:
-
-    detemine_template = """\
-Description: <The protocol text I give you>           
-Incomplete spec:
-<The spec I give you>
-
-<The hints I give you>
-"""
-    chatveri = BaseChatClass(
-        get_incontext_learning_contents("determine_init_var"), useOpenKey=useOpenKey
-    )
-    determine_question = (
-        detemine_template.replace("<The protocol text I give you>", doc)
-        .replace("<The spec I give you>", spec)
-        .replace("<The hints I give you>", hint)
-    )
-    determine_answer, tokens_usage = chatveri.get_respone(
-        determine_question,
-        model=llm_model,
-        maxTokens=maxTokens,
-        temperature_arg=temperature,
-        n_choices=n_choices,
-    )
-    conclude_in_dict = """\
-Based on above analysis, conclude your results in dictionary. If you think there are some implicit knowledge for some role, \
-update the dictionary with them. 
-If you think there are some mistakes in the above result, correct them.
-Do not include any other explaination in your result.
-<The spec I give you>"""
-    determine_answer, tokens_usage = chatveri.get_respone(
-        conclude_in_dict.replace("<The spec I give you>", spec),
-        model=llm_model,
-        maxTokens=maxTokens,
-        temperature_arg=temperature,
-        n_choices=n_choices,
-    )
-    from ast import literal_eval
-
-    dicts: dict = literal_eval(determine_answer[0])
-
-    spec_list = spec.split("\n")
-    new_spec = []
-    for line in spec_list:
-        for name, args in dicts.items():
-            if f"let {name}" in line:
-                line = f"let {name}({', '.join(list(args))}) = "
-        new_spec += [line]
-
-    new_spec = "\n".join(new_spec)
-    return new_spec
-
-
-def LLM_parser(
-    doc: str,
-) -> str:
-    pass
 
 
 if __name__ == "__main__":
@@ -360,6 +202,7 @@ if __name__ == "__main__":
 Op(A, assign(shared_secret, dh_exchange(g, p, a, b)))
 Op(A, assign(signed_secret, sign(shared_secret, host_key)))
 Knows(role(C), V_C, I_C)
+Knows(role(C), V_C, I_E)
 Knows(role(S), V_S, I_S, K_S)
 Op(C, assign(shared_secret_C, dh_exchange(g, p, q)))
 Op(S, assign(shared_secret_S, dh_exchange(g, p, q)))
@@ -399,5 +242,49 @@ Op(C, assign(initial_iv_ctos, hash(concat(K, H, "A", session_id), HASH)))
 Op(S, assign(initial_iv_ctos, hash(concat(K, H, "A", session_id), HASH)))
 Op(C, assign(initial_iv_stoc, hash(concat(K, H, "B", session_id), HASH)))
 Op(S, assign(initial_iv_stoc, hash(concat(K, H, "B", session_id), HASH)))
+Send(S, C, message)
 """
+#     code = """
+#     /*
+# Gen(S, y)
+# Op(S, assign(f, exp(g, y)))
+# Recv(S, C, e)
+# Op(S, assign(K, exp(e, y)))
+# Op(S, assign(H, hash(concat(V_C, V_S, I_C, I_S, K_S, e, f, K))))
+# Op(S, assign(s, sign(H, sk_S)))
+# Op(S, assign(message, concat(K_S, f, s)))
+# Send(S, C, message)
+# Recv(C, S, message)
+# // Extending key material if the required key length exceeds the hash output:
+# Op(C, assign(extended_key_CtoS, extend_key(enc_key_CtoS, K, H)))  // Client extends encryption key for client-to-server
+# Op(S, assign(extended_key_StoC, extend_key(enc_key_StoC, K, H)))  // Server extends encryption key for server-to-client
+# Op(C, assign(extended_int_key_CtoS, extend_key(int_key_CtoS, K, H)))  // Client extends integrity key for client-to-server
+# Op(S, assign(extended_int_key_StoC, extend_key(int_key_StoC, K, H)))  // Server extends integrity key for server-to-client
+
+# // Assigning extended keys to respective agents:
+# Knows(C, extended_key_CtoS, extended_int_key_CtoS)  // Client knows its extended keys
+# Knows(S, extended_key_StoC, extended_int_key_StoC)  // Server knows its extended keys
+# */"""
+    code = """
+Knows(A, Kas, idA)
+Knows(B, Kbs, idB)
+Knows(S, Kas, Kbs)
+Send(A, B, idA)
+Recv(B, A, idA)
+Gen(B, Nb)
+Send(B, A, Nb)
+Recv(A, B, Nb)
+Op(A, assign(encryptedNb, senc(Nb, Kas)))
+Send(A, B, encryptedNb)
+Recv(B, A, encryptedNb)
+Op(B, assign(encryptedIdA, senc(idA, Kbs)))
+Send(B, S, concat(encryptedNb, encryptedIdA))
+Recv(S, B, concat(encryptedNb, encryptedIdA))
+Op(S, assign(decryptedNb, dec(encryptedNb, Kas)))
+Op(S, assign(decryptedIdA, dec(encryptedIdA, Kbs)))
+Op(S, assign(encryptedNbForB, senc(decryptedNb, Kbs)))
+Send(S, B, encryptedNbForB)
+Recv(B, S, encryptedNbForB)
+Op(B, assign(decryptedNbForB, dec(encryptedNbForB, Kbs)))# """
     print(T_transform(code))
+    # print(extract_from_comments(code))

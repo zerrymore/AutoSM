@@ -45,8 +45,8 @@
     <div class="input-group">
       <span class="input-group-text"  id="mode_label">Prompt Mode:</span>
       <select class="form-control" name="mode" id="prompt_mode" aria-describedby="prompt_mode">
-        <option value="simple">Trivial prompt</option>
         <option value="lambda">Lambda as intermediate</option>
+        <option value="simple">Few shot prompt</option>
       </select>
     </div>
   </div>
@@ -65,14 +65,15 @@
           <option value="Yahalom">8. Yahalom</option>
           <option value="kca">9. Kao-Chow Authentication V1</option>
           <option value="X509_1">10. CCITT X.509.1</option>
-          <option value="Woo_Lam_Pi_f">11. Woo and Lam</option>
-          <option value="lake">12. LAK06</option>
+          <option value="Woo_Lam">11. Woo and Lam</option>
+          <option value="lak">12. LAK06</option>
           <option value="splice">13. Splice</option>
           <option value="Neu_Stu">14. Neuman-Stubblebine</option>
           <option value="naxos">15. NAXOS</option>
           <option value="ssh">16. SSH</option>
           <option value="edhoc">17. EDHOC</option>
           <option value="kemtls">18. KEMTLS</option>
+          <option value="emv">19. EMV simplified</option>
       </select>
     </div>
 </div>
@@ -90,7 +91,7 @@
     <!-- 1. Diagram  -->
     <div class="widget-tab-contents" id="diagramDivName-container">
       <div id="diagramDivName" style="height:100px; float:left; background-color: #000000"></div>
-      <div id="diagramMSC" style="width:35%; height:600px; float:left; background-color: #eee"></div>
+      <div id="diagramMSC" style="width:30%; height:600px; float:left; background-color: #eee"></div>
       <!-- <input style="position: absolute; top: 0pt; right: 0px; margin-right: 15pt" class="btn-primary" type="submit" , name="parse" ,
       onclick="parseReq()" , value="parse" /> -->
       <!-- 1.1 sub-area: loaded texts -->
@@ -102,12 +103,18 @@
       </div>
      
 
-      <div style="width:65%; float:right;"> <!-- New container for CodeEditor and sapic -->
+      <div style="width:70%; float:right;"> <!-- New container for CodeEditor and sapic -->
       
         <!-- sapic -->
         <div class="my-checkIR" id="sapic" 
-          style="position: relative; height: 600px; width:50%; border-left: 2px solid #070707;  background-color:white;float:left;">
-          <div id="logEditor" style="height: 600px; width: 100%;"></div>
+          style="position: relative; height: 600px; width:50%; border-left: 1px solid #070707;  background-color:white;float:left;">
+          <div id="logEditor" style="height: 600px; width: 100%;">In this protocol, a client C generates a fresh 
+symmetric key k, encrypts it with the public key 
+pkS of a server S (aenc stands for asymmetric 
+encryption), and sends it to S. 
+The server confirms the key's receipt by sending
+the hash of the key back to the client.
+          </div>
           <input style="position: absolute; top: 0pt; right: 0px; margin-right: 15pt" class="btn-primary" type="submit" , name="parse" ,
           onclick="parseReq()" , value="parse" />
           <input style="position: absolute; top: 30pt; right: 0px; margin-right: 15pt" class="btn-primary" type="submit" , name="analyze" ,
@@ -118,26 +125,21 @@
 
         <!-- CodeEditor -->
         <div class="myCodeEditor" id="CodeEditor_button"
-        style="position: relative; height: 600px; width:50%; border-left: 2px solid #070707; border-right: 2px solid #070707; background-color:white;  float:left;">
-        <div id="sapicEditor"style="height: 600px; width: 100%;">
-/* Jan 2025 
-* Frontend of the tool.
-* Note: This is the editable SAPIC+ specification,                    
-* which allows users to modify the generated model.
-* The .spthy file can be downloaded via the button.
-**/
+        style="position: relative; height: 600px; width:50%; border-left: 1px solid #070707; border-right: 1px solid #070707; background-color:white;  float:left;">
+        <div id="sapicEditor"style="height: 600px; width: 100%;">/* Jan 2025 
+ * Frontend of the tool.
+ * Note: This is the editable SAPIC+ specification,                    
+ * which allows users to modify the generated model.
+ * The .spthy file can be downloaded via the button.
+ */
       </div>
         <input style="position: absolute; top: 0pt; right: 0px; margin-right: 15pt" class="btn-primary" type="submit" , name="synthesis" ,
         onclick="synthesisReq()" , value="Compile" />
       </div>
-
       </div>
       
       <div id="InspectorDiv" class="inspector"></div>
-
-
       <script src="/ace-builds/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
-
       <script src="/static/editor.js"></script>
 
     </div>
