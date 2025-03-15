@@ -167,7 +167,7 @@ def calculus_to_msc(code):
     for group in groups:
         isGroup.append({
             "key": group,
-            "text": f"Role:{group}",
+            "text": f"{group}",
             "isGroup": True,
             "loc": f"{group_index*100} 0",
             "duration": max_duration + 4,

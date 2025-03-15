@@ -1,44 +1,45 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-import os, sys, time
+import os, time
 import openai
 import logging
 import tiktoken
-from typing import List
 
 
-def num_tokens_from_messages(messages, model="gpt-3.5-turbo-0613"):
+def num_tokens_from_messages(messages, model="gpt-4o-mini-2024-07-18"):
     """Return the number of tokens used by a list of messages."""
     try:
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:
-        print("Warning: model not found. Using cl100k_base encoding.")
-        encoding = tiktoken.get_encoding("cl100k_base")
+        print("Warning: model not found. Using o200k_base encoding.")
+        encoding = tiktoken.get_encoding("o200k_base")
     if model in {
-        "gpt-3.5-turbo-0613",
-        "gpt-3.5-turbo-16k-0613",
+        "gpt-3.5-turbo-0125",
         "gpt-4-0314",
         "gpt-4-32k-0314",
         "gpt-4-0613",
         "gpt-4-32k-0613",
-    }:
+        "gpt-4o-mini-2024-07-18",
+        "gpt-4o-2024-08-06"
+        }:
         tokens_per_message = 3
         tokens_per_name = 1
-    elif model == "gpt-3.5-turbo-0301":
-        tokens_per_message = (
-            4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
-        )
-        tokens_per_name = -6  # if there's a name, the role is omitted
     elif "gpt-3.5-turbo" in model:
-        # print("Warning: gpt-3.5-turbo may update over time. Returning num tokens assuming gpt-3.5-turbo-0613.")
-        return num_tokens_from_messages(messages, model="gpt-3.5-turbo-0613")
+        print("Warning: gpt-3.5-turbo may update over time. Returning num tokens assuming gpt-3.5-turbo-0125.")
+        return num_tokens_from_messages(messages, model="gpt-3.5-turbo-0125")
+    elif "gpt-4o-mini" in model:
+        print("Warning: gpt-4o-mini may update over time. Returning num tokens assuming gpt-4o-mini-2024-07-18.")
+        return num_tokens_from_messages(messages, model="gpt-4o-mini-2024-07-18")
+    elif "gpt-4o" in model:
+        print("Warning: gpt-4o and gpt-4o-mini may update over time. Returning num tokens assuming gpt-4o-2024-08-06.")
+        return num_tokens_from_messages(messages, model="gpt-4o-2024-08-06")
     elif "gpt-4" in model:
-        # print("Warning: gpt-4 may update over time. Returning num tokens assuming gpt-4-0613.")
+        print("Warning: gpt-4 may update over time. Returning num tokens assuming gpt-4-0613.")
         return num_tokens_from_messages(messages, model="gpt-4-0613")
     else:
         raise NotImplementedError(
-            f"""num_tokens_from_messages() is not implemented for model {model}. See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens."""
+            f"""num_tokens_from_messages() is not implemented for model {model}."""
         )
     num_tokens = 0
     for message in messages:
@@ -58,20 +59,26 @@ def find_best_reply_content(reply_list):
 
 class BaseChatClass:
     def __init__(
-        self, conversation_list=[], continuous_talking=True, useOpenKey=False
+        self, 
+        conversation_list=[], 
+        continuous_talking=True, 
+        useOpenKey=False,
+
     ) -> None:
         # set API KEY
-        if useOpenKey:
-            openai.api_base = os.environ.get("API_URL_BASE")
-            openai.api_key = os.environ.get("OPENAI_API_KEY")
-            # openai.proxy = ""
-        else:
-            openai.api_key = os.environ.get("OPENAI_API_KEY")
-            openai.api_base = os.environ.get("API_URL_BASE")
+        openai.api_base = os.environ.get("API_URL_BASE")
+        openai.api_key = os.environ.get("OPENAI_API_KEY")
 
+        self.useOpenKey = useOpenKey
         self.conversation_list = conversation_list
         self.continuous_talking = continuous_talking
+        
+    def reload_conversation(self, msg_list):
+        self.conversation_list = msg_list
 
+    def extend_conversation(self, msg_list):
+        self.conversation_list.extend(msg_list)
+    
     def show_conversation(self, msg_list):
         for msg in msg_list:
             if msg["role"] == "user":
@@ -79,18 +86,17 @@ class BaseChatClass:
             else:
                 print(f"\U0001f47D: {msg['content']}\n")
 
-    # 提示chatgpt
     def get_respone(
         self,
         prompt,
         model="gpt-3.5-turbo",
         maxTokens=2048,
-        temperature_arg=0.5,
+        temperature_arg=0.5, 
         stream_out=True,
         stop_str=None,
         n_choices=1,
     ):
-
+        
         if self.continuous_talking:
             self.conversation_list.append({"role": "user", "content": prompt})
 
@@ -135,12 +141,16 @@ class BaseChatClass:
             # iterate through the stream of events
             print(f"\U0001f47D: ", end="")
             for chunk in response:
-                chunk_msg = chunk.choices[0]["delta"]  # extract the message
-                collected_messages[chunk.choices[0]["index"]].append(
-                    chunk_msg
-                )  # save the message
-                if chunk.choices[0]["index"] == 0:
-                    print(chunk_msg.get("content", ""), end="")
+                # print(chunk)
+                try:
+                    chunk_msg = chunk.choices[0]["delta"]  # extract the message
+                    collected_messages[chunk.choices[0]["index"]].append(
+                        chunk_msg
+                    )  # save the message
+                    if chunk.choices[0]["index"] == 0:
+                        print(chunk_msg.get("content", ""), end="")
+                except Exception as e:
+                    print(e)
             print("\n")
 
             # get the full reply content in list
@@ -154,8 +164,11 @@ class BaseChatClass:
             tmp_cvlist = self.conversation_list.copy()
             for each_reply_content in full_reply_content_list:
                 tmp_cvlist.append({"role": "assistant", "content": each_reply_content})
-            tokens_usage = num_tokens_from_messages(tmp_cvlist, model) - n_choices * 5
-
+            print(model)
+            try:
+                tokens_usage = num_tokens_from_messages(tmp_cvlist, model) - n_choices * 5
+            except:
+                tokens_usage = -1
         # don't use stream of chunks
         else:
             # get the reply content
