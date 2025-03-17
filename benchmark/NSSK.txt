@@ -16,7 +16,7 @@ The protocol can be specified as follows in security protocol notation:
     1.  A --> S: A, B, Na
     Alice sends a message to the server identifying herself and Bob, telling the server she wants to communicate with Bob.
 
-    2. S --> A: {Na, Kab, B {Kab, A}Kbs}Kas
+    2. S --> A: {Na, Kab, B, {Kab, A}Kbs}Kas
     The server generates Kab and sends back to Alice a copy encrypted under 
     Kbs for Alice to forward to Bob and also a copy for Alice. 
     Since Alice may be requesting keys for several different people, 
@@ -33,4 +33,3 @@ The protocol can be specified as follows in security protocol notation:
 
     5. A --> B: {Nb-1}Kab
     Alice performs a simple operation on the nonce, re-encrypts it and sends it back verifying that she is still alive and that she holds the key.
-

@@ -2,7 +2,6 @@
  * wikipedia
  * Link: https://en.wikipedia.org/wiki/Yahalom_(protocol)
  */
-
 Yahalom is an authentication and secure key-sharing protocol designed for use on an insecure network such as the Internet.
 Yahalom uses a trusted arbitrator to distribute a shared key between two people. 
 This protocol can be considered as an improved version of Wide Mouth Frog protocol 

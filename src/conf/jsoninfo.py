@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
+
 import json
 import os, sys
 from typing import Any, Dict, Text
@@ -25,7 +26,18 @@ def write_json_config_to_env(config: Dict[Text, Any]) -> None:
             os.environ[key] = str(config[key])
 
 
-def load_json_config() -> Dict[Text, Any]:
+
+def load_env_for_deepseek(config: Dict[Text, Any]) -> None:
+    for key in config:
+        if key == 'deepseek_URL_BASE':
+            os.environ['API_URL_BASE'] = str(config[key])
+        elif key == 'deepseek_api_key':
+            os.environ['OPENAI_API_KEY'] = str(config[key])
+        else:
+            os.environ[key] = str(config[key])
+            
+
+def load_json_config(model_famliy:str) -> Dict[Text, Any]:
     ##== Load the JSON config from the config.json file. ==##
     # returns the path to the current directory
     current_path = os.path.dirname(__file__)
@@ -35,7 +47,12 @@ def load_json_config() -> Dict[Text, Any]:
             # loads the config file into the variable config
             config = json.load(f)
             # calls the function write_json_config_to_env and passes the config variable as a parameter
-            write_json_config_to_env(config)
+            if model_famliy.startswith("gpt"):
+                write_json_config_to_env(config)
+            
+            if model_famliy.startswith("deepseek"):
+                load_env_for_deepseek(config)
+                
             # returns the config variable
             return config
     except FileNotFoundError:

@@ -3,5 +3,5 @@
  */
 
 In this protocol, a client C generates a fresh symmetric key k, \
-encrypts it with the public key pkS of a server S (aenc stands for asymmetric encryption), and sends it to S. \ 
-The server confirms the key’s receipt by sending the hash of the key back to the client.
+encrypts it with the public key pkS of a server S (aenc stands for asymmetric encryption), and sends it to S.
+The server confirms the key's receipt by sending the hash of the key back to the client.

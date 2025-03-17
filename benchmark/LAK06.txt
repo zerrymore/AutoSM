@@ -6,49 +6,36 @@
  * Note: 
  */
 
-The RFID system has three main components: T ,R, and B.
-T carries object identifying data. 
-T is attached to all objects in an RFID system. 
-T is typically composed of a microchip for storage and computation, 
-and a coupling element, such as an antenna coil for communication. 
-T may also contain a contact pad. Tag memory may be read-only, write-once read-many or fully rewritable.
-
-We describes the process of our authentication pro
-tocol as in Figure 1.
-
-
-Back-end               Reader                     Tag
-	|                   s <- PRNG                  |
-	|                      |          s            |
-	|                      | --------------------->|
-	|                      |                       |
-	|                      |                    r1 <- PRNG
-	|                      |                    r2 <- h(r1⊕k⊕s)   
-	|                      |                       |
-	|                      |       r1, r2          |
-	|    s, r1, r2         |<----------------------|
-	|<---------------------|                       |
-	| Finds ID             |                       |
-	| Updates DB           |                       |
-	|                      |                       |
-r3'<- h(r2⊕k⊕s)		     	  					  
-	|--------------------------------------------->|
-	|					   |					   |
-	|                      |                    r3 <- h(r2⊕k⊕s)
-	|                      |                    IF r3' != r3  
-	|                      |                    THEN                  
-	|                      |                      k <- h(k) 
-
-
+The RFID system has two main components: Tag T , and Reader R.
+We describes the process of our authentication protocol as in Figure 1.
+  Reader                  Tag
+ s <- PRNG                  |
+    |          s            |
+    | --------------------->|
+    |                       |
+    |                    r1 <- PRNG
+    |                    r2 <- h(r1⊕k⊕s)   
+    |                       |
+    |        r1, r2         |
+    |<----------------------|
+    |                       |
+    | Finds ID              |
+    | Updates DB            |
+    |                       |
+  r3' <- h(r2⊕k⊕s)
+    |---------------------->|
+    |                       |
+    |                r3 <- h(r2⊕k⊕s)
+    |                  IF r3' != r3  
+    |                  THEN                   
+    |                  k <- h(k)
+    |                       |
+    |                       |
 1. R generates and saves a new pseudorandom number s by utilizing PRNG, 
 and sends s to T.
-
-2. T also generates a new pseudorandom number r1 and sends r1 to R. 
-After that, T generates r2, i.e., h(r1⊕k⊕s), 
-where s was sent by R, and sends r2 to R.
-
+2. T also generates a new pseudorandom number r1, constructs r2, 
+i.e., h(r1⊕k⊕s), then send r1, r2 to R, where s was sent by R.
 3. R delivers responses of T with the saved value s to B, i.e., s, r1, and r2.
-
 4. In order to nd ID of T, B searches k from the fields K and Klast 
 which satisfies the following equation:
 h(r1⊕k⊕s) ? =r2
@@ -56,23 +43,15 @@ where r1, r2, and s are values sent by T.
 If only one k satisfies the equation, 
 then we can know ID corresponding to k in D is ID of T 
 because the equation is true if k and k is identical. 
-If two more values satising the equation are found because of hash collisions, 
-B informs the failure of searching ID of T to R, 
-and orders R to query again in order to restart the process from the first step.
-
-5. B updates information of T. If k is found in the field K of a record, 
-k is copied to the field
-Klast of the record and the eld K of the record
-is set to h(k). If k is found in the field Klast, we
-do not update D (because this situation means B
-already updated D at the previous authentication
-process but T didn't).
-
+5. R updates information of T. 
+If k is found in the field K of a record,
+k is copied to the field Klast of the record,
+and the field K is set to h(k). 
+If k is found in the field Klast, no update is made to D.
 6. From s, r2, and k, which are received values from 
 T and the value found by testing Eq.(1), 
-B calculates r3, i.e., h(r2⊕k⊕s), and sends r3 to R. 
-R transfers r3 to T in order to inform the update.
-
-7. In order to test the correctness of the value R sends, 
-T tests the following equation: r3 ? = r3.
+R calculates r3, i.e., h(r2⊕k⊕s), and sends r3 to T 
+in order to inform the update.
+7. To test the correctness of the value Reader sends, 
+T verifies the following equation: r3 = r3.
 If the equation is correct, T updates k to h(k).

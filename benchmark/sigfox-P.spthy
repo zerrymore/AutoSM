@@ -16,16 +16,9 @@ let Device(skD, pkD, pkS) =
   let <=pkS, Na> = adec(msg, skD) in
   if verify(sig, msg, pkS)=true then
     event Recv(pkD, msg);
-	  event Secret(Na)
+    event Secret(Na)
 
-// process:
-//     !(
-//       new skS; out(pk(skS)); event HonestA(pk(skS));
-//       !(
-//         new skD; out(pk(skD)); event HonestB(pk(skD));
-//         (!Server(skS, pk(skS), pk(skD))  | !Device(skD, pk(skD), pk(skS)) )
-//       )
-//     ) 
+
 
 let Compromise(s) =
     event Reveal(pk(s)); out(s)
@@ -44,28 +37,28 @@ process:
 
 
 lemma executable: 
-		exists-trace 
-		"Ex A B m #i #j.
-				Send(A,m)@i & Recv(B,m) @j"
+    exists-trace 
+    "Ex A B m #i #j.
+        Send(A,m)@i & Recv(B,m) @j"
 
 lemma secret_A: 
-		"All n #i #x. 
-			Secret(n) @i & Role('A')@x 
-			==> (not (Ex #j. K(n)@j)) 
-			| (Ex B #j #k. Reveal(B)@j & Honest(B)@k)"
-	
+    "All n #i #x. 
+      Secret(n) @i & Role('A')@x 
+      ==> (not (Ex #j. K(n)@j)) 
+      | (Ex B #j #k. Reveal(B)@j & Honest(B)@k)"
+  
 lemma secret_B:
-		"All n #i #x.
-			Secret(n) @i & Role('B')@x 
-			==> (not (Ex #j. K(n)@j)) 
-			| (Ex B #j #k. Reveal(B)@j & Honest(B)@k)"
-	
+    "All n #i #x.
+      Secret(n) @i & Role('B')@x 
+      ==> (not (Ex #j. K(n)@j)) 
+      | (Ex B #j #k. Reveal(B)@j & Honest(B)@k)"
+  
 lemma secrecy_PFS_A: 
-		// exists-trace 
-		"All x #i #x. 
+    // exists-trace 
+    "All x #i #x. 
       Secret(x) @i & Role('A')@x
-			==> not (Ex #j. K(x)@j) 
-			| (Ex B #r. Reveal(B)@r & Honest(B) @i & (r < i))"
+      ==> not (Ex #j. K(x)@j) 
+      | (Ex B #r. Reveal(B)@r & Honest(B) @i & (r < i))"
 
 
 

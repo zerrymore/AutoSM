@@ -5,8 +5,6 @@
  * Note: This protocol originates from [2]. But the protocol description is excerpted from [3], Section 4.3.
  *       Besides we find an error in the alice and Bob notation in [2], that has been corrected here.
  */
-
-
 The Denning-Sacco symmetric key protocol is used to establish session keys in a network
 with a single server and multiple agents. 
 Each agent shares a (secret) symmetric key withthe server, 

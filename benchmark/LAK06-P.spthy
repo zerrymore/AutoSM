@@ -56,22 +56,3 @@ lemma noninjectiveagreementREADER:
     ==> (Ex #j. Running(<'R','T',t>) @j)"
 
 end
-
-
-
-// ==============================================================================
-// summary of summaries:
-
-// analyzed: LAK06.spthy
-
-//   processing time: 139.49s
-  
-//   WARNING: 1 wellformedness check failed!
-//            The analysis results might be wrong!
-  
-//   executable (exists-trace): verified (9 steps)
-//   helpingSecrecy (all-traces): verified (3 steps)
-//   noninjectiveagreementTAG (all-traces): verified (3568 steps)
-//   noninjectiveagreementREADER (all-traces): falsified - found trace (13 steps)
-
-// ==============================================================================

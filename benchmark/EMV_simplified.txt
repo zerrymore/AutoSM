@@ -1,0 +1,61 @@
+This section provides technical background on the specific Visa contactless protocol. For the purpose of this exercises, some messages have been simplified and substantial parts of the protocol have been omitted, such as cardholder verification.  The crypto-related notation in the figure and also in the rest of this material is the following:
+We will use this crypto-related notation in the following:
+* mk is a (master) key only known to the card and its issuer.
+* f is a key derivation function.
+* (privC, pubC) is the private/public key pair of the card. pubC is publicly known.
+* sign(priv, m) is the digital signature on m with the private key priv. Note that we consider signatures that do not reveal the message m.
+* verify(sig, m, pub) equals true if and only if sig=sign(priv,m) and (priv, pub) is a valid private/public key pair.
+* MAC(k, m) is Message Authentication Code (MAC) on m with the key k.
+Here is an overview of the resulting execution flow of the Visa contactless transaction:
+Card: knows mk, privC         Terminal: knows pubC          Issuer: knows mk
+    |                              |                               |
+sk = f(mk, ATC)                fresh un                            |
+fresh nc                       PDOL=<amount, un>                   |
+    |                              |                               | 
+    |   'GET PROCESSING OPTIONS'   |                               |
+    |<-----------------------------|                               |
+    |                              |                               |
+AC = MAC(sk, <PDOL, ATC>)          |                               |
+    |                              |                               |
+    |        AIP,CID,ATC,AC        |                               |
+    |----------------------------->|                               |
+    |      'READ RECORD'           |                               |
+    |<-----------------------------|                               |
+    |                              |                               |
+sm = <un, amount, nc, ATC, AIP>    |                               |
+SDAD = sign(privC, sm)             |                               |
+    |                              |                               |
+    |      PAN, SDAD, nc           |                               |
+    |------------------------------|                               |
+    |                              |                               |
+    |                          IF SDAD verification fails          |
+    |                            THEN Decline                      |
+    |                          ELSE Continue                       |
+    |                              |                               |
+    |                              | PAN, PDOL, ATC, AC            |
+    |                              |-------------------------------|
+    |                              |                               |
+    |                              |                            IF (PAN is unrecognized or
+    |                              |                              AC verification fails)
+    |                              |                            THEN Decline
+    |                              |                               |
+    |                              |'ACCEPTED',MAC(f(mk, ATC), AC) |
+    |                              |<------------------------------|
+    |                              |                               |
+    |                              |                               |
+1. **Application Selection:** An EMV contactless transaction is performed using one of the six EMV contactless protocols/kernels mentioned before. The negotiation of the kernel to be used for the transaction is the first phase of the protocol. This negotiation is done via two exchanges of 'SELECT' commands and responses.
+This brief description of the application selection phase is merely informative. We will not model this phase.
+2. **Offline Data Authentication (ODA):** After a kernel has been selected (Visa in our case), the terminal sends the 'GET_PROCESSING_OPTIONS' command with the Processing Data Object List (PDOL) as the payload. The PDOL is composed
+of the amount of the transaction and a terminal-generated random number un, called the Unpredictable Number (UN) in EMV's terminology.
+The card responds to this command with the Application Interchange Profile (AIP) and some other data that we will explain later in the Transaction Authorization phase. The AIP informs the terminal of the card's authentication capabilities. In this lab we will assume that AIP = 'fDDA' and will explain later what this means.
+The terminal then sends the 'READ_RECORD' command to read the card's records, which are static data stored in the card. We will assume these records are composed solely of the Primary Account Number (PAN, commonly known as the card number) and the nonce nc.
+The terminal then proceeds to cryptographically authenticate the card, using the method indicated by the AIP. Our assumption on the AIP being 'fDDA' entails that the Fast Dynamic Data Authentication (fDDA) method will be used. In this method, the card replies to the terminal's 'READ RECORD' command with the Signed Dynamic Authentication Data (SDAD), which is a signature by the
+card on transaction data as indicated in the figure.
+3. **Transaction Authorization (TA):** For transaction authorization, the card generates
+and supplies the Application Cryptogram (AC) in response to the 'GET_PROCESSING_OPTIONS' command (note that this command goes before the 'READ_RECORD' one). The AC is a cryptographic proof of the transaction. The computation by the card (and verification by the issuer) of the AC uses the session key _sk_ derived from a shared master key _mk_ and the ATC. The key _mk_ is only known to the issuer and the card.
+ Together with the AC, the card sends the AIP (which we described before), the Cryptogram Information Data (CID), and the Application Transaction Counter (ATC). The CID, which can be 'TC' or 'ARQC', indicates the type of authorization: offline or online, respectively.
+The transaction continues as follows:
+    * if CID = 'TC', then the transaction is approved offline by the terminal. In this case, the AC is called the Transaction Cryptogram (TC).
+    * otherwise (i.e. if CID = 'ARQC') the terminal forwards the transaction data to the issuer for online authorization. The data forwarded is composed of the card number (i.e. the PAN), the PDOL, the transaction counter ATC, and the Application Cryptogram (AC). In this case, the AC is called the Authorization Request Cryptogram (ARQC). 
+  The issuer authorizes the transaction if the AC is correct, in which case it sends back to the terminal the authorization code 'ACCEPT' and an issuer-generated MAC, called the Authorization Response Cryptogram (ARPC). The ARPC serves, among other things, as a cryptographic proof for the terminal that the issuer accepted the transaction.
+Notice that the terminal can neither verify the AC nor the ARPC because the key mk, and sk by extension, are unknown to it.

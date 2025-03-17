@@ -60,15 +60,15 @@ process:
 !(   
   new Kas; out(id(Kas)); event HonestA(id(Kas));
   !(
-		new Kbs; out(id(Kbs)); event HonestB(id(Kbs));
-		(
+        new Kbs; out(id(Kbs)); event HonestB(id(Kbs));
+        (
     CompromiseLtk(Kas) | CompromiseLtk(Kbs) 
     ||
      (!A(Kas, id(Kas), id(Kbs)) 
      | !B(Kbs, id(Kas), id(Kbs)) 
      | !S(Kas, Kbs, id(Kas), id(Kbs)))
   )
-	)
+    )
 )
 
 

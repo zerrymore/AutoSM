@@ -136,7 +136,7 @@ We use a table to document the sources of our protocol descriptions and how we r
 | 15  | SPLICE/AS                    | [IEICE Transactions on Information and Systems](https://www.scitepress.org/PublishedPapers/2005/25570/25570.pdf)                         | Design and Implementation of an Authentication System in WIDE Internet Environment            | Suguru Yamaguchi, Kiyohiko Okayama, Hideo Miyahara  | The protocol description is excerpted from Section 3.1, "Requesting a Server," which corresponds to Figure 3. The figure illustrates the message format exchanged between the parties, and this information has been integrated into the corresponding descriptive sentence. |
 | 16  | CCITT X.509-1			           | [The Directory-Authentication Framework](https://1f8a81b9b0707b63-19211.webchannel-proxy.scarabresearch.com/rec/T-REC-X.509-198811-S/en) | CCITT X.509 (11/1988) AND Security Defects in CCITT Recommendation X .509                       | ITU                                                 | We focus on One-way authentication, Section 9.2. The original protocol description is located in page 18.                                                                 |
 | 17  | Denning-Sacco                | [International Conference on Rewriting Techniques and Applications (RTA'11)](https://people.inf.ethz.ch/basin/pubs/rta11.pdf) | FAST: An Efficient Decision Procedure for Deduction and Static Equivalence                      | Bruno Conchinha, David Basin, Carlos Caleiro       | This protocol originates from [2]. But the protocol description is excerpted from [3], Section 4.3. Besides, we find an error in the Alice and Bob notation in [2], that has been corrected here. |
-| 18  | LAK06_state                        | [SCIS06](https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=262d8634634e0a227e4c2a7f3651baed4bf67707)                       | RFID Mutual Authentication Scheme based on Synchronized Secret Information                    | Sangshin Lee, Tomoyuki Asano, and Kwangjo Kim      | This is the raw protocol description excerpted the the orignial paper. The protocol contains a key chaining mechanism, which need loop to charactrize. |
+| 18  | LAK06                        | [SCIS06](https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=262d8634634e0a227e4c2a7f3651baed4bf67707)                       | RFID Mutual Authentication Scheme based on Synchronized Secret Information                    | Sangshin Lee, Tomoyuki Asano, and Kwangjo Kim      | The raw protocol description, excerpted from the original paper, contains a key chaining mechanism that requires looping to characterize. In our abstraction, we merged the 'Reader' entity with its backend. |
 
 
 
@@ -145,7 +145,8 @@ We use a table to document the sources of our protocol descriptions and how we r
 Here gives an overivew for the general workflow of the tool. We use a NSPK example to illustrate how user can interact with the tool and how tool can generate formal specificaions and check the results automatically.
 
 
-### References
+
+## References
 1. Cheval, Vincent, Charlie Jacomme, Steve Kremer, and Robert Künnemann. 2022. **"SAPIC+: Protocol Verifiers of the World, Unite!"** In *31st USENIX Security Symposium (USENIX Security 22)*, 3935–52.
 
 2. Wikipedia. **"Needham-Schroeder protocol."** https://en.wikipedia.org/wiki/Needham%E2%80%93Schroeder_protocol

@@ -6,7 +6,7 @@ This benchmark consists of 18 protocols. For each protocol, there are three asso
 - `protocol_name-P.spthy`: Represents the Sapic+ model.  
 - `protocol_name-R.spthy`: Represents the Tamarin model.  
 
-When you run the model using Tamarin, it generates a summary of the results. This summary includes details such as processing time, lemmas, and whether the results are verified or falsified. All the summaries are compiled in the `summarized_results.txt` file.  
+In our benchmark, we aimed to establish a 'ground truth' for each model, ensuring that it not only satisfies the safety properties used as test cases in our study, but also incorporates the attacks that have been identified When you run the model using Tamarin, it generates a summary of the results. This summary includes details such as processing time, lemmas, and whether the results are verified or falsified. All the summaries are compiled in the `summarized_results.txt` file.  
 
 To generate a table from the summaries, simply run the following command:
 
