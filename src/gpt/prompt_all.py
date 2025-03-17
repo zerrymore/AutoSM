@@ -551,9 +551,9 @@ by filling in the placeholders denoted by `/* >> The lambda calculus << */` \
 with the appropriate lambda calculus expressions. Ensure the results are enclosed within /* ... */. \
 
 Additional Rules:
-- Do ``not`` parse any decryption operations (e.g., `Op(A, assign(msg, dec(...)))` is prohibited).
-- For Diffie-Hellman key exchange, use `exp(g, x)` without the modular operation.
-- For private key asymetric encryption, use sign(m, k)
+- Do **not** parse any decryption operations (e.g., `Op(A, assign(msg, dec(...)))` is prohibited).
+- For Diffie-Hellman key exchange, use `exp('g', x)` without the mod operation, where `'g'` is a string.
+- For private key asymetric encryption, use sign(m, k), where m is the plaintext, k is the key.
 - Every `Send` must have a corresponding `Recv`.
 - Messages must be bound to a variable before being sent. 
   For example: 
@@ -603,7 +603,8 @@ Common Knowledge:
 - Symmetric keys are shared only between relevant roles.
 - Secret keys are never known by other roles.
 - For asymmetric protocols, consider long-term secret keys as initial knowledge for the corresponding role,
-- Avoid introducing variables that are irrelevant to the discussed protocol
+- Avoid introducing variables that are irrelevant to the discussed protocol.
+- Constants or string cannot be inital knowledge.
 
 You should think step by step:
 1. Revise the expressions to resolve the errors.
@@ -611,4 +612,15 @@ You should think step by step:
 ```json
 {{ "ret": "ok", "revision": "<ALL THE EXPRESSIONS AFTER REVISION>" }}
 ```
+"""
+
+
+SPEC_TEMPLATE = """\
+theory temp
+begin
+builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
+functions: {functions}
+{new_spec}
+{top_spec}
+end
 """

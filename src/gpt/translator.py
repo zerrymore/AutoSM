@@ -1,4 +1,6 @@
 import ast
+import logging
+from gpt.utils import *
 from gpt.OPS import SYN_OPS
 
 process_template = """let {name}({parameters}) =
@@ -64,6 +66,33 @@ def extract_role_names(code):
     return ", ".join(list(Names))
 
 
+def T_transform(Lambda_spec: str) -> str:
+    """
+    Take pure expressions as input, then output the particial process.
+    """
+    try:
+        ##== Filter out all the deconstrction expressions,  ==##
+        ##== only allowing construction and I/O expressions ==##
+
+        corr_Lambda_spec = "\n".join(
+            fix_brackets(line)
+            for line in Lambda_spec.split("\n")
+            if (not deconstruct_expr(line)) and (not is_loop_expression(line))
+        )
+
+        with open("./filter_expr.txt", "w") as f:
+            f.write(corr_Lambda_spec)
+
+        from gpt.translator import lambda_to_processes, format_parse_output
+
+        spec, _ = lambda_to_processes(corr_Lambda_spec)
+        Role_spec, _ = format_parse_output(spec)
+    except Exception as e:
+        logging.error(str(e))
+        Role_spec = ""
+    return Role_spec
+    
+    
 def lambda_to_processes(code):
     execution_order = execute_code(code)
 

@@ -28,8 +28,8 @@ def get_incontext_learning_contents(content_type, shot_num=2):
                         {'role': 'assistant', 'content': first_shot_sapic_answer},
                         {'role': 'user', 'content': second_shot_sapic_question},
                         {'role': 'assistant', 'content': second_shot_sapic_answer},
-                        {'role': 'user', 'content': third_shot_sapic_question},
-                        {'role': 'assistant', 'content': third_shot_sapic_answer}
+                        # {'role': 'user', 'content': third_shot_sapic_question},
+                        # {'role': 'assistant', 'content': third_shot_sapic_answer}
                         ]
     elif content_type == 'ccg_parser':
         # set system prompt

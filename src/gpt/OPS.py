@@ -87,6 +87,11 @@ def __syn_assign(params, index=None, process_name=None):
 def __syn_exp(params, index=None, process_name=None):
     # print("mul:", params)
     # if len(params) == 2:
+    
+    # if params[0] == "g":
+    #     return f"eexp('g', {params[1]})"
+    # return f"eexp({params[0]}, {params[1]})"  
+    
     if params[0] == "g":
         return f"'g'^{params[1]}"
     return f"{params[0]}^{params[1]}"
@@ -120,6 +125,11 @@ def __syn_cond(params, index=None, process_name=None):
 def __syn_glob_gen(params, index=None, process_name=None):
     # if len(params) == 2:
     return f"new {params[1]}"
+
+
+def __syn_mod(params, index=None, process_name=None):
+    # if len(params) == 2:
+    return f"{params[0]}"
 
 
 def __syn_glob_send(params, index=None, process_name=None):
@@ -165,6 +175,7 @@ SYN_OPS = {
     "compute": __syn_assign,
     "computes": __syn_assign,
     "exp": __syn_exp,
+    "mod": __syn_mod,
     "pow": __syn_exp,
     "xor": __syn_xor,
     "str": __syn_str,

@@ -123,9 +123,14 @@ class TreeToString(Transformer):
         return f"{items[0]} - {items[1]}"
 
     def xor(self, items):
-        return f"{items[0]} * {items[1]}"
+        return f"({items[0]} XOR {items[1]})"
 
     def func(self, items):
+        if items[0] == "XOR":
+            paras = items[1].split(",")
+            # print(paras)
+            # return f"{paras[0]} XOR {paras[1]}"
+            return f'XOR({items[1]})'
         return f"{items[0]}({items[1]})"
 
     def match(self, items):
@@ -214,7 +219,7 @@ def tree2str(node) -> str:
 gamma = []
 
 
-def rewrite(external_stack: list, vdg: dict, pointers: dict, j: int):
+def rewrite(K, external_stack: list, vdg: dict, pointers: dict, j: int):
     ##===This function name is not ideal and should be renamed later.
 
     # The function fully unfolds the received message based on its global definition.
@@ -297,13 +302,17 @@ def rewrite(external_stack: list, vdg: dict, pointers: dict, j: int):
             for vi in list(vdg[v]):
                 if vi in pointers.keys():
                     if vi not in stack:
+                        # It has not been deconstructed before
                         if vi not in list(deconstructed_vars):
-                            stack += [vi]
-                            deconstructed_vars |= {vi}
+                            # It is not in Knowledge set
+                            if vi not in K:
+                                stack += [vi]
+                                deconstructed_vars |= {vi}
 
         else:
             pass
     return init_re, j
+
 
 
 def var_mapping(node: Tree, mapping: dict):
@@ -326,9 +335,89 @@ def inverse_key(key: str) -> str:
         return key
 
 
+def replace_concat_with_angle_brackets(s):
+    result = []
+    i = 0
+    n = len(s)
+    while i < n:
+        if s[i:i+7] == "concat(" and i + 7 < n:
+            start = i
+            i += 7
+            brackets = 1
+
+            while i < n and brackets > 0:
+                if s[i] == '(':
+                    brackets += 1
+                elif s[i] == ')':
+                    brackets -= 1
+                i += 1
+            if brackets != 0:
+                raise ValueError("Unmatched parentheses in concat function.")
+            result.append('<' + s[start+7:i-1] + '>')
+        else:
+            result.append(s[i])
+            i += 1
+    return ''.join(result)
+
+import ast
+
+
+def process_ast_node(t:str, K:set, pointers:dict, T:set):
+    """
+    Given a grounding term t, and knowledge set K, and pointers that
+    representing memory, determine whether the t can be constructed
+    from knowledge K.
+    If yes, T records the reference relation in K, i.e., how t
+    can be reconstructed using the term within K.
+    """
+    
+    node = ast.parse(t, mode='eval')
+    node = node.body
+
+    if isinstance(node, ast.Name):
+        if t in K:
+            return True
+        else:
+            return False
+
+    if isinstance(node, ast.Call):
+        func_str =  ast.unparse(node)
+        print(f'func_call:{func_str}')
+        for k in K:
+            temp_eval_str = evaluate(pointers, k).replace("<", "concat(").replace(">", ")")
+            print(f'{k} ==> {temp_eval_str}')
+            if temp_eval_str == func_str:
+                T.update({func_str : k})
+                return True 
+        for arg in node.args:
+            arg_t = ast.unparse(arg)
+            result = process_ast_node(arg_t, K, pointers, T)
+            if not result:
+                return False 
+
+    return True
+
+
+
 
 def rewrite_receiv_event(mapping, pointers, K, hasDeconstructed: list):
+    """
+    mapping: the recevied variable mapping
+    pointers: mem
+    K: knowledge set
+    """
+    
+    
     res = []
+    
+    print(f'mapping:----')
+    # print(mapping)
+    for k in mapping.keys():
+        print(tree2str(k))
+        print(tree2str(mapping[k]))
+        
+        print()
+    
     undeconstructed_vars = copy.deepcopy(mapping)
 
     stack = copy.deepcopy(mapping)
@@ -377,7 +466,7 @@ def rewrite_receiv_event(mapping, pointers, K, hasDeconstructed: list):
         processed_count = 0
 
         for v in stack.keys():
-            if tree2str(v) not in hasDeconstructed:
+            if tree2str(v) not in hasDeconstructed and tree2str(v) in K:
                 p = stack[v]
                 assert p.data == "expression"
                 p_tree = p.children[0]
@@ -431,22 +520,47 @@ def rewrite_receiv_event(mapping, pointers, K, hasDeconstructed: list):
                     elif func_name == "sign":
                         msg = tree2str(args.children[0])
                         sig_key = tree2str(args.children[1])
-                        if msg in K and inverse_key(sig_key) in K:
+                        # this is an ad-hoc implementation. the case should be: eval(msg) \in K
+                        if (msg in K and inverse_key(sig_key) in K):
                             stmt = f"if verify({tree2str(v)}, {msg}, {inverse_key(sig_key)}) = true then"
-
+                            processed_count += 1
+                            undeconstructed_vars.pop(v)
+                            hasDeconstructed += [tree2str(v)]
+                        elif _vars_from_str(evaluate(pointers, msg)).issubset(K) and inverse_key(sig_key) in K:
+                            stmt = f'let {msg} = {evaluate(pointers, msg)} in'
+                            hasDeconstructed += [msg]
+                            stmt += f"if verify({tree2str(v)}, {msg}, {inverse_key(sig_key)}) = true then"
                             processed_count += 1
                             undeconstructed_vars.pop(v)
                             hasDeconstructed += [tree2str(v)]
                         else:
-                            stmt = f"// let {tree2str(p)} = {tree2str(v)} in"
-                            queue = {**queue, v: p}
+                            print("~~~~~~~~~~~~~~~~")
+                            # print(f"hello{evaluate(pointers, msg)}")
+                            # print(_vars_from_str(evaluate(pointers, msg)))
+                            # print(K)
+                            ori_str = evaluate(pointers, msg)
+                            func_str = ori_str.replace("<", "concat(").replace(">", ")")
+                            T = dict()
+                            print(process_ast_node(func_str, K, pointers, T))
+                            print(T)
+                            print("~~~~~~~~~~~~~~~~~")  
+                            if process_ast_node(func_str, K, pointers, T) and inverse_key(sig_key) in K:
+                                for t in T.keys():
+                                    func_str = func_str.replace(t, T[t])
+                                func_str = replace_concat_with_angle_brackets(func_str)
+                                stmt = f"let {msg} = {func_str} in"
+                                stmt += f"if verify({tree2str(v)}, {msg}, {inverse_key(sig_key)}) = true then"
+                            else:
+                                stmt = f"// let {tree2str(p)} = {tree2str(v)} in"
+                                queue = {**queue, v: p}
                         res += [stmt]
 
-                    ###==  one direction function ==##
+                    ###==  box-black function, e.g., hash/1 ==##
                     else:
                         func_args: Tree = p_tree.children[1]
                         func_vars: set = _vars(p_tree)
                         flag = True
+                        print(f'{func_name}({func_vars})')
                         for arg_v in func_vars:
                             """
                             Here is an ad-hoc implementation
@@ -454,27 +568,51 @@ def rewrite_receiv_event(mapping, pointers, K, hasDeconstructed: list):
                             from knowledge set K
                             """
                             gt = evaluate(pointers, arg_v)
+                            
+                            print(f'{arg_v} |-> {gt}')
+                            
                             vars = set(
                                 [t for t in _vars_from_str(gt) if not t.startswith("'")]
                             )
+                            """
+                            Consider a special case that: in(mess), where
+                            mess = kdf(a, h)
+                            a ∈ K & not(h ∈ K), 
+                            but h⇓b and b can be constructed from the set K.
+                            The algorithm should infer that where h can be constructed,
+                            if so, the construction statement should be added to the statements.
+                            For some case, the constuction statement is explicit, but sometimes it does not
+                            """
                             if not vars.issubset(K):
                                 flag = False
-                            if arg_v in K:
-                                flag = True
+                                break
+                            # if arg_v in K:
+                            #     flag = True
 
                         if not flag:
                             stmt = f"// let {tree2str(p)} = {tree2str(v)} in"
+                            print(f'flag: {tree2str(v)}:{tree2str(p)}')
+                            print(stack)
                             queue = {**queue, v: p}
                         else:
+                            stmt = ""
                             for i, f_arg in enumerate(func_args.children):
                                 c = tree2str(f_arg)
                                 if not c.startswith("'"):
-                                    if c in K:
-                                        func_args.children[i] = Tree(
-                                            "expression",
-                                            [Tree("match", [Token("NAME", f"{c}")])],
-                                        )
-                                        hasDeconstructed += [f"{c}"]
+                                    
+                                    # first we should reconstruct the intermediate vars that we can acheive  
+                                    if c not in K:
+                                        stmt += f'let {c} = {evaluate(pointers, c)} in'
+                                        hasDeconstructed += [c]
+                                    # if c in K:
+                                    
+                                    # Now every arg within this function can be pattern matched
+                                    func_args.children[i] = Tree(
+                                        "expression",
+                                        [Tree("match", [Token("NAME", f"{c}")])],
+                                    )
+                                    hasDeconstructed += [f"{c}"]
+                                        
                                 K |= {tree2str(f_arg)}
 
                             undeconstructed_vars.pop(v)
@@ -483,12 +621,13 @@ def rewrite_receiv_event(mapping, pointers, K, hasDeconstructed: list):
 
                             processed_count += 1
 
-                            stmt = f"let {tree2str(p)} = {tree2str(v)} in"
+                            stmt += f"let {tree2str(p)} = {tree2str(v)} in"
                         res += [stmt]
 
                 elif p_tree.data == "concat":
                     if tree2str(v) in K:
                         concat_args = p_tree.children[0]
+                        K_tmp = set()
                         for i, c_arg in enumerate(concat_args.children):
                             c = tree2str(c_arg)
                             if not c.startswith("'"):
@@ -499,8 +638,8 @@ def rewrite_receiv_event(mapping, pointers, K, hasDeconstructed: list):
                                     )
                                     
                                     hasDeconstructed += [f"{c}"]
-                            K |= {tree2str(c_arg)}
-                        K |= {tree2str(v)}
+                            K_tmp |= {tree2str(c_arg)}
+                        K |= K_tmp
                         undeconstructed_vars.pop(v)
 
                         hasDeconstructed += [tree2str(v)]
@@ -522,6 +661,8 @@ def rewrite_receiv_event(mapping, pointers, K, hasDeconstructed: list):
                     queue = {**queue, v: p}
 
         if processed_count == 0:
+            print(f'undeconstructed')
+            print(undeconstructed_vars)
             break
 
         stack = {**queue}
@@ -541,7 +682,6 @@ def get_role_root(node: Tree, role_roots):
 
 def evaluate(mem: dict, var: str) -> str:
     """ """
-    # print(var)
     if var not in mem.keys():
         return var
     else:
@@ -595,9 +735,12 @@ def rewrite_local_process(
             
             unconstructed[tree2str(node.children[0])] = node.children[1]
         else:
-            stmt = (
-                f"let {tree2str(node.children[0])} = {tree2str(node.children[1])} in "
-            )
+            if tree2str(node.children[0]) not in hasDeconstructed:
+                stmt = (f"let {tree2str(node.children[0])} = {tree2str(node.children[1])} in")
+            else:
+                stmt = ""
+            
+            assert len(_vars(tree2str(node.children[0]))) == 0 
             K |= _vars(tree2str(node.children[0]))
             K |= {tree2str(node.children[0])}
 
@@ -615,8 +758,7 @@ def rewrite_local_process(
     elif node.data == "out":
         stmt = ""
         sending_message = tree2str(node)
-
-        ## TODO Here is an implicit assumption that the VAR `sending_message` is a atomic rather a composite message
+        # Here is an implicit assumption that the VAR `sending_message` is a atomic rather a composite message
         if sending_message not in unconstructed.keys():
             stmt = f"out({sending_message});"
         else:
@@ -679,14 +821,17 @@ def rewrite_local_process(
         incoming_message = tree2str(node)
         local_p += [f"in({incoming_message});"]
         # j = 0
-        rewrite_init, j = rewrite(stack, vdg, pointers, j)
+        rewrite_init, j = rewrite(K, stack, vdg, pointers, j)
         print(f'STACK:{stack}, rewrite_init: {rewrite_init}')
         rewrite_init += ["0"]
         init_str = "\n".join(rewrite_init)
         # print(f'init_str: {init_str}')
         last_str = init_str
                                      
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+                                     
+                                     
+                                     
+        print(f'init_str:{last_str}')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
         ##== Recursively rewrite the term ==##
         while True:
             init_root = Parser.parse(last_str)
@@ -694,7 +839,7 @@ def rewrite_local_process(
 
             deconstruct_binding_map(init_root, in_vdg, in_pointers)
 
-            inter_res, k = rewrite(stack, in_vdg, in_pointers, j)
+            inter_res, k = rewrite(K, stack, in_vdg, in_pointers, j)
 
             inter_res += ["0"]
             inter_str = "\n".join(inter_res)
@@ -705,6 +850,9 @@ def rewrite_local_process(
                 print(f'last_str:{last_str}')
                 print(f'inter_str:{inter_str}')
             last_str = inter_str
+
+
+
 
         print(f'vdg: {vdg}')
         print(f'in_vdg: {in_vdg}')
@@ -727,6 +875,17 @@ def rewrite_local_process(
         root = Parser.parse(last_str)
         mapping = {}
         var_mapping(root, mapping)
+        
+        print("+++++++++++++++++++++++++++++++++++++++++++")
+        for i in pointers:
+            print(f'{i}|-> {tree2str(pointers[i])}')
+        
+        print()
+        
+        for p in mapping:
+            print(f'{tree2str(p)}|-> {tree2str(mapping[p])}')
+        
+        print("+++++++++++++++++++++++++++++++++++++++++++")
 
         # Todo: K should be updated when the process is rewriten
         res, undeconstructed_vars = rewrite_receiv_event(
@@ -810,7 +969,7 @@ def Rewriter(code: str) -> str:
             hasDeconstructed,
         )
 
-        print(role_name)
+        print(f'Role:{role_name}')
         print("This is hasdeconstructed variable:")
         print(hasDeconstructed)
         print()

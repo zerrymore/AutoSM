@@ -292,17 +292,12 @@ if __name__ == "__main__":
         json_str = f.read()
         
     json_str = """
-To resolve the errors identified in the error reports, we need to ensure that the variables `idB`, `skA`, and `pkB` are correctly categorized and used in the lambda calculus expressions. Here's the categorization:
+Here is the revised lambda calculus expression:
 
-- `idB` (Identity of B): Initial Knowledge for A, as identities are commonly known in protocols.
-- `skA` (Secret key of A): Initial Knowledge for A, as secret keys are known only to their respective owners.
-- `pkB` (Public key of B): Common Knowledge, as public keys are publicly known.
-
-Revised Lambda Calculus Expressions:
 ```json
 {
   "ret": "ok",
-  "revision": "Gen(A, rA) Op(A, assign(tA, timestamp())) Op(A, assign(encData, 'encData'))  // confidential parameters Op(A, assign(sgnData, 'sgnData'))  // non-confidential parameters Knows(A, idB, skA, pkB) Op(A, assign(hashData, hash(concat(tA, rA, idB, sgnData, encData)))) Op(A, assign(signedData, concat(tA, rA, idB, sgnData, encData, asenc(hashData, skA)))) Op(A, assign(encryptedData, aenc(signedData, pkB))) Send(A, B, encryptedData) Recv(B, A, encryptedData)"
+  "revision": "/*\nKnows(C, g, p, q, Ks, pubS, Vc, Ic)\nKnows(S, g, p, q, Ks, privS, Vc, Ic)\nOp(C, assign(Vc, 'Vc'))\nOp(S, assign(Vs, 'Vs'))\nOp(C, assign(Ic, 'Ic'))\nOp(S, assign(Is, 'Is'))\nGen(C, x)\nOp(C, assign(e, mod(pow(g, x), p)))\nSend(C, S, e)\nGen(S, y)\nOp(S, assign(f, mod(pow(g, y), p)))\nRecv(S, C, e)\nOp(S, assign(K, mod(pow(e, y), p)))\nOp(S, assign(H, hash(concat(Vc, Vs, Ic, Is, Ks, e, f, K))))\nOp(S, assign(s, sign(H, privS)))\nSend(S, C, concat(Ks, f, s))\nRecv(C, S, concat(Ks, f, s))\nOp(C, assign(K, mod(pow(f, x), p)))\nOp(C, assign(H, hash(concat(Vc, Vs, Ic, Is, Ks, e, f, K))))\nOp(C, verify(s, H, pubS)))\n*/"
 }
 ```
 """

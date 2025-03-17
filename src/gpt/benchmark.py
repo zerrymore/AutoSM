@@ -5,17 +5,32 @@ the key's receipt by sending the hash of the key back to the client.
 """
 
 exercise = """\
+```
+Source: Teaching material of Tamarin-prover
+Title: Tamarin Toy Protocol
+Link: https://github.com/benjaminkiesl/tamarin_toy_protocol
+Author: Benjamin Kiesl
+```
 Alex computes a nonce and sends it to Blake. (A -> B: ANonce)
-When Blake receives Alex's nonce, Blake computes their own nonce and sends it to Alex. (B -> A: BNonce)
-When Alex receives Blake's nonce, Alex does two things: Alex installs a session key SK, which is derived 
-from ANonce and BNonce by applying a key derivation function (i.e., SK = kdf(ANonce, BNonce)).
-Once the session key is installed, Alex sends a message with the string "ACK"  to Blake (A -> B: "ACK") 
-and switches to a 'DONE' state to indicate that the protocol has been executed successfully on Alex's side.
-When Blake receives the "ACK" message, Blake also computes the session key SK = kdf(ANonce, BNonce), \
-installs it and switches to a 'DONE' state.    
+When Blake receives Alex's nonce, Blake computes their own 
+nonce and sends it to Alex. (B -> A: BNonce)
+When Alex receives Blake's nonce, Alex does two things: 
+Alex installs a session key SK, which is derived from ANonce and
+BNonce by applying a key derivation function (i.e., SK = kdf(ANonce, BNonce)).
+Once the session key is installed, Alex sends a message with 
+the string "ACK"  to Blake (A -> B: "ACK") and switches to a 'DONE' state 
+to indicate that the protocol has been executed successfully on Alex's side.
+When Blake receives the "ACK" message, Blake also computes the 
+session key SK = kdf(ANonce, BNonce), installs it and switches to a 'DONE' state.    
 """
 
-nssk = """\
+
+nssk  = """\
+```
+ Source: Teaching Assignment
+ Title: Description of the Needham Schroeder public key protocol and its attack
+ Link: https://members.loria.fr/VCortier/files/School/NS.pdf
+```
 Here, Alice A initiates the communication to Bob B. 
 S is a server trusted by both parties. In the communication:
 1. A and B are identities of Alice and Bob repectively.
@@ -25,268 +40,294 @@ S is a server trusted by both parties. In the communication:
 5. Kab is a symmetric, generated key, which will be the session key of the 
 session between A and B.
 
-Both A, B and S knows the identities of A and B.
+The protocol can be specified as follows in security protocol notation:
+  1.  A --> S: A, B, Na
+  Alice sends a message to the server identifying herself and Bob, 
+  telling the server she wants to communicate with Bob.
+  2. S --> A: {Na, Kab, B {Kab, A}Kbs}Kas
+  The server generates Kab and sends back to Alice a copy encrypted under
+  Kbs for Alice to forward to Bob and also a copy for Alice.
+  Since Alice may be requesting keys for several different people,
+  the nonce assures Alice that the message is fresh and that
+  the server is replying to that particular message and the inclusion of Bob's name
+  tells Alice who she is to share this key with. 
 
-The protocol can be specified as follows:
-1. Alice sends a message <A, B, Na> (where A, B indicates the identities and Na a fresh nonce) \
-and a fresh nonce Na to the server, telling the server she wants to \
-communicates wit Bob.
-
-2. The server generates Kab and sends back to Alice a copy encrypted under \
-Kbs for Alice to forward to Bob and also a copy for Alice. \
-Since Alice may be requesting keys for several different people, \
-the nonce assures Alice that the message is fresh and that \
-the server is replying to that particular message and the inclusion of Bob's name \
-tells Alice who she is to share this key with ( S -> A: {Na, Kab, B, {Kab, A}Kbs}Kas ).
-
-3. Alice forwards the message senc(<Kab, A>, Kbs) to Bob who can decrypt it \
-with the key he shares with the server Kbs, thus authenticating the data. 
-
-4. Bob sends Alice a nonce Nb encrypted under Kab to show that he has the key.
-
-5. Alice performs a simple operation 'dec' on the nonce (dec(Nb)), re-encrypts it \
-and sends it back verifying that she is still alive and that she holds the key.
+  3. A --> B: {Kab, A}Kbs
+  Alice forwards the key to Bob who can decrypt it
+  with the key he shares with the server Kbs, thus authenticating the data. 
+  4. B --> A: {Nb}Kab  
+  Bob sends Alice a nonce Nb encrypted under Kab to show that he has the key.
+  5. A --> B: {Nb-1}Kab
+  Alice performs a simple operation on the nonce, re-encrypts it and sends it 
+  back verifying that she is still alive and that she holds the key.
 """
+
 
 Otway_Rees = """\
-In the following description, `A`, `B` are the identities of principal A, B repectively.
-`kas`, `kab` are shared symmetric keys between A and S, between A  and B respectively.
-A knows the key `Kas`, `A` and `B` initially,
-B knows symmetric key `Kbs`, `A`, `B` and S knows both `Kas` and `Kbs` and identits `A` and `B` initially.
+```
+Source: GIAC paper
+Link: https://www.giac.org/paper/gcih/81/man-in-the-middle-attack-initiator-otway-rees-key-exchange-protocol/100561
+Title: Otway-Rees Key Exchange Protocol Specification 
+Note: We have rearranged the content order on page 6 of the original paper.
+      Specifically, we have moved Table 2, which illustrates the messages in each step,
+      to the description section.
+```
+The message in the form {m}K symbolizes that message m has been encrypted 
+with K using a symmetrical cryptographic algorithm. 
+Before starting the protocol, each of the principals has certain initial knowledge. 
+Keys Kas and Kbs are permanent keys given to A and B respectively, as personal keys. 
+They must share these with the server to communicate with it. 
+With these permanent keys, the principals are able to obtain a session key from the server.
+1. A --> B: I, A, B, {Na , I, A, B}kas
+A sends B the protocol session number I, his identity A, the identity of the principal with 
+whom he wishes to communicate (B), and a message encrypted with the key kas. 
 
-1. A sends B the protocol session number I (a fresh nonce), his identity, the identity of the principal
-with whom he wishes to communicate, and a message encrypted with the key `kas`, i.e.,
-the message1 is `<I,A,B,{Na,I,A,B}kas>`.
-
-2. B receives A's message and concats it with his own message encrypted with the key kbs (`{Nb,I,A,B}kbs`) before  
+2. B --> S: I, A, B, {Na, I, A, B}kas, {Nb, I, A, B}kbs 
+B receives A's message and adds his own message encrypted with the key kbs before 
 sending it to the trusted server S. 
 
-3. S receives the message and is able to retrieve the session number, the random number 
-from A: `Na`, using his shared key kas, the random number from B: `Nb` with the other shared 
-key `kbs`, and generates the session key `kab`. With this information, he is able to generate
-message 3 and sends it to B. message3=`I,{Na,kab}kas,{Nb, kab}kbs`
+3. S --> B: I, {Na, kab}kas, {Nb, kab}Kbs
+S receives the message and is able to retrieve the session number, the random number 
+from A, Na, using his shared key kas, the random number from B, Nb with the other 
+shared key kbs, and generates the session key kab. With this information, he is able to 
+generate message 3 and sends it to B. 
 
-4. The principal B receives message 3, removes the last encrypted part with his 
-shared key, decrypts this sub-message with his key `kbs`, retrieves the session key `kab`, 
+4. B --> A: I, {Na , kab}kas
+The principal in question receives message 3, removes the last encrypted part with his 
+shared key, decrypts this sub-message with his key kbs, retrieves the session key kab, 
 and sends the remaining part of the message to A. In this way, A is also able to 
-retrieve the session key kab, based on the last part of message 4 (`I,{Na,kab}kas`),
-by using his shared key kas, and the two principals are able to start communicating. 
+retrieve the session key kab, based on the last part of message 4, by using his shared 
+key kas, and the two principals are able to start communicating. 
 """
 
-# Denning_Sacco = """\
-# The Denning-Sacco protocol facilitates secure communication by allowing two parties (Alice and Bob) \
-# to establish a shared session key via a trusted Key Distribution Center (KDC). \
-# Alice initiates the communication by sending a message to the KDC (S), \
-# requesting a session key to communicate with Bob (B). The message includes the identities of Alice (A) and Bob (B). \
-# The KDC responds to Alice with an encrypted message using Kas. The message includes: \
-# (1) The identity of Bob (B), indicating the session key is for communication with Bob. \
-# (2) The session key (Kab) for Alice and Bob to use. \
-# (3) A timestamp (T) to ensure the message's freshness which is a fresh nonce. \
-# An encrypted part for Bob {Kab, A, T}Kbs, which includes the session key (Kab), the identity of Alice (A),\
-# and the timestamp (T), all encrypted with Bob's key (Kbs). This ensures that only Bob can decrypt and use this information.\
-# Alice forwards the encrypted part {Kab, A, T}Kbs to Bob. \
-# This message allows Bob to decrypt it using his key (Kbs) to retrieve the session key (Kab) \
-# and verify Alice's identity and the message's freshness with the timestamp.
-# """ 
+
 
 Denning_Sacco = """\
-The Denning-Sacco protocol facilitates secure communication by allowing two parties (Alice and Bob) \
-to establish a shared session key via a trusted Key Distribution Center (KDC). \
-    
-Alice initiates the communication by sending a message to the KDC (S), \
-requesting a session key to communicate with Bob (B). The message includes the identities of Alice (A) and Bob (B). 
-    
-The KDC responds to Alice with an encrypted message using Kas. The message includes: \
-(1) The identity of Bob (B), indicating the session key is for communication with Bob. \
-(2) The session key (Kab) for Alice and Bob to use. \
-(3) A timestamp (T) to ensure the message's freshness which is a fresh nonce.
-(4) An encrypted part for Bob {Kab, A, T}Kbs, which includes the session key (Kab), the identity of Alice (A),\
-and the timestamp (T), all encrypted with Bob's key (Kbs). This ensures that only Bob can decrypt and use this information.
+```
+Protocol: Denning-Sacco
+Source: International Conference on Rewriting Techniques and Applications (RTA'11)
+Title: FAST: An E cient Decision Procedure for Deduction and Static Equivalence
+Authors: Bruno Conchinha,David Basin, Carlos Caleiro
+Note: This protocol originates from [2]. But the protocol description is excerpted from [3], Section 4.3.
+      Besides we find an error in the alice and Bob notation in [2], that has been corrected here.
+```
+The Denning-Sacco symmetric key protocol is used to establish session keys in a network
+with a single server and multiple agents. 
+Each agent shares a (secret) symmetric key withthe server, 
+but there are no shared keys between agents. 
+In Alice&Bob notation, the protocolis as follows.
+1. A --> S: A,B
+2. S --> A: {B,Kab,T,{Kab,A,T}Ksb}Ksa
+3. A --> B: {Kab,A,T}Ksb
+Here, A and B are two participants, and S is the server. 
+A requests from the server a session key to communicate with B. 
+The server generates a new session key, Kab, and sends it to A, 
+encrypted with the (symmetric) key shared between A and S. 
+This message also contains a timestamp T, 
+used to determine the validity of the new session key, 
+and the ticket {Kab,A,T}Ksb.
+A then forwards this ticket to B, 
+who can decrypt it using the key Ksb shared between B and S, 
+to obtain the new session key Kab, 
+the name A of the intended communication partner, 
+and the time T of the request.    
+"""
 
-Alice forwards the encrypted part {Kab, A, T}Kbs to Bob. \
-This message allows Bob to decrypt it using his key (Kbs) to retrieve the session key (Kab) \
-and verify Alice's identity and the message's freshness with the timestamp.
-""" 
+
 
 Kao_Chow_Authentication_V1 = """\
-1. Initiation by A: The process begins with Principal A (the initiator) sending a message \
-to the Server (S). This message includes A's identity, B's identity (the intended \
-communication partner), and a nonce (Na) generated by A. The nonce is a random number \
-used to ensure freshness and prevent replay attacks.
+```
+Source: An Efficient and Secure Authentication Protocol Using Uncertified Keys
+Authors: I-Lung Kao and Randy Chow
+Link: https://dl.acm.org/doi/pdf/10.1145/206826.206832
+Note: The protocol description is excerpted from Section 2, page 2 of the original paper.
+    We do not modify any contents given by the paper,  
+    but we moved the message format given in the Alice&bob notation 
+    next to the corresponding natural language description.
+```
+Two principals, A and B, wishing to authenticate each other and
+to obtain a shared session key for subsequent communication. 
+A trusted authentication server S shares a master 
+key with each principal and is capable of produc- 
+ing good session keys and sending them securely on 
+the requests of principals.
 
-2. Server's Response to B: Upon receiving the message from A, the Server constructs two encrypted packages:
-(package 1) The first package contains A's identity, B's identity, the nonce Na, and \
-the session key (Kab) intended for use between A and B. This package is encrypted with \
-the server's key shared with A (Kas), ensuring that only A can decrypt it.
-(package 2) The second package is similar but is encrypted with the server's key shared with B (Kbs), \
-ensuring that only B can decrypt it. The Server sends this compound message to B, \
-facilitating the secure distribution of the session key (Kab).
+Message 1, A --> S: A, B, Na
+Principal A initiates the authentication by sending
+S a plaintext message containing the identities of 
+itself and the desired communicating peer B, and a 
+nonce Na (message 1). 
 
-3. B's Response to A: B decrypts the received package using Kbs, extracts the session \
-key (Kab), and sends a message to A. This message (<package1, package2, Nb>) includes:
-(package 1) The encrypted package intended for A (using Kas), which A can decrypt \
-using her shared key with the server to verify the session key.
-(package 2) An encrypted version of the nonce Na using the session key (Kab), \
-allowing A to verify that B has correctly received and decrypted the session key.
-(package 3) B's nonce (Nb), introducing a challenge for A to ensure B's message's authenticity and freshness.
-B -> A: <package1, package2, Nb>
+Message 2, S --> B: {A, B, Na, Kab}Kas, {A, B, Na, Kab}Kbs.
+After S receives this message, he generates a session key Kab and appends 
+it to the identities of both parties and nonce Na to form two credentials, 
+one for A and the other for B. 
+Both credentials have exactly the same contents, 
+but one is encrypted with A's master key Kas, and 
+the other is encrypted with B's master key Kbs.
+S sends both credentials to B (message 2), who then 
+decrypts the second one and finds out that A wants 
+to authenticate with B mutually, Na is the nonce 
+issued by A, and Kab is generated by S to be used 
+as a session key for future communication between A and B. 
 
-4. Final Acknowledgment by A: A decrypts B's message, verifies the nonce Na, \
-and responds to B's challenge by encrypting B's nonce (Nb) with the session key (Kab) \
-and sending it back to B. This step completes the mutual authentication process, \
-confirming to B that A has successfully received and acknowledged the session key (Kab).\
+Message 3, B --> A: {A, B, Na, Kab}Kas, {Na}Kab, Nb
+B then forwards the first credential from 
+S to A, and also sends an encrypted Na with Kb 
+and another nonce Nb (message 3). 
+Upon receiving them, A decrypts the credential to get Kb and verifies 
+its freshness by checking the presence of Na 
+also authenticates B by decrypting the encrypted 
+part with Kab and comparing the result with Na. 
+
+Message 4, A --> B : {Nb}Kab 
+If they match, A encrypts Nb with Kab and sends 
+it back to B (massage 4) to prove its identity to B. 
 """
 
 
-# Kao_Chow_Authentication_V1 = """\
-# A, B, S :  	principal
-# Kab, Kbs, Kas : shared key
-
-# A generates a fresh nonce Na, then send message to S:
-# 1.  	A	->	S	:  	<A, B, Na>
-
-# 2.  	S	->	B	:  	<{A, B, Na, Kab}Kas, {A, B, Na, Kab}Kbs>
-
-# B generates a fresh nonce Nb, then send message to A:
-# 3.  	B	->	A	:  	<{A, B, Na, Kab}Kas, {Na}Kab, Nb>
-
-# 4.  	A	->	B	:  	<{Nb}Kab>
-# """
-
-# Yahalom = """\
-# Protocol Steps:
-# A -> B: Alice starts the protocol by sending her identity (A) and a freshly generated \
-# nonce (Na) to Bob. This message indicates Alice's intention to communicate securely and \
-# serves as a challenge to prove Bob's identity in later steps.
-
-# B -> S: Bob responds to Alice's request by sending a message to the Server (S). \
-# This message includes Bob's identity (B), and an encrypted package {A, Na, Nb}Kbs \
-# containing Alice's identity, Alice's nonce (Na), and Bob's freshly generated nonce (Nb), \
-# all encrypted with Bob's key (Kbs). This ensures that only the Server can decrypt and \
-# process the message, proving Bob's identity to the Server.
-
-# S -> A: The Server processes Bob's request and sends two encrypted messages: \
-# The first message {B, Kab, Na, Nb}Kas is encrypted with Alice's key (Kas) and includes \
-# Bob's identity (B), the session key (Kab), and both nonces (Na, Nb). This message assures \
-# Alice of Bob's participation and provides the session key.The second message {A, Kab}Kbs \
-# is encrypted with Bob's key (Kbs) and includes Alice's identity (A) and the session key (Kab), \
-# intended for Bob.
-
-# A -> B: Alice forwards the second message {A, Kab}Kbs to Bob, proving her ability to \
-# communicate with the Server and her possession of the session key. She also sends an \
-# encrypted message {Nb}Kab, which contains Bob's nonce encrypted with the session key (Kab). \
-# This step confirms to Bob that Alice has received and accepted the session key, \
-# and it validates Alice's identity to Bob.
-# """
 
 Yahalom = """\
-Alice and Server shares a key Kas, Bob shares a Kbs with Server initially.
-All the identitis  can be known publickly.
-
-A -> B: Alice starts the protocol by sending her identity (A) and a freshly generated \
-nonce (Na) to Bob. This message indicates Alice's intention to communicate securely and \
-serves as a challenge to prove Bob's identity in later steps.
-
-B -> S: Bob responds to Alice's request by sending a message to the Server (S). \
-This message includes Bob's identity (B), and an encrypted package {A, Na, Nb}Kbs \
-containing Alice's identity, Alice's nonce (Na), and Bob's freshly generated nonce (Nb), \
-all encrypted with Bob's key (Kbs). This ensures that only the Server can decrypt and \
-process the message, proving Bob's identity to the Server.
-
-S -> A: The Server processes Bob's request and sends a message including two packages: \
-The first package {B, Kab, Na, Nb}Kas is encrypted with Alice's key (Kas) and includes \
-Bob's identity (B), the session key (Kab), and both nonces (Na, Nb). This message assures \
-Alice of Bob's participation and provides the session key.The second package {A, Kab}Kbs \
-is encrypted with Bob's key (Kbs) and includes Alice's identity (A) and the session key (Kab), \
-intended for Bob.
-
-A -> B: Alice forwards the second package {A, Kab}Kbs to Bob, proving her ability to \
-communicate with the Server and her possession of the session key. She also sends an \
-encrypted message {Nb}Kab, which contains Bob's nonce encrypted with the session key (Kab). \
-This step confirms to Bob that Alice has received and accepted the session key, \
-and it validates Alice's identity to Bob.
+```
+Protocol: Yahalom
+Source: wikipedia
+Link: https://en.wikipedia.org/wiki/Yahalom_(protocol)
+```
+Yahalom is an authentication and secure key-sharing protocol designed for use on an insecure network such as the Internet.
+Yahalom uses a trusted arbitrator to distribute a shared key between two people. 
+This protocol can be considered as an improved version of Wide Mouth Frog protocol 
+(with additional protection against man-in-the-middle attack), 
+but less secure than the Needham-chroeder protocol.
+If Alice (A) initiates communication with Bob (B), and S is a server trusted by both parties, 
+the protocol can be specified as follows using security protocol notation:
+  - A and B represent the identities of Alice and Bob, respectively.
+  - Kas is a symmetric key known only to A and S.
+  - Kbs is a symmetric key known only to B and S.
+  - Na and Nb are nonces generated by A and B respectively.
+  - Kab is a symmetric, generated key, which will be the session key for the session between A and B.
+A --> B: A, Na
+  Alice sends a message to Bob requesting communication, including her nonce Na.
+B --> S: B, {A, Na, Nb}Kbs
+  Bob sends a message to the Server encrypted with Kbs
+S --> A: {B, Kab, Na, Nb}Kas, {A, Kab}Kbs
+  The Server sends Alice a message containing the generated session key Kab and a message to be forwarded.
+A --> B: {A, Kab}Kbs, {Nb}Kab
+  Alice forwards the message to Bob and verifies Na has not changed. 
+  Bob will verify Nb has not changed when he receives the message.    
 """
+
 
 
 X509_1 = """\
-The CCITT X.509 version 1 protocol is a security mechanism designed to ensure secure \
-communication between two principals, often referred to as Alice (A) and Bob (B), within a network. 
-Both Ta, Na, Xa and Ya are fresh nonce. Tha public key of both roles are known publicly.
-
-Alice initiates communication by sending a message to Bob that includes her identity (A), \
-a timestamp (Ta) to mark the message's time, a nonce (Na) for ensuring the message's freshness, \
-Bob's identity (B), some data (Xa), and user-specific data (Ya) encrypted with Bob's public key (PK(B)) for confidentiality. \
-
-This entire package, except the encrypted part {Ya}PK(B), is then signed with Alice's private key (SK(A)) to ensure authenticity. \
-The signed part includes a hash of the entire message (including {Ya}PK(B)) to verify the integrity and origin of the message. \
-For simplification, the message which is sent from A to B is  `<A, Ta, Na, B, Xa, {Ya}PK(B), hash_part, {hash_part}SK(A)>` \
-where `<...>` operator denotes concatation of string, {}PK denotes asymmetric.
+```
+Source: THE DIRECTORY-AUTHENTICATION FRAMEWORK and Security Defects in CCITT Recommendation X .509
+Link: https://1f8a81b9b0707b63-19211.webchannel-proxy.scarabresearch.com/rec/T-REC-X.509-198811-S/en
+Title: CCITT X.509 (11/1988)  
+Authors: ITU
+Notes: We focus on One-way authentication, which is located in
+      page 18. The original document (section 9.2) offers three options of the message format.
+      Here we only consider the last case which the most complex. 
+      To make it self-contained, we move the notation (Table 1) here, 
+      and add some explainations that excerpted from paper "Security Defects in CCITT Recommendation X.509"
+      by  I'Anson and Mitchell.
+```
+(1) A generates rA, a non-repeating number, which is used to detect replay attacks and to prevent forgery. 
+(2) A sends the following message to B: 
+  B --> A, A{tA, rA, B, sgnData, Bp[encData]}, 
+  where tA, rA are time stamps and random numbers, 
+  B is the name of B, sgnData is a collection of non-confidential parameters (e.g. authentication checks for accompanying data), 
+  encData is a collection of confidential parameters (e .g. secret keys), 
+  Bp[x] denotes the encryption of data x using the public key of B and 
+  A{y} denotes data y with a signed version of y appended, i.e., A{y} = y, Xs[h(y)]. 
+  Inclusion of sgnData and encData within the token is intended to provide origin authentication, 
+  integrity and non-repudiation services for these parameters.
+Here are the notation:
+- Xp: Public key of a user X.
+- Xs:  Secret key of X.
+- Xp[Info]: Encipherment of some information, Info, using the public key of X.
+- Xs[Info]: Encipherment of Info using the secret key of X.
+- X{Info}: The signing of Info by user X. Information (Info) is signed by appending to it an enciphered summary of the information. \
+The summary is produced by means of a one-way hash function, while the enciphering is carried out using the secret key of the signer. \
+Thus X{Info} = Info, Xs[h(Info)].
+- A --> B: A list of certificates needed to allow a particular user to obtain the public key of another, \
+is known as a certification path. Each item in the list is a certificate of the certification authority of the next item in the list. \
+A certification path from A to B (denoted A --> B).
 """
-temp = """<A, Ta, Na, B, Xa, {Ya}PK(B), {h(Ta, Na, B, Xa, {Ya}PK(B))}SK(A)>"""
+
+Woo_Lam = """\
+```
+Source: International Workshop on Security In Information Systems.
+Author: Siraj Shaikh and Vicky Bush
+Link: https://www.scitepress.org/PublishedPapers/2005/25570/25570.pdf
+Title: Analysing the Woo-Lam Protocol Using CSP and Rank Functions
+```
+Woo and Lam introduce a protocol that provides one-way authentication of the 
+initiator of the protocol, A, to a responder, B. The protocol uses symmetric-key cryp
+tography and a trusted third-party server, with whom A and B share long-term sym
+metric keys. 
+(1)  A -> B: A
+(2)  B -> A: Nb
+(3)  A -> B: {Nb}Kas
+(4)  B -> S: {A,{Nb}Kas}Kbs
+(5)  S -> B: {Nb}Kbs
+The keys Kas and Kbs represent the long-term keys that A and B share with the trusted server S. 
+The protocol goal is to authenticate A to B by using a fresh and unpredictable nonce, Nb, produced by B. 
+A starts the protocol by sending it's identity to B. B replies by sending a freshly 
+generated nonce Nb. A encrypts Nb with key Kas and sends it back to B. B concatenates 
+A's reply with the identity of A, encrypts it with key Kbs and sends it to the server S.
+S sends out Nb back to B encrypted under KBS. B compares the nonce it receives from S 
+with the one it sent out to A. If they match, then B is guaranteed that the initiator of the 
+protocol is in fact the principal claimed in the first step of the protocol."""
 
 
 
-Woo_Lam_Pi_f = """\
-The Woo and Lam Pi f protocol is a variant of the original Woo and Lam Pi protocol, \
-designed for secure authentication between two principals with the assistance of a trusted third party. \
-This version specifically emphasizes the use of shared keys for encryption and authentication. \
-Here's a concise description:
-1. Alice starts the authentication process by sending her identity (A) to Bob, \
-signaling her intention to establish a secure communication.
+splice = """
+When a user accesses servers, the user must. send her/his authenticator 
+to the server to prove her/his identity. The protocol for establishing 
+the authenticated connection between a client and a sever is shown in Figure 3.
 
-2. Bob generates a nonce (Nb) and sends it to Alice. \
-This nonce acts as a challenge to prove Alice's identity in a secure manner.
+C --> AS: C, S, id
+First, the client program, which is invoked by the user to access the server, 
+sends a message (2a) to the authentication server to get a public key for the server. 
 
-3. Alice constructs a message containing her identity (A), Bob's identity (B), \
-and the nonce (Nb). She then encrypts this message with the shared key between her and the Server (S), \
-Kas, and sends this encrypted message to Bob. This step aims to prove Alice's \
-identity to Bob by utilizing the shared secret with the Server.
+AS --> C: AS, {AS, C, id, PKs}SKas
+The authentication server picks the server's public key up from its database, 
+and sends it to the client in the message (2b). 
+The message (2b) is encrypted in order to prevent message modifications by intruders. 
 
-4. Bob forwards the message received from Alice to the Server for verification. \
-He includes the original message from Alice and adds Alice's identity (A), his own identity (B) and the \
-nonce (Nb) for context. This entire package is encrypted with the shared key between \
-Bob and the Server, Kbs, ensuring that only the Server can decrypt and verify the contents.
+C --> S: C, S, {C, timestamp, life, {id}PKs}SKc
+Then, the client sends the message (2c) to the server. 
+We call this message as the authenticator. 
+The message includes a time stamp and a field for life time of the message to detect replay attacks. 
+The message identifier (id) is selected randomly.
 
-5. The Server decrypts Bob's message using Kbs, verifies the authenticity and integrity \
-of Alice's message, and then constructs a new message containing Alice's and Bob's \
-identities along with the nonce (Nb). This message is encrypted with the shared key \
-between Bob and the Server, Kbs, and sent back to Bob. 
-This confirms to Bob that Alice's identity has been successfully authenticated.
-"""
-splice = """\
-The SPLICE/AS protocol is designed to facilitate secure communication between \
-a client (C) and a server (S) with the assistance of an authentication server (AS). \
-This protocol establishes trust and secure communication channels by using public \
-and private keys, nonces, and timestamps. Here's a concise explanation:
-1. Client to Authentication Server: `<C, S, N1>`
-The client (C) initiates the protocol by sending a message to the authentication \
-server (AS) containing its own identity, the server's identity (S), and a nonce (N1). \
-This step is aimed at requesting a certificate for the server's public key.
-2. Authentication Server to Client: `<AS, {AS, C, N1, pk(S)}sk(AS)>`
-The authentication server responds by sending a certificate back to the client, \
-which includes the identities of both the AS and the client, the nonce N1, \
-and the server's public key, all signed with the authentication server's private key. \
-This certificate ensures the client that the server's public key is legitimate.
-3. Client to Server: `<C, S, {C, T, L, {N2}pk(S)}sk(C)>`
-The client then sends a message to the server containing both identities (C and S), \
-a timestamp (T), a lifetime (L) for the message, and an encrypted nonce (N2) using \
-the server's public key, all signed with the client's private key. \
-This encrypted nonce can be used as a symmetric key for secure communication.
-4. Server to Authentication Server: `<S, C, N3>`\
-The server, needing to authenticate the client, sends a message to the authentication \
-server containing its own identity, the client's identity, and a nonce (N3). This step \
-requests a certificate for the client's public key.
-5. Authentication Server to Server: `<AS, {AS, S, N3, pk(C)}sk(AS>`
-The authentication server responds with a certificate for the client's public key, \
-including the identities of both the AS and the server, the nonce N3, and the client's public key, \
-all signed with the AS's private key. This certificate authenticates the client's public key to the server.
-6. Server to Client: `<S, C, {S, inc(N2)}pk(C)>`
-Finally, the server sends a message to the client, \
-including both identities and an incremented nonce (N2), encrypted with the client's public key. \
-This confirms the secure channel's establishment and the nonce's acceptance for future symmetric encryption.
+
+When the server receives the message, the following procedure is invoked; 
+(i) if the server does not have the client's public key PKc, the server 
+gets the key from the authentication server through using the 
+same protocol as the client, 
+(ii) the server decrypts the message using the client's public key, 
+(iii) picks the sender's name C in the encrypted block, and 
+(iv) compares it with the sender's name written in the top of the message. 
+If both names are same, then the server can trust that the message sender is C.
+
+S --> C: S, C, {S, id+1}PKc
+After that, it returns the message (2f) to the client. 
+The client also decrypts the message, and get the value id + 1. 
+If the value is right (the value is surely id + 1), 
+the client trusts that the message was returned by the server. 
 """
 
 sigfox = """\
+```
+Source: ACSAC 2017
+Title: Automated Analysis of Secure Internet of Things Protocols
+Link: https://dl.acm.org/doi/10.1145/3134600.3134624
+Authors:  Jun Young Kim,  Ralph Holz,  Wen Hu
+Note: The text is excerpted from Section 3.1, page 5 in the original paper.
+    The original description contains some explaination about the `fact` 
+    and MSRs in Tamarin, which are excluded here.
+```
 SigFox essentially uses TLS 1.2 PKC (public key cryptography) and shares its security goals. 
 The server pushes an asymmetric-encrypted notification (na) with its signature to devices.
 The server uses the public key of the device (pkB) and generates a fresh data item na. It then encrypts the data and the server's public key \
@@ -295,89 +336,55 @@ Then the server signs the message using its own private key skA and sends the me
 Once the device receives the asymmetrically encrypted message with a signature, then perform signature verification on received message.
 """
 
-tmp = """
-Both the public keys of client and Server can be known by each. The secrect key is private, only known by himself.
-The SigFox server pushes an asymmetric-encrypted notification (na) with its signature to devices.
-The server uses the public key of device (pkB) and generates a fresh data item na. It then encrypts the data and the server's public key \
-(pkA) using the the public key of client, pkB to generate the message aenc(<pkA, na>, pkB). \
-Then the server signs the message using its own private key ltkA. The server sends the message along with its signature (<mess, sig>) to the device. \
-Device receives the asymmetrically encrypted message with a signature, then perform signature \
-verification on received message."""
 
 Neu_Stu = """\
-1. Initial Request by A:
-Principal A initiates the protocol by sending its identity along with a nonce (Na) to Principal B. \
-The nonce serves as a challenge to ensure the freshness of the session and protect against replay attacks.
-
-2. Request Forwarding by B (B	->	S	:  	B, {A, Na, Tb}Kbs, Nb):
-Upon receiving A's request, B forwards this request to the Server (S). B includes its own identity, \
-a package encrypted with B's server-shared key (Kbs) containing A's identity, the nonce Na, and a \
-timestamp (Tb) to ensure timeliness. B also generates and sends its own nonce (Nb) to the server, \
-aiming for mutual authentication.
-
-3. Server's Response to A (S -> A: <package1, package2>):
-The Server responds with two encrypted packages:
-(package 1) The first package is encrypted with A's server-shared key (Kas) and contains B's identity, \
-A's nonce (Na), a session key (Kab) for A and B to use, and the timestamp (Tb).
-(package 2) The second package, intended for B, is encrypted with B's server-shared key (Kbs) and \
-includes A's identity, the session key (Kab), and the timestamp (Tb). The server also sends back \
-B's nonce (Nb) to confirm its receipt.
-
-4. Transmission to B (A -> B: 	{A, Kab, Tb}Kbs, {Nb}Kab ):
-A sends to B the second package it received from the server, proving it has successfully decrypted \
-the server's message and obtained the session key (Kab). A also sends Nb encrypted with Kab, \
-ensuring that only B can decrypt it, which proves to B that A possesses the correct session key.
-
-5. First Message Exchange (A	->	B	:  	Ma, {A, Kab, Tb}Kbs):
-A sends a message (Ma) directly to B, along with the repeated transmission of the second package \
-({A, Kab, Tb}Kbs). This serves as an additional authentication step and ensures that \
-both parties acknowledge the established session key.
-
-6. Response by B (B	->	A	:  	Mb, {Ma}Kab):
-B responds with its own message (Mb) and the encryption of A's message (Ma) using the session key (Kab), \
-further confirming the successful establishment of the secure session and mutual authentication.
-
-7. Final Acknowledgment by A (A	->	B	:  	{Mb}Kab):
-A completes the protocol by sending the encryption of B's message (Mb) using the session key (Kab), \
-finalizing the mutual authentication process.
-"""
-
-
-nsl = """\
-Alice knows his sercet key skA, public key pkA and the public of bob pkB.
-Alice starts the protocol by sending her identity A together with a freshly generated random number Na. \
-This message is encrypted using an asymmetric encryption algorithm with B's public key (denoted pub(B)). \
-We suppose that only agent Bob (whose identity is B) knows the secret key corresponding to pub(B). \
-Next Bob receives the message {A, Na}pub(B) sent by Alice. \
-Using his private key, Bob decrypts the message. He sends the received nonce Na together with a freshly generated nonce Nb \
-encrypted with A's public key (pub(A)) to Alice. Finally Alice receives the message {Na, Nb}pub(A).\
-She decrypts the message and checks that the nonce NA corresponds to the nonce previously generated and sent to Bob. \
-She sends the nonce Nb to Bob encrypted with Bob's public key. Upon reception of this message Bob \
-decrypts it and checks that the nonce corresponds to the one previously generated.\
-"""
-
-ssh = """\
-SSH protocol: 
-The following steps are used to exchange a key. Here C is the client; S is the server; p is a large safe \
-prime; g is a generator for a subgroup of GF(p); V_S is S's identification string; \
-V_C is C's identification string; K_S is S's public host key; I_C is C's SSH_MSG_KEXINIT message and \
-I_S is S's SSH_MSG_KEXINIT message that have been exchanged before this part begins.
-
-C generates a random number x and computese = g^x. C sends e to S.
-
-S generates a random number y and computes f = g^y. S receives e. It computes K = e^y, \
-H = hash(V_C || V_S || I_C || I_S || K_S || e || f || K) (these elements are encoded according to their types; \
-see below), and signature s on H with its private host key. S sends (K_S || f || s) to C. The signing operation \
-may involve a second hashing operation.
-
-C verifies that K_S really is the host key for S (e.g., using certificates or a local database). C is also allowed \
-to accept the key without verification; however, doing so will render the protocol insecure against active attacks \
-(but may be desirable for practical reasons in the short term in many environments). C then computes K = f^x,\
-H = hash(V_C || V_S || I_C || I_S || K_S || e || f || K), and verifies the signature s on H.
+The Neuman-Stubblebine protocol is a computer network authentication protocol 
+designed for use on insecure networks (e.g., the Internet). 
+It allows individuals communicating over such a network to prove their identity to each other. 
+This protocol utilizes time stamps, but does not depend on synchronized clocks.
+If Alice (A) initiates the communication to Bob (B) with S is a server trusted by both parties, 
+the protocol can be specified as follows using security protocol notation:
+- A and B are identities of Alice and Bob respectively
+- M is a session identifier
+- Kas is a symmetric key known only to A and S
+- Kbs is a symmetric key known only to B and S
+- Na and Nb are nonces generated by A and B respectively
+- Ta and Tb are timestamps generated by A and B respectively
+- Kab is a generated symmetric key, which will be the session key of the session between A and B
+A -> B: A, Na
+  Alice notified Bob of intent to initiate secure communication.
+B -> S: B, Nb, {A, Na, Tb}Kbs
+  Bob generates a times stamp and a nonce, and sends this to the trusted Server.
+S -> A: {B, Na, Kab, Tb}Kas, {A, Kab, Tb}Kbs, Nb
+  The trusted Server generates a session key and a message for Alice to forward to Bob.
+A -> B: {A, Kab, Tb}Kbs, {Nb}Kab
+  Alice forwards the message and verifies Na is the same that she generated earlier. 
+  Bob will verify Tb and Nb have not changed when he receives the message.
+  
+An advantage provided by this protocol is that Alice can utilize the trusted Server's message to 
+initiate authentication with Bob within some predetermined time limit without utilizing the trusted Server. 
+The protocol proceeds as follows using the same definitions as above.
+A -> B: {A, Kab, Tb}Kbs, Ma
+  Alice sends the message the trusted Server sent her previously when communication with Bob.
+B -> A: Mb, {Ma}Kab
+  Bob sends Alice a new nonce and her new nonce encrypted with session key that Alice resent from previous communication.
+A -> B: {Mb}Kab
+  Alice returns Bob's nonce encrypted with the session key to allow him to verify the communication is successful.
 """
 
 
 ssh = """\
+```
+Source: RFC 4253
+Title: The Secure Shell (SSH) Transport Layer Protocol
+Authors: T. Ylonen, C. Lonvick, Ed. 
+Link: https://datatracker.ietf.org/doc/html/rfc4253
+
+Note: We only select Section 8 and Section 7.2 as input, excluding other parts. 
+      These sections are reordered to reflect the actual order of protocol execution; 
+      that is, first performing the key exchange (Section 8), 
+      followed by retrieving the key from shared keys (Section 7.2).
+```
 The Diffie-Hellman (DH) key exchange provides a shared secret that
 cannot be determined by either party alone.  The key exchange is
 combined with a signature with the host key to provide host
@@ -390,7 +397,6 @@ identification string; V_C is C's identification string; K_S is S's
 public host key; I_C is C's SSH_MSG_KEXINIT message and I_S is S's
 SSH_MSG_KEXINIT message that have been exchanged before this part
 begins.
-
 1. C generates a random number x (1 < x < q) and computes
     e = g^x mod p.  C sends e to S.
 
@@ -504,23 +510,217 @@ In the same flight, the server sends application data encrypted under keys deriv
 Once the client receives and verifies ServerFinished, the server is explicitly authenticated."""
 
 naxos = """\
-In this protocol, each party x has a long-term private key lkx and a corresponding public key pkx = 'g'^lkx, \
-where 'g' is a generator of the Diffie-Hellman group. Because 'g' can be public, we model it as a public \
-constant. Two different hash functions h1 and h2 are used.
-To start a session, the initiator I first creates a fresh nonce eskI, also known as I's ephemeral (private) key. \
-He then concatenates eskI with I's long-term private key lkI, hashes the result using the hash function h1, and \
-sends 'g'^h1(eskI ,lkI) to the responder. The responder R stores the received value in a variable X, computes a \
-similar value based on his own nonce eskR and long-term private key lkR, and sends the result to the initiator, \
-who stores the received value in the variable Y. Finally, both parties compute a session key (kI and kR, respec-\
-tively) whose computation includes their own long-term private keys, such that only the intended partner can \
-compute the same key.
-"""
-lake = """\
+```
+Protocol: NAXOS
+Source: Tamarin-manual
+Link: https://tamarin-prover.com/manual/master/book/005_protocol-specification-rules.html
+```
+The Naxos protocol, is displayed below:
++--------------------------------------------------------------+
+|      I                                       R               |
+|                     g^h1(eskI, lkI)                          |
+|create fresh eskI ----------------------> receive X           |
+|                                                              |
+|                    g^h1(eskR, lkR)                           |
+|     receive Y <-------------------------> create fresh eskR  |
+|                                                              |
+| kI = h2(Y^lkI, x, Y^h1(eskI, lkI), I, R)                     |
+| kR = h2(y, X^ltkR, X^h1(eskR, lkR), I, R)                    |
+|     for y = pkI^h1(eskR, lkR) and x = pkR^h1(eskI, lkI)      |
+|--------------------------------------------------------------+
+In this protocol, each party x has a long-term private key lkx 
+and a corresponding public key pkx = 'g'^lkx, where 'g' is a 
+generator of the Diffie-Hellman group.
 
+To start a session, the initiator I first creates a fresh nonce eskI, 
+also known as I's ephemeral (private) key. He then concatenates eskI 
+with I's long-term private key lkI, hashes the result using the hash function h1, and
+sends 'g'^h1(eskI ,lkI) to the responder. 
+The responder R stores the received value in a variable X, 
+computes a similar value based on his own nonce eskR and long-term private key lkR, 
+and sends the result to the initiator, who stores the received value in the variable Y. 
+Finally, both parties compute a session key (kI and kR, respectively) 
+whose computation includes their own long-term private keys, 
+such that only the intended partner can compute the same key.
+
+
+"""
+lak = """\
+```
+Protocol: LAK06
+Source: SCIS06
+Title: RFID Mutual Authentication Scheme based on Synchronized Secret Information
+Authors: Sangshin Lee, Tomoyuki Asano, and Kwangjo Kim
+Link: https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=262d8634634e0a227e4c2a7f3651baed4bf67707
+Note: 
+```
+The RFID system has two main components: Tag T , and Reader R.
+We describes the process of our authentication protocol as in Figure 1.
+  Reader                  Tag
+ s <- PRNG                  |
+    |          s            |
+    | --------------------->|
+    |                       |
+    |                    r1 <- PRNG
+    |                    r2 <- h(r1⊕k⊕s)   
+    |                       |
+    |        r1, r2         |
+    |<----------------------|
+    |                       |
+    | Finds ID              |
+    | Updates DB            |
+    |                       |
+  r3' <- h(r2⊕k⊕s)
+    |---------------------->|
+    |                       |
+    |                r3 <- h(r2⊕k⊕s)
+    |                  IF r3' != r3  
+    |                  THEN                   
+    |                  k <- h(k)
+    |                       |
+    |                       |
+1. R generates and saves a new pseudorandom number s by utilizing PRNG, 
+and sends s to T.
+2. T also generates a new pseudorandom number r1, constructs r2, 
+i.e., h(r1⊕k⊕s), then send r1, r2 to R, where s was sent by R.
+3. R delivers responses of T with the saved value s to B, i.e., s, r1, and r2.
+4. In order to nd ID of T, B searches k from the fields K and Klast 
+which satisfies the following equation:
+h(r1⊕k⊕s) ? =r2
+where r1, r2, and s are values sent by T. 
+If only one k satisfies the equation, 
+then we can know ID corresponding to k in D is ID of T 
+because the equation is true if k and k is identical. 
+5. R updates information of T. 
+If k is found in the field K of a record,
+k is copied to the field Klast of the record,
+and the field K is set to h(k). 
+If k is found in the field Klast, no update is made to D.
+6. From s, r2, and k, which are received values from 
+T and the value found by testing Eq.(1), 
+R calculates r3, i.e., h(r2⊕k⊕s), and sends r3 to T 
+in order to inform the update.
+7. To test the correctness of the value Reader sends, 
+T verifies the following equation: r3 = r3.
+If the equation is correct, T updates k to h(k).
+"""
+
+nspk = """\
+```
+Source: Teaching Assignment
+Title: Description of the Needham Schroeder public key protocol and its attack
+Link: https://members.loria.fr/VCortier/files/School/NS.pdf
+```
+The Needham Schroeder public key protocol can be described as follows:
+  A --> B: {A,Na}pub(B)
+  B --> A: {Na,Nb}pub(A)
+  A --> B: {Nb}pub(B)
+Initial knowledge: 
+  We suppose that agents A and B initially know public 
+  keys pub(C) of agent C, for any agent C. Data generated
+  during the protocol: Na is a nonce generated by A. 
+  Nb is a nonce generated by B.
+Protocol description: 
+  Alice starts the protocol by sending her identity A 
+  together with a freshly generated random number Na. 
+  This message is encrypted using an asymmetric encryption
+  algorithm with B's public key (denoted pub(B)). 
+  We suppose that only agent Bob (whose identity is B) 
+  knows the secret key corresponding to pub(B). 
+  Next Bobreceives the message {A,Na}pub(B) sent by Alice.
+  Using his private key, Bob decrypts the message. 
+  He sends the received nonce Na together with a freshly 
+  generated nonce Nb encrypted with A's public key (pub(A)) to Alice.
+  Finally Alice receives the message {Na,Nb}pub(A). 
+  She decrypts the message and checks that the nonce NA 
+  corresponds to the nonce previously generated and sent to Bob.
+  She sends the nonce Nb to Bob encrypted with Bob's public key.
+  Upon reception of this message Bob decrypts it and checks that
+  the nonce corresponds to the one previously generated.
+"""
+
+emv = """\
+This section provides technical background on the 
+specific Visa contactless protocol. For the 
+purposeof this exercises, some messages have been 
+simplified and substantial parts of the protocol 
+have been omitted, such as cardholder verification.  
+The crypto-related notation in the figure and also
+in the rest of this material is the following:
+We will use this crypto-related notation in the 
+following:
+* mk is a (master) key only known to the card and its issuer.
+* f is a key derivation function.
+* (privC, pubC) is the private/public key pair of the card.
+  `pubC` is publicly known.
+* sign(priv, m) is the digital signature on m with the 
+  private key `priv`. Note that we consider signatures that
+  do not reveal the message m.
+* verify(sig, m, pub) equals true 
+  if and only if sig=sign(priv,m) and (priv, pub) is a valid private/public key pair.
+* MAC(k, m) is Message Authentication Code (MAC) on `m` with the key `k`.
+Here is an overview of the resulting execution flow of the Visa contactless transaction:
+Card: knows mk, privC         Terminal: knows pubC          Issuer: knows mk
+    |                              |                               |
+sk = f(mk, ATC)                fresh un                            |
+fresh nc                       PDOL=<amount, un>                   |
+    |                              |                               | 
+    |   'GET PROCESSING OPTIONS'   |                               |
+    |<-----------------------------|                               |
+    |                              |                               |
+AC = MAC(sk, <PDOL, ATC>)          |                               |
+    |                              |                               |
+    |        AIP,CID,ATC,AC        |                               |
+    |----------------------------->|                               |
+    |      'READ RECORD'           |                               |
+    |<-----------------------------|                               |
+    |                              |                               |
+sm = <un, amount, nc, ATC, AIP>    |                               |
+SDAD = sign(privC, sm)             |                               |
+    |                              |                               |
+    |      PAN, SDAD, nc           |                               |
+    |------------------------------|                               |
+    |                              |                               |
+    |                          IF SDAD verification fails          |
+    |                            THEN Decline                      |
+    |                          ELSE Continue                       |
+    |                              |                               |
+    |                              | PAN, PDOL, ATC, AC            |
+    |                              |------------------------------>|
+    |                              |                               |
+    |                              |                            IF (PAN is unrecognized or
+    |                              |                              AC verification fails)
+    |                              |                            THEN Decline
+    |                              |                               |
+    |                              |'ACCEPTED',MAC(f(mk, ATC), AC) |
+    |                              |<------------------------------|
+    |                              |                               |
+    |                              |                               |
+1. **Application Selection:** An EMV contactless transaction is performed 
+using one of the six EMV contactless protocols/kernels mentioned before. 
+The negotiation of the kernel to be used for the transaction is the first phase of the protocol. 
+This negotiation is done via two exchanges of 'SELECT' commands and responses.
+This brief description of the application selection phase is merely informative. We will not model this phase.
+2. **Offline Data Authentication (ODA):** After a kernel has been selected (Visa in our case), 
+the terminal sends the 'GET_PROCESSING_OPTIONS' command with the Processing Data Object List (PDOL) as the payload.
+The PDOL is composed of the amount of the transaction and a terminal-generated random number un, 
+called the Unpredictable Number (UN) in EMV's terminology.
+The card responds to this command with the Application Interchange Profile (AIP) and some other data that we will explain later in the Transaction Authorization phase. The AIP informs the terminal of the card's authentication capabilities. In this lab we will assume that AIP = 'fDDA' and will explain later what this means.
+The terminal then sends the 'READ_RECORD' command to read the card's records, which are static data stored in the card. We will assume these records are composed solely of the Primary Account Number (PAN, commonly known as the card number) and the nonce nc.
+The terminal then proceeds to cryptographically authenticate the card, using the method indicated by the AIP. Our assumption on the AIP being 'fDDA' entails that the Fast Dynamic Data Authentication (fDDA) method will be used. In this method, the card replies to the terminal's 'READ RECORD' command with the Signed Dynamic Authentication Data (SDAD), which is a signature by the
+card on transaction data as indicated in the figure.
+3. **Transaction Authorization (TA):** For transaction authorization, the card generates
+and supplies the Application Cryptogram (AC) in response to the 'GET_PROCESSING_OPTIONS' command (note that this command goes before the 'READ_RECORD' one). The AC is a cryptographic proof of the transaction. The computation by the card (and verification by the issuer) of the AC uses the session key _sk_ derived from a shared master key _mk_ and the ATC. The key _mk_ is only known to the issuer and the card.
+ Together with the AC, the card sends the AIP (which we described before), the Cryptogram Information Data (CID), and the Application Transaction Counter (ATC). The CID, which can be 'TC' or 'ARQC', indicates the type of authorization: offline or online, respectively.
+The transaction continues as follows:
+    * if CID = 'TC', then the transaction is approved offline by the terminal. In this case, the AC is called the Transaction Cryptogram (TC).
+    * otherwise (i.e. if CID = 'ARQC') the terminal forwards the transaction data to the issuer for online authorization. The data forwarded is composed of the card number (i.e. the PAN), the PDOL, the transaction counter ATC, and the Application Cryptogram (AC). In this case, the AC is called the Authorization Request Cryptogram (ARQC). 
+  The issuer authorizes the transaction if the AC is correct, in which case it sends back to the terminal the authorization code 'ACCEPT' and an issuer-generated MAC, called the Authorization Response Cryptogram (ARPC). The ARPC serves, among other things, as a cryptographic proof for the terminal that the issuer accepted the transaction.
+Notice that the terminal can neither verify the AC nor the ARPC because the key mk, and sk by extension, are unknown to it.
 """
 DB = {
     "running_ex" : running_example,
-    "nsl": nsl,
+    "nspk": nspk,
     "exercise" : exercise,
     "Denning_Sacco": Denning_Sacco,
     "nssk": nssk,
@@ -528,7 +728,7 @@ DB = {
     "Yahalom" : Yahalom,
     "kca" : Kao_Chow_Authentication_V1,
     "X509_1" : X509_1,
-    "Woo_Lam_Pi_f": Woo_Lam_Pi_f,
+    "Woo_Lam": Woo_Lam,
     "splice": splice,
     "sigfox": sigfox,
     "Neu_Stu": Neu_Stu,
@@ -536,8 +736,6 @@ DB = {
     # "edhoc": edhoc,
     "kemtls": kemtls,
     "naxos": naxos,
-    # "lake": lake,
+    "lak": lak,
+    "emv": emv,
 }
-
-if __name__ == "__main__":
-    print(Denning_Sacco)

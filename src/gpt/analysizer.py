@@ -1,192 +1,159 @@
-from lark import Lark, Transformer, Tree, Token
-from gpt.bnf import ROLE_BNF, TOP_BNF
+import ast
 
-RoleParser = Lark(ROLE_BNF, parser='lalr', start='start', propagate_positions=True)
-TopParser = Lark(TOP_BNF, parser='lalr', start='start', propagate_positions=True)
-class Role:
+class RoleBasedVariableAnalyzer(ast.NodeVisitor):
     def __init__(self):
-        self.vars = []   
-    
-def parse_diff(diff_text):
-    old_version = []
-    new_version = []
-    for line in diff_text.split('\n'):
-        if line.startswith('-'):
-            old_version.append(line.replace("-", " "))  
-        elif line.startswith('+'):
-            new_version.append(line.replace("+", " "))  
-        else:
-            old_version.append(line)
-            new_version.append(line)
-    return "\n".join(old_version), "\n".join(new_version)
+        self.K = {}  # Dictionary to store known variables per role
+        self.E = {}  # Dictionary to store error variables per role
+        self.dependencies = {}  # Dictionary to store dependencies of each variable
+        self.log = []  # List to store detailed logs of errors
 
-def filter_match_subtrees(tree, match="match"):
-    matched_subtrees = []
-    
-    if tree.data == match:
-        matched_subtrees.append(tree)
-    
-    if isinstance(tree, Tree):
-        for child in tree.children:
-            if isinstance(child, Tree):
-                matched_subtrees.extend(filter_match_subtrees(child, match))
-    
-    return matched_subtrees
-    
-def _vars(tree_node):
-    if isinstance(tree_node, Token):
-        return {tree_node.value}
-    elif isinstance(tree_node, Tree):
-        vars_set = set()  
-        start_index = 0  
+    def visit_Call(self, node):
+        if isinstance(node.func, ast.Name):
+            function_name = node.func.id
+            if len(node.args) > 0:
+                role_arg = node.args[0]
+                role = role_arg.id if isinstance(role_arg, ast.Name) else None
 
-        if tree_node.data in ['func','event']:
-            start_index = 1
+                if role:
+                    if role not in self.K:
+                        self.K[role] = set()
+                    if role not in self.E:
+                        self.E[role] = set()
+
+                    if function_name == "Send":
+                        if len(node.args) > 2:
+                            send_var = node.args[2]
+                            self._check_send_variables(role, send_var, node.lineno)
+
+                    elif function_name == "Recv":
+                        if len(node.args) > 2:
+                            recv_var = node.args[2]
+                            self._collect_variables(role, recv_var)
+                            self._add_dependencies_to_knowledge(role, recv_var, node.lineno)
+
+                    elif function_name in ["Knows", "Gen"]:
+                        for arg in node.args[1:]:
+                            self._collect_variables(role, arg)
+
+                    elif function_name == "Op":
+                        if len(node.args) > 1 and isinstance(node.args[1], ast.Call) and node.args[1].func.id == "assign":
+                            assigned_var = node.args[1].args[0]
+                            expression_arg = node.args[1].args[1]
+                            if isinstance(assigned_var, ast.Name):
+                                self.dependencies[assigned_var.id] = self._extract_variables(expression_arg)
+                                self.K[role].add(assigned_var.id)
+                            self._check_expression_variables(role, expression_arg, node.lineno)
+
+    def _check_send_variables(self, role, node, lineno):
+        vars_in_expression = self._extract_variables(node)
+        for var in vars_in_expression:
+            if var not in self.K[role]:
+                self.E[role].add(var)
+                self.log.append({
+                    'error': f"Variable '{var}' not known in role '{role}' when sending",
+                    'line': lineno,
+                    'code': self.source_code[lineno-1]
+                })
+
+    def _extract_variables(self, node):
+        result = set()
+        if isinstance(node, ast.Name):
+            result.add(node.id)
+        elif isinstance(node, ast.Call):
+            for arg in node.args:
+                result.update(self._extract_variables(arg))
+        elif isinstance(node, ast.Attribute):
+            result.add(self._get_full_attribute_name(node))
+        return result
+
+    def _collect_variables(self, role, node):
+        if isinstance(node, ast.Name):
+            self.K[role].add(node.id)
+        elif isinstance(node, ast.Call):
+            for arg in node.args:
+                self._collect_variables(role, arg)
+        elif isinstance(node, ast.Attribute):
+            full_name = self._get_full_attribute_name(node)
+            self.K[role].add(full_name)
             
-        for child in tree_node.children[start_index:]:
-            vars_set.update(_vars(child)) 
-        return vars_set
-    else:
-        return set()
+    # def _add_dependencies_to_knowledge(self, role, node, lineno):
+    #     vars = self._extract_variables(node)
+    #     for var in vars:
+    #         if var in self.dependencies:
+    #             self.K[role].update(self.dependencies[var])
     
-def count_leading_spaces(s):
-    return len(s) - len(s.lstrip())
+    def _add_all_dependencies(self, role, var, seen_vars):
+        """
+        Recursively adds all dependencies of a variable to the knowledge set of a role.
+        :param role: The role for which dependencies are being added.
+        :param var: The current variable being processed.
+        :param seen_vars: A set to track variables that have been processed to avoid infinite recursion.
+        """
+        if var in seen_vars:  # Avoid infinite recursion by checking if we have already seen this variable
+            return
+        seen_vars.add(var)  # Mark this variable as seen
 
-def static_analysis(root:Tree, vars:set, Err:dict[int]):
-    for node in root.children:
-        if isinstance(node, Tree):
-            if node.data in ["stmt"]:
-                stmt = node.children[0]
-                if stmt.data in ["new"]:
-                    vars.update(_vars(stmt))
-                elif stmt.data in ["_in"]:
-                    matched_trees:list = [_vars(t) for t in filter_match_subtrees(stmt)]
-                    if matched_trees:
-                        matched:set = set.union(*matched_trees)
-                    else: 
-                        matched = set()
-                    unmatched = _vars(stmt) - matched
-                    
-                    # Err 1: Extra matching
-                    if len(matched - vars) != 0:
-                        err_str = f"// {matched-vars} is not local variable, can not be matched."
-                        Err.setdefault(node.meta.line, []).append(err_str)
-                        
-                    # Err 2: Lacking mathching
-                    if len(unmatched & vars) != 0:
-                        err_str = f"// {unmatched & vars} should use `=` to be matched."
-                        Err.setdefault(node.meta.line, []).append(err_str)
-                    vars.update(_vars(stmt))
-                    
-                elif stmt.data in ["out", "event"]:
-                    out_vars = _vars(stmt)
-                    if len(out_vars-vars) != 0:
-                        err_str = f"// Variables {out_vars-vars} are unbounded."
-                        Err.setdefault(stmt.meta.line, []).append(err_str)
-                    # vars.update(_vars(stmt))
-            elif node.data in ["binding"]:
-                left = node.children[0]
-                matched_trees:list = [_vars(t) for t in filter_match_subtrees(left)]
-                
-                # There exists some matched variables
-                if matched_trees:
-                    matched:set = set.union(*matched_trees)
-                    # print(f"matched:{matched}")
-                else: 
-                    matched = set()
-                unmatched = _vars(left) - matched
-                
-                # Err 1: Extra matching
-                if len(matched - vars) != 0:
-                    # print(f"// Extra matching:{matched-vars}")
-                    err_str = f"// {matched-vars} is not local variable, can not be matched."
-                    Err.setdefault(node.meta.line, []).append(err_str)
-                    
-                # Err 2: Lacking mathching
-                if len(unmatched & vars) != 0:
-                    # print(f"lack matching:{unmatched & vars}")
-                    err_str = f"// {unmatched & vars} should use `=` to be matched."
-                    Err.setdefault(node.meta.line, []).append(err_str)
-                    
-                right = node.children[1]
-                # Err 3: Unbounded variable used
-                if len(_vars(right)-vars) != 0:
-                    err_str = f"// Variables {_vars(right)-vars} are unbounded"
-                    Err.setdefault(node.meta.line, []).append(err_str)
-                    # print(f"unbounded varaible used:{_vars(right)-vars}")
-                vars.update(_vars(left))
-            elif node.data in ["guard"]:
-                pass
-            else:
-                static_analysis(node, vars, Err)
+        if var in self.dependencies:
+            # Update the knowledge base with the direct dependencies of the variable
+            self.K[role].update(self.dependencies[var])
+            # Recursively add dependencies of each dependency
+            for dep_var in self.dependencies[var]:
+                self._add_all_dependencies(role, dep_var, seen_vars)
 
-import logging
-def analysis(code):
-    logging.info(f'\U0001f605:{code}')
-    R = []
-    root = RoleParser.parse(code)
-    for node in root.children:
-        if node.data == "role":
-            R += [node]
+    def _add_dependencies_to_knowledge(self, role, node, lineno):
+        vars = self._extract_variables(node)  # Assuming this method extracts all variables used in the node
+        for var in vars:
+            self._add_all_dependencies(role, var, set())
+
+
+    # Implement remaining methods...
     
-    Err = {}
-    for role in R:
-        vars = set()
-        for node in role.children:
-            if isinstance(node, Tree) and node.data in ["parameters"]:
-                vars.update(_vars(node))
-            if isinstance(node, Tree) and node.data in ["stms"]:
-                static_analysis(node, vars, Err)
+    def _check_expression_variables(self, role, node, lineno):
+        if isinstance(node, ast.Name):
+            if node.id not in self.K[role]:
+                self.E[role].add(node.id)
+                # Log the error with detailed information
+                self.log.append({
+                    'error': f"Variable '{node.id}' not known in role '{role}'",
+                    'line': lineno,
+                    'code': self.source_code[lineno-1]
+                })
+        elif isinstance(node, ast.Call):
+            for arg in node.args:
+                self._check_expression_variables(role, arg, lineno)  # Pass lineno to recursive calls
+        elif isinstance(node, ast.Attribute):
+            base_name = self._get_full_attribute_name(node)
+            if base_name not in self.K[role]:
+                self.E[role].add(base_name)
+                # Log the error with detailed information
+                self.log.append({
+                    'error': f"Variable '{base_name}' not known in role '{role}'",
+                    'line': lineno,
+                    'code': self.source_code[lineno-1]
+                })
 
-    start = 0
-    spec = []
-    codes = code.split("\n")
-    for line_num, errs in Err.items():
-        end = line_num - 1
-        spec += [line for line in codes[start:end]]
-        space_num = count_leading_spaces(codes[line_num-1])
-        spec += [" "*space_num + line for line in errs]
-        start = end
-    spec += codes[start:]
-    return "\n".join(spec)
 
-if __name__ == "__main__":
-    code2 ="""\
-let A(Kas, idA, idB) =
-  new Na;
-  out(<idA, idB, Na>);
-  in(cipher1);
-  let message2 = sdec(cipher1, Kas) in
-  let <=Na, =idB, Kab, cipher2> = message2 in
-  out(cipher2);
-  in(cipher3);
-  let message3 = sdec(cipher3, Kab) in
-  out(senc(message3, Kab)); 0
 
-let B(Kbs, idA, idB) =
-  in(cipher);
-  let message = sdec(cipher, Kbs) in
-  let <Kab, =idA> = message in
-  new Nb;
-  out(senc(Nb, Kab));
-  in(cipher3);
-  let message3 = sdec(cipher3, Kab) in 0
+    def _get_full_attribute_name(self, node):
+        if isinstance(node, ast.Attribute):
+            return self._get_full_attribute_name(node.value) + '.' + node.attr
+        elif isinstance(node, ast.Name):
+            return node.id
+        return ''
 
-let S(Kas, Kbs, idA, idB) =
-  new Kab;
-  in(<=idA, =idB, Na>);
-  let message1 = senc(<Na, idB, Kab, senc(<Kab, idA>, Kbs)>, Kas) in
-  out(message1); 0"""
-    new_version = []
-    for line in code2.split('\n'):
-        if line.startswith('-'):
-            pass  
-        elif line.startswith('+'):
-            new_version.append(line.replace("+", " "))  
-        else:
-            new_version.append(line)
-    file = "\n".join(new_version)
+def analyze_code(code):
+    tree = ast.parse(code)
+    analyzer = RoleBasedVariableAnalyzer()
+    analyzer.source_code = code.split("\n")  # Split source code into lines
+    analyzer.visit(tree)
+    return analyzer.K, analyzer.E, analyzer.log, analyzer.dependencies
 
-    print(analysis(file) == file)
-    
-    
+def log_report(log_entries):
+    return "\n".join([f"Error on line {entry['line']}: {entry['error']} in '{entry['code']}'" for entry in log_entries])
+
+
+def errs_report(code):
+    K, _, entries, dependency = analyze_code(code)
+    print(dependency)
+    print(K)
+    return log_report(entries)
