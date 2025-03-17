@@ -92,7 +92,7 @@ The tool is composed of four stages, transitioning from natural language input t
 - Run the tool's frontend
     ```bash
     $ cd src
-    $ python -m frontend --app tool run
+    $ python -m flask --app frontend run
     ```
 - (Optional) Add ```--debug``` flag to enable debugging mode.
 - Then open web-based tool at http://127.0.0.1:5000.
