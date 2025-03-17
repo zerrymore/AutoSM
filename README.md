@@ -92,15 +92,14 @@ The tool is composed of four stages, transitioning from natural language input t
 - Run the tool's frontend
     ```bash
     $ cd src
-    $ python -m flask --app tool run
+    $ python -m frontend --app tool run
     ```
-**I recommend use ```python -m flask --app rewrite run``` to use the lastest version of the tool.**
 - (Optional) Add ```--debug``` flag to enable debugging mode.
-- Then open web-based tool at http://127.0.0.1:5000
+- Then open web-based tool at http://127.0.0.1:5000.
 
 ### User example
 
-Here we take protocol `CCITT X509.1` as example to show how user can use the tool generate symbolic model semi-automatically.
+Here we take protocol `Denning-Sacco` as example to show how user can use the tool generate symbolic model semi-automatically.
 
 1. Load the protocol document.
 

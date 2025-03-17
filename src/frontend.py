@@ -3,18 +3,19 @@ import json
 from gpt.parser import *
 from gpt.prompt_all import *
 from gpt.benchmark import DB
+import logging
+from gpt.translator import T_transform
 from gpt.rewriter import Rewriter
 from gpt.utils import setup_logger, extract_exprs, parse_json
 from gpt.gptcore import BaseChatClass
 from gpt.auto_model import AutoModel
 from gpt.gen_msc import calculus_to_msc
 from gpt.prompt import get_incontext_learning_contents
-from gpt.prompt_all import REVIEW_TEMPLATE
+from gpt.prompt_all import REVIEW_TEMPLATE, SPEC_TEMPLATE
 from gpt.utils import compile_verify
-from gpt.regression import errs_report
+from gpt.analysizer import errs_report
 
 
-from utils.gen_html import loadText, sapic_hl_gen
 from conf.jsoninfo import load_json_config
 from flask import Flask, render_template, jsonify, request, Blueprint
 
@@ -24,17 +25,6 @@ from flask import Blueprint
 setup_logger()
 load_json_config("gpt")
 
-
-
-SPEC_TEMPLATE = """\
-theory temp
-begin
-builtins: diffie-hellman, symmetric-encryption, signing, xor, hashing, asymmetric-encryption
-functions: {functions}
-{new_spec}
-{top_spec}
-end
-"""
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 
@@ -72,18 +62,7 @@ def few_shot():
             if prompt in ["lambda"]:
                 """Step1: hire llm to read the given documents"""
 
-                chatmodel = AutoModel(
-                    # get_incontext_learning_contents("SeqReader"),
-                    conversation_list=[],
-                    useOpenKey=True,
-                    continuous_talking=True,
-                    model=llm,
-                    case=case,
-                    doc=doc,
-                    temperature=0.4,
-                    max_tokens=1024,
-                    n_choices=1,
-                )
+                chatmodel = AutoModel(model=llm, case=case, doc=doc)
 
                 # 1. Parse the document
                 parse_prompt = get_incontext_learning_contents("SeqReader")
@@ -94,6 +73,10 @@ def few_shot():
                                 
                 while True:
                     report = errs_report(draft_exprs)
+                    
+                    if report == "": 
+                        final_exprs = draft_exprs
+                        break
                     
                     logging.info(f'\U0001f4d6:{REVIEW_TEMPLATE.format(report)}')
 
@@ -189,11 +172,9 @@ def few_shot():
                 hints = "\n".join(["# "+ l for l in report.split("\n")])
             msc = calculus_to_msc(exprs)
             
-            
-            
-            
             data = {"msc": msc, "report": f"\n{hints}"}
             return json.dumps(data)
+
 
         if req["type"] == "rewrite":
             logs = req["logs"]
