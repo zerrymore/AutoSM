@@ -46,8 +46,8 @@ def get_incontext_learning_contents(content_type, shot_num=2):
                     # {'role': 'assistant', 'content': fifth_ccg_answer},
                     # {'role': 'user', 'content': sixth_ccg_question},
                     # {'role': 'assistant', 'content': sixth_ccg_answer},
-                    # {'role': 'user', 'content': end_ccg_question},
-                    # {'role': 'assistant', 'content': end_ccg_answer},
+                    {'role': 'user', 'content': end_ccg_question},
+                    {'role': 'assistant', 'content': end_ccg_answer},
                     ]
     if content_type == "init_signature":
         if shot_num == 0:

@@ -230,7 +230,7 @@ def fix_brackets(input_str):
 
 
 def deconstruct_expr(input_str):
-    function_names = ["sdec", "adec", "if_then_else", "If", "dec", "if"]
+    function_names = ["sdec", "adec", "if_then_else", "If", "dec", "if", "=="]
     pattern = r'\b(' + '|'.join(function_names) + r')\s*\((.*?)\)'
     matches = re.findall(pattern, input_str)
     if matches:

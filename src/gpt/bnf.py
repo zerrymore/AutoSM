@@ -154,7 +154,18 @@ class TreeToStmt(Transformer):
       return f"{items[0]} * {items[1]}"
     
     def func(self, items):
-      return f"{items[0]}({items[1]})"
+        func_name = items[0]
+        if func_name == "XOR":
+            paras = items[1].split(",", 1)
+            p1 = paras[0].strip()
+            p2 = paras[1].strip()
+            return f"{p1} XOR {p2}"
+        if func_name == "exp":
+            paras = items[1].split(",", 1)
+            p1 = paras[0].strip()
+            p2 = paras[1].strip()
+            return f"{p1}^{p2}"
+        return f"{items[0]}({items[1]})"
     
     def match(self, items):
       return f'={items[0]}'

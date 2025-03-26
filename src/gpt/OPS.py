@@ -93,7 +93,9 @@ def __syn_exp(params, index=None, process_name=None):
     # return f"eexp({params[0]}, {params[1]})"  
     
     if params[0] == "g":
+        return f"exp('g', {params[1]})"
         return f"'g'^{params[1]}"
+    return f"exp({params[0]}, {params[1]})"
     return f"{params[0]}^{params[1]}"
 
 

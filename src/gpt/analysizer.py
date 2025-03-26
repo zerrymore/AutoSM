@@ -46,6 +46,8 @@ class RoleBasedVariableAnalyzer(ast.NodeVisitor):
 
     def _check_send_variables(self, role, node, lineno):
         vars_in_expression = self._extract_variables(node)
+        print(vars_in_expression)
+        print("~~~~~~~!!!!!")
         for var in vars_in_expression:
             if var not in self.K[role]:
                 self.E[role].add(var)
@@ -60,6 +62,13 @@ class RoleBasedVariableAnalyzer(ast.NodeVisitor):
         if isinstance(node, ast.Name):
             result.add(node.id)
         elif isinstance(node, ast.Call):
+            function_name = node.func.id
+            # if function_name == "exp":
+            #     arg = node.args[0]
+            #     # print(arg.id)
+            # else:
+            #     args = node.args      
+                      
             for arg in node.args:
                 result.update(self._extract_variables(arg))
         elif isinstance(node, ast.Attribute):
@@ -153,7 +162,29 @@ def log_report(log_entries):
 
 
 def errs_report(code):
+    code = code.replace("exp(g,", "exp('g',").replace("pow(g,", "pow('g',")
     K, _, entries, dependency = analyze_code(code)
     print(dependency)
     print(K)
     return log_report(entries)
+
+
+
+if __name__ == "__main__":
+    code = """\
+Gen(I, eskI)
+Gen(R, eskR)
+Op(I, assign(h1_eskI_lkI, h1(concat(eskI, lkI))))
+Op(R, assign(h1_eskR_lkR, h1(concat(eskR, lkR))))
+Op(I, assign(X, exp('g', h1_eskI_lkI)))
+Op(R, assign(Y, exp(g, h1_eskR_lkR)))
+Send(I, R, X)
+Recv(R, I, X)
+Send(R, I, Y)
+Recv(I, R, Y)
+Op(I, assign(x, exp(pkR, h1_eskI_lkI)))
+Op(R, assign(y, exp(pkI, h1_eskR_lkR)))
+Op(I, assign(kI, h2(concat(exp(Y, lkI), x, exp(Y, h1_eskI_lkI), idI, idR))))
+Op(R, assign(kR, h2(concat(y, exp(X, lkR), exp(X, h1_eskR_lkR), idI, idR))))
+"""
+    print(errs_report(code))

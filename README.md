@@ -70,7 +70,7 @@ The tool is composed of four stages, transitioning from natural language input t
   ```
 - Before using Tamarin, set the terminal encoding to UTF-8:
   ```bash
-  $ export LC_ALL=C.UTF-8
+  $ export LANG=en_US.UTF-8        
   ```
 
 2. Setup the conda environments, and install the related packages.

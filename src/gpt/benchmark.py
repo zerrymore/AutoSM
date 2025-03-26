@@ -391,30 +391,28 @@ combined with a signature with the host key to provide host
 authentication.  This key exchange method provides explicit server
 authentication as defined in Section 7.
 The following steps are used to exchange a key.  In this, C is the
-client; S is the server; p is a large safe prime; g is a generator
+client; S is the server; g is a generator
 for a subgroup of GF(p); q is the order of the subgroup; V_S is S's
 identification string; V_C is C's identification string; K_S is S's
 public host key; I_C is C's SSH_MSG_KEXINIT message and I_S is S's
 SSH_MSG_KEXINIT message that have been exchanged before this part
 begins.
-1. C generates a random number x (1 < x < q) and computes
-    e = g^x mod p.  C sends e to S.
-
-2. S generates a random number y (0 < y < q) and computes
-    f = g^y mod p.  S receives e.  It computes K = e^y mod p,
-    H = hash(V_C || V_S || I_C || I_S || K_S || e || f || K)
+1. C generates a random number xx (1 < xx < q) and computes
+    ee = g^x.  C sends ee to S.
+2. S generates a random number yy (0 < yy < q) and computes
+    ff = g^y.  S receives ee.  It computes Key = ee^yy,
+    H = hash(V_C || V_S || I_C || I_S || K_S || ee || ff || Key)
     (these elements are encoded according to their types; see below),
-    and signature s on H with its private host key.  S sends
-    (K_S || f || s) to C.  The signing operation may involve a
+    and signature sig on H with its private host key.  S sends
+    (K_S || ff || sig) to C.  The signing operation may involve a
     second hashing operation.
-
 3. C verifies that K_S really is the host key for S (e.g., using
     certificates or a local database).  C is also allowed to accept
     the key without verification; however, doing so will render the
     protocol insecure against active attacks (but may be desirable for
     practical reasons in the short term in many environments).  C then
-    computes K = f^x mod p, H = hash(V_C || V_S || I_C || I_S || K_S
-    || e || f || K), and verifies the signature s on H.
+    computes Key = ff^xx, H = hash(V_C || V_S || I_C || I_S || K_S
+    || ee || ff || Key), and verifies the signature s on H.
 
 
 This is implemented with the following messages.  The hash algorithm
@@ -439,14 +437,14 @@ derivation.  Here, we'll call it HASH.
 Encryption keys MUST be computed as HASH, of a known value and K, as
 follows:
 
-o  Initial IV client to server: HASH(K || H || "A" || session_id)
+o  Initial IV client to server: HASH(Key || H || "A" || session_id)
     (Here K is encoded as mpint and "A" as byte and session_id as raw
     data.  "A" means the single character A, ASCII 65).
-o  Initial IV server to client: HASH(K || H || "B" || session_id)
-o  Encryption key client to server: HASH(K || H || "C" || session_id)
-o  Encryption key server to client: HASH(K || H || "D" || session_id)
-o  Integrity key client to server: HASH(K || H || "E" || session_id)
-o  Integrity key server to client: HASH(K || H || "F" || session_id)
+o  Initial IV server to client: HASH(Key || H || "B" || session_id)
+o  Encryption key client to server: HASH(Key || H || "C" || session_id)
+o  Encryption key server to client: HASH(Key || H || "D" || session_id)
+o  Integrity key client to server: HASH(Key || H || "E" || session_id)
+o  Integrity key server to client: HASH(Key || H || "F" || session_id)
 
 Key data MUST be taken from the beginning of the hash output.  As
 many bytes as needed are taken from the beginning of the hash value.
@@ -653,11 +651,11 @@ following:
 * f is a key derivation function.
 * (privC, pubC) is the private/public key pair of the card.
   `pubC` is publicly known.
-* sign(priv, m) is the digital signature on m with the 
+* sign(m, priv) is the digital signature on m with the 
   private key `priv`. Note that we consider signatures that
   do not reveal the message m.
 * verify(sig, m, pub) equals true 
-  if and only if sig=sign(priv,m) and (priv, pub) is a valid private/public key pair.
+  if and only if sig=sign(m, priv) and (priv, pub) is a valid private/public key pair.
 * MAC(k, m) is Message Authentication Code (MAC) on `m` with the key `k`.
 Here is an overview of the resulting execution flow of the Visa contactless transaction:
 Card: knows mk, privC         Terminal: knows pubC          Issuer: knows mk
@@ -665,18 +663,18 @@ Card: knows mk, privC         Terminal: knows pubC          Issuer: knows mk
 sk = f(mk, ATC)                fresh un                            |
 fresh nc                       PDOL=<amount, un>                   |
     |                              |                               | 
-    |   'GET PROCESSING OPTIONS'   |                               |
+    |   'GET_PROCESSING_OPTIONS'   |                               |
     |<-----------------------------|                               |
     |                              |                               |
 AC = MAC(sk, <PDOL, ATC>)          |                               |
     |                              |                               |
     |        AIP,CID,ATC,AC        |                               |
     |----------------------------->|                               |
-    |      'READ RECORD'           |                               |
+    |      'READ_RECORD'           |                               |
     |<-----------------------------|                               |
     |                              |                               |
 sm = <un, amount, nc, ATC, AIP>    |                               |
-SDAD = sign(privC, sm)             |                               |
+SDAD = sign(sm, privC)             |                               |
     |                              |                               |
     |      PAN, SDAD, nc           |                               |
     |------------------------------|                               |
@@ -716,8 +714,7 @@ The transaction continues as follows:
     * if CID = 'TC', then the transaction is approved offline by the terminal. In this case, the AC is called the Transaction Cryptogram (TC).
     * otherwise (i.e. if CID = 'ARQC') the terminal forwards the transaction data to the issuer for online authorization. The data forwarded is composed of the card number (i.e. the PAN), the PDOL, the transaction counter ATC, and the Application Cryptogram (AC). In this case, the AC is called the Authorization Request Cryptogram (ARQC). 
   The issuer authorizes the transaction if the AC is correct, in which case it sends back to the terminal the authorization code 'ACCEPT' and an issuer-generated MAC, called the Authorization Response Cryptogram (ARPC). The ARPC serves, among other things, as a cryptographic proof for the terminal that the issuer accepted the transaction.
-Notice that the terminal can neither verify the AC nor the ARPC because the key mk, and sk by extension, are unknown to it.
-"""
+Notice that the terminal can neither verify the AC nor the ARPC because the key mk, and sk by extension, are unknown to it."""
 DB = {
     "running_ex" : running_example,
     "nspk": nspk,
