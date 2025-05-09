@@ -228,14 +228,14 @@ def tree2str(node) -> str:
     return reconstructed_string
 
 
-def tree2str_xor(node) -> str:
-    reconstructed_string = ""
-    if isinstance(node, Token):
-        reconstructed_string = node.value
-    elif isinstance(node, Tree):
-        transformer = TreeXor()
-        reconstructed_string = transformer.transform(node)
-    return reconstructed_string
+# def tree2str_xor(node) -> str:
+#     reconstructed_string = ""
+#     if isinstance(node, Token):
+#         reconstructed_string = node.value
+#     elif isinstance(node, Tree):
+#         transformer = TreeXor()
+#         reconstructed_string = transformer.transform(node)
+#     return reconstructed_string
 
 
 # ghost variables
