@@ -168,6 +168,7 @@ SYN_OPS = {
     "Op": __syn_Op,
     "Checks": __syn_Checks,
     "concat": __syn_concat,
+    "pair": __syn_concat,
     "aenc": __syn_aenc,
     "var": __syn_var,
     "role": __syn_role,

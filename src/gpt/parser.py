@@ -51,6 +51,7 @@ def collect_funcs(local_processes:str, top_process:str) -> list:
             pass
 
     functions = set()
+    functions.add("placeholder/0")
     for node in func_nodes:
         node: Tree
         func_name = node.children[0].value

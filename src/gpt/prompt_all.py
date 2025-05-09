@@ -393,7 +393,8 @@ Next Bob receives the message {A, Na}pub(B) sent by Alice.
 """
 
 second_ccg_answer = """\
-/* 
+/*
+Knows(Alice, skA, pkB, idA) // Asymetric encription, so key-pairs should be intially known
 Gen(Alice, Na)
 Op(Alice, assign(message1, aenc(concat(idA, Na), pkB)))
 Send(Alice, Bob, message1)
