@@ -1,5 +1,6 @@
 from lark import Lark, Token, Tree, Transformer
 import copy
+from gpt.utils import is_function_call
 
 BNF = """\
 	?start: stms
@@ -119,25 +120,32 @@ class TreeToString(Transformer):
         except:
             return ""
 
-    def exp(self, items):
-        return f"{items[0]} - {items[1]}"
 
     def xor(self, items):
         return f"({items[0]} XOR {items[1]})"
 
     def func(self, items):
-        if items[0] == "XOR":
-            paras = items[1].split(",")
-            # print(paras)
-            # return f"{paras[0]} XOR {paras[1]}"
-            return f'XOR({items[1]})'
+        if items[0] == "exp":
+            print("#############")
+            print(items[1])
+        # if items[0] == "XOR":
+        #     paras = items[1].split(",", 1)
+        #     print("#############")
+        #     print(items)
+        #     print(paras[0].strip())
+        #     print(paras[1].strip())
+        #     print("#############")
+        #     # print(paras)
+        #     # return f"{paras[0]} XOR {paras[1]}"
+        #     return f'XOR({items[1]})'
         return f"{items[0]}({items[1]})"
 
     def match(self, items):
         return f"={items[0]}"
 
     def exp(self, items):
-        return f"{items[0]}^{items[1]}"
+        return f"{items[0]}({items[1]})"
+        # return f"{items[0]}^{items[1]}"
 
     def nonce(self, items):
         return f"{items[0]}"
@@ -151,7 +159,8 @@ class TreeToString(Transformer):
     def __default__(self, data, children, meta):
         return children[0] if children else data
 
-
+    
+    
 def _vars(tree_node):
     if isinstance(tree_node, Token):
         return {tree_node.value}
@@ -168,7 +177,11 @@ def _vars(tree_node):
 
 
 def _vars_from_str(expr: str) -> set:
+    print(f'expr:{expr}')
     root = expr_Parser.parse(expr)
+    
+    V = _vars(root)
+    
     return _vars(root)
 
 
@@ -211,6 +224,16 @@ def tree2str(node) -> str:
         reconstructed_string = node.value
     elif isinstance(node, Tree):
         transformer = TreeToString()
+        reconstructed_string = transformer.transform(node)
+    return reconstructed_string
+
+
+def tree2str_xor(node) -> str:
+    reconstructed_string = ""
+    if isinstance(node, Token):
+        reconstructed_string = node.value
+    elif isinstance(node, Tree):
+        transformer = TreeXor()
         reconstructed_string = transformer.transform(node)
     return reconstructed_string
 
@@ -332,10 +355,15 @@ def inverse_key(key: str) -> str:
     elif key.startswith("pk"):
         return f"sk{key[-1]}"
     else:
+        if key.startswith("priv"):
+            return f"pub{key[-1]}"
+        elif key.startswith("pub"):
+            return f"priv{key[-1]}"
         return key
 
 
 def replace_concat_with_angle_brackets(s):
+    print(s)
     result = []
     i = 0
     n = len(s)
@@ -396,7 +424,7 @@ def process_ast_node(t:str, K:set, pointers:dict, T:set):
                 return False 
 
     return True
-
+    
 
 
 
@@ -410,13 +438,11 @@ def rewrite_receiv_event(mapping, pointers, K, hasDeconstructed: list):
     
     res = []
     
-    print(f'mapping:----')
-    # print(mapping)
-    for k in mapping.keys():
-        print(tree2str(k))
-        print(tree2str(mapping[k]))
+    # for k in mapping.keys():
+    #     print(tree2str(k))
+    #     print(tree2str(mapping[k]))
         
-        print()
+    #     print()
     
     undeconstructed_vars = copy.deepcopy(mapping)
 
@@ -424,7 +450,7 @@ def rewrite_receiv_event(mapping, pointers, K, hasDeconstructed: list):
 
     from collections import deque
 
-    queue = {}  # 延后处理的队列
+    queue = {}
 
     """
     #ISSURE 2 
@@ -521,15 +547,18 @@ def rewrite_receiv_event(mapping, pointers, K, hasDeconstructed: list):
                         msg = tree2str(args.children[0])
                         sig_key = tree2str(args.children[1])
                         # this is an ad-hoc implementation. the case should be: eval(msg) \in K
+                        print(f'msg:{msg}')
+                        print(_vars_from_str(evaluate(pointers, msg)))
                         if (msg in K and inverse_key(sig_key) in K):
                             stmt = f"if verify({tree2str(v)}, {msg}, {inverse_key(sig_key)}) = true then"
                             processed_count += 1
                             undeconstructed_vars.pop(v)
                             hasDeconstructed += [tree2str(v)]
                         elif _vars_from_str(evaluate(pointers, msg)).issubset(K) and inverse_key(sig_key) in K:
-                            stmt = f'let {msg} = {evaluate(pointers, msg)} in'
+                            stmt_tmp = f'let {msg} = {evaluate(pointers, msg)} in'
+                            res += [stmt_tmp]
                             hasDeconstructed += [msg]
-                            stmt += f"if verify({tree2str(v)}, {msg}, {inverse_key(sig_key)}) = true then"
+                            stmt = f"if verify({tree2str(v)}, {msg}, {inverse_key(sig_key)}) = true then"
                             processed_count += 1
                             undeconstructed_vars.pop(v)
                             hasDeconstructed += [tree2str(v)]
@@ -548,8 +577,9 @@ def rewrite_receiv_event(mapping, pointers, K, hasDeconstructed: list):
                                 for t in T.keys():
                                     func_str = func_str.replace(t, T[t])
                                 func_str = replace_concat_with_angle_brackets(func_str)
-                                stmt = f"let {msg} = {func_str} in"
-                                stmt += f"if verify({tree2str(v)}, {msg}, {inverse_key(sig_key)}) = true then"
+                                stmt_tmp = f"let {msg} = {func_str} in"
+                                res += [stmt_tmp]
+                                stmt = f"if verify({tree2str(v)}, {msg}, {inverse_key(sig_key)}) = true then"
                             else:
                                 stmt = f"// let {tree2str(p)} = {tree2str(v)} in"
                                 queue = {**queue, v: p}
@@ -602,7 +632,7 @@ def rewrite_receiv_event(mapping, pointers, K, hasDeconstructed: list):
                                     
                                     # first we should reconstruct the intermediate vars that we can acheive  
                                     if c not in K:
-                                        stmt += f'let {c} = {evaluate(pointers, c)} in'
+                                        res += [f'let {c} = {evaluate(pointers, c)} in']
                                         hasDeconstructed += [c]
                                     # if c in K:
                                     
@@ -621,7 +651,7 @@ def rewrite_receiv_event(mapping, pointers, K, hasDeconstructed: list):
 
                             processed_count += 1
 
-                            stmt += f"let {tree2str(p)} = {tree2str(v)} in"
+                            stmt = f"let {tree2str(p)} = {tree2str(v)} in"
                         res += [stmt]
 
                 elif p_tree.data == "concat":
@@ -682,6 +712,8 @@ def get_role_root(node: Tree, role_roots):
 
 def evaluate(mem: dict, var: str) -> str:
     """ """
+    print(var)
+    print("----------")
     if var not in mem.keys():
         return var
     else:
@@ -689,6 +721,31 @@ def evaluate(mem: dict, var: str) -> str:
         for v in _vars(mem[var]):
             value = value.replace(v, evaluate(mem, v))
         return value
+    
+# def evaluate(mem: dict, var: str) -> str:
+#     """ """
+#     var = var.replace("<", "concat(").replace(">", ")")
+#     print(var)
+#     print("----------")
+#     if var not in mem.keys():
+#         return var
+#     else:
+#         value: str = tree2str(mem[var])
+#         if is_function_call(value):
+#             import ast
+#             tree = ast.parse(value, mode='eval')
+#             # 检查确保是一个函数调用
+#             if not isinstance(tree.body, ast.Call):
+#                 return value  # 如果不是函数调用，直接返回原字符串
+
+#             # 遍历参数并进行替换
+#             for arg in tree.body.args:
+#                 if isinstance(arg, ast.Name):
+#                     arg.id = evaluate(mem, arg.id)  # 替换参数名
+#             return ast.unparse(tree.body).strip()
+#         # for v in _vars(mem[var]):
+#         #     value = value.replace(v, evaluate(mem, v))
+#         return value
 
 
 def rewrite_local_process(
@@ -747,11 +804,11 @@ def rewrite_local_process(
             ##== TODO: when new variable is constructed, K is enlarged,     ==##
             ##== some variable may be deconstructed at this timepoint,      ==##
             ##== so the greedy algorithm for deconstruction may be applied  ==##
-            # res, undeconstructed_vars = rewrite_receiv_event(undeconstructed_mapping, pointers, K)
+            # res, undeconstructed_vars = rewrite_receiv_event(undeconstructed_mapping, pointers, K, hasDeconstructed)
             # undeconstructed_mapping |=  undeconstructed_vars
 
             # for dcon_stmt in res:
-            # local_p.append(dcon_stmt)
+            #     local_p.append(dcon_stmt)
 
         local_p += [stmt]
 
@@ -978,9 +1035,16 @@ def Rewriter(code: str) -> str:
         # r, _ = rewrite_receiv_event(undeconstructed_mapping, pointers, K)
         # Todo: K should be updated when the process is rewriten
 
+
+        # stms = local_p[1:]
+        # for stmt in stms:
+        #     root = expr_Parser.parse(stmt)
+            
+        
         current_local_process = "\n".join(local_p + ["0"])
         res += current_local_process + "\n"
-
+        
+        print(res)
     return res
 
 

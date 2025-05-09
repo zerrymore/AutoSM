@@ -254,6 +254,42 @@ is known as a certification path. Each item in the list is a certificate of the 
 A certification path from A to B (denoted A --> B).
 """
 
+X509_1 = """\
+```
+Source: THE DIRECTORY-AUTHENTICATION FRAMEWORK and Security Defects in CCITT Recommendation X .509
+Link: https://1f8a81b9b0707b63-19211.webchannel-proxy.scarabresearch.com/rec/T-REC-X.509-198811-S/en
+Title: CCITT X.509 (11/1988)  
+Authors: ITU
+Notes: We focus on One-way authentication, which is located in
+      page 18. The original document (section 9.2) offers three options of the message format.
+      Here we only consider the last case which the most complex. 
+      To make it self-contained, we move the notation (Table 1) here, 
+      and add some explainations that excerpted from paper "Security Defects in CCITT Recommendation X.509"
+      by  I'Anson and Mitchell.
+```
+Here are the notation:
+- pkX: Public key of a user X.
+- skX:  Secret key of X.
+- p[Info]: Encipherment of some information, Info, using the public key of X.
+- skX[Info]: Encipherment of Info using the secret key of X.
+- X{Info}: The signing of Info by user X. Information (Info) is signed by appending to it an enciphered summary of the information. \
+The summary is produced by means of a one-way hash function, while the enciphering is carried out using the secret key of the signer. \
+Thus X{Info} = Info, skX[h(Info)].
+- A_B: A list of certificates needed to allow a particular user to obtain the public key of another, \
+is known as a certification path. Each item in the list is a certificate of the certification authority of the next item in the list. \
+A certification path from A to B (denoted A_B).
+(1) A generates rA, a non-repeating number, which is used to detect replay attacks and to prevent forgery. 
+(2) A sends the following message to B: 
+  B_A, A{tA, rA, B, sgnData, pkB[encData]}, 
+  where tA, rA are time stamps and random numbers, 
+  B is the name of B, sgnData is a collection of non-confidential parameters (e.g. authentication checks for accompanying data), 
+  encData is a collection of confidential parameters (e .g. secret keys), 
+  pkB[x] denotes the encryption of data x using the public key of B and 
+  A{y} denotes data y with a signed version of y appended, i.e., A{y} = y, skA[h(y)]. 
+  Inclusion of sgnData and encData within the token is intended to provide origin authentication, 
+  integrity and non-repudiation services for these parameters.
+"""
+
 Woo_Lam = """\
 ```
 Source: International Workshop on Security In Information Systems.
@@ -529,7 +565,6 @@ The Naxos protocol, is displayed below:
 In this protocol, each party x has a long-term private key lkx 
 and a corresponding public key pkx = 'g'^lkx, where 'g' is a 
 generator of the Diffie-Hellman group.
-
 To start a session, the initiator I first creates a fresh nonce eskI, 
 also known as I's ephemeral (private) key. He then concatenates eskI 
 with I's long-term private key lkI, hashes the result using the hash function h1, and
@@ -555,11 +590,11 @@ Note:
 The RFID system has two main components: Tag T , and Reader R.
 We describes the process of our authentication protocol as in Figure 1.
   Reader                  Tag
- s <- PRNG                  |
+    |                       |
     |          s            |
     | --------------------->|
     |                       |
-    |                    r1 <- PRNG
+    |                       |
     |                    r2 <- h(r1⊕k⊕s)   
     |                       |
     |        r1, r2         |

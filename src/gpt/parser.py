@@ -55,8 +55,12 @@ def collect_funcs(local_processes:str, top_process:str) -> list:
         node: Tree
         func_name = node.children[0].value
         arity = len(node.children[1].children)
+        #Todo: should be a more elegant way to get arity
+        declarations = f"{func_name}/{arity}"
+        built_ins = ["pk/1", "sign/2", "verify/3", "aenc/2", "adec/2", "senc/2", "sdec/2"]   
         if func_name != "exp":
-            functions.add(f"{func_name}/{arity}")
+            if declarations not in built_ins:
+                functions.add(f"{func_name}/{arity}")
     return functions
 
 

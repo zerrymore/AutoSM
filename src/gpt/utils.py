@@ -169,7 +169,7 @@ def extract_from_comments(comment_string:str) -> str:
                 fcalls.append(expr)
         return "\n".join(fcalls)
     except:
-        pass
+        return extract_exprs(comment_string)
     
     return extract_exprs(comment_string)
 
