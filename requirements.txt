@@ -4,8 +4,7 @@ transformers==4.28.1
 pandas
 tabulate
 termcolor
-google-cloud-aiplatform>= 1.25.0
 tiktoken
 colorama
-pygments
 dirtyjson
+lark
